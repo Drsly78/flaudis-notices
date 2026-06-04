@@ -21,7 +21,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
   header { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 20px 0; }
-  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--orange); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--orange); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .logo span { color: var(--muted); font-size: 13px; letter-spacing: 1px; font-family: 'DM Sans', sans-serif; font-weight: 300; margin-top: 4px; }
   .search-wrap { position: relative; }
   .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
@@ -139,6 +139,10 @@ let fbReady = false;
 // État local des sélections en cours (avant save)
 let localState = {};
 
+// Stocker l'état des panels ouverts et onglets actifs
+let openPanels = new Set();
+let activeTabs = {};
+
 // Firebase — écoute temps réel
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
@@ -171,7 +175,7 @@ async function loadNotices() {
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
         const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
         return { ref, label: label||ref, year,
-          githubUrl: 'https://github.com/Drsly78/sav-notices/blob/main/notices/' + encodeURIComponent(f.name) };
+          githubUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
       })
       .sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
@@ -211,6 +215,15 @@ function renderAll() {
     return;
   }
 
+  // Sauvegarder panels ouverts
+  document.querySelectorAll('.detail-panel').forEach(p => {
+    if (p.style.display === 'block') openPanels.add(p.id.replace('panel-',''));
+  });
+  document.querySelectorAll('.tab-btn.active').forEach(btn => {
+    const key = btn.closest('.detail-panel')?.id.replace('panel-','');
+    if (key) activeTabs[key] = btn.textContent.includes('Emplacement') ? 'loc' : 'inf';
+  });
+
   document.getElementById('results').innerHTML = filtered.map((n, i) => {
     const key = getKey(n.ref);
     const d = fbData[key] || {};
@@ -242,6 +255,24 @@ function renderAll() {
       </div>
     </div>`;
   }).join('');
+
+  // Restaurer panels ouverts
+  openPanels.forEach(key => {
+    const p = document.getElementById('panel-' + key);
+    if (p) p.style.display = 'block';
+    // Restaurer onglet actif
+    const tab = activeTabs[key] || 'loc';
+    const tabEl = document.getElementById('tab-' + tab + '-' + key);
+    if (tabEl) {
+      document.getElementById('tab-loc-' + key)?.classList.toggle('active', tab === 'loc');
+      document.getElementById('tab-inf-' + key)?.classList.toggle('active', tab === 'inf');
+      const tabs = p?.querySelectorAll('.tab-btn');
+      if (tabs) tabs.forEach(btn => btn.classList.toggle('active', 
+        (tab === 'loc' && btn.textContent.includes('Emplacement')) ||
+        (tab === 'inf' && btn.textContent.includes('Stock'))
+      ));
+    }
+  });
 }
 
 function renderLocTab(key, loc) {
@@ -299,13 +330,23 @@ function renderInfTab(key, vis, stk) {
       <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
     </div>
     <button class="save-btn orange" id="stk-save-${key}" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
+    <div style="margin-top:12px">
+      <button style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="toggleNote('${key}')">📝 Note</button>
+      <div id="note-block-${key}" style="display:none;margin-top:8px">
+        <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${fbData[key]?.note || ''}</textarea>
+        <button class="save-btn orange" style="margin-top:6px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
+      </div>
+    </div>
   </div>`;
 }
 
 // ── INTERACTIONS ──────────────────────────────────────────
 window.togglePanel = function(key) {
   const p = document.getElementById('panel-' + key);
-  if (p) p.style.display = p.style.display === 'block' ? 'none' : 'block';
+  if (!p) return;
+  const isOpen = p.style.display === 'block';
+  p.style.display = isOpen ? 'none' : 'block';
+  if (isOpen) openPanels.delete(key); else openPanels.add(key);
 };
 
 window.showTab = function(key, tab, btn) {
@@ -383,6 +424,22 @@ window.saveStock = async function(key) {
     await db.ref('produits/' + key + '/stock').set(val);
     if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
     setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer le stock';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
+  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
+};
+
+window.toggleNote = function(key) {
+  const block = document.getElementById('note-block-' + key);
+  if (block) block.style.display = block.style.display === 'none' ? 'block' : 'none';
+};
+
+window.saveNote = async function(key) {
+  const val = document.getElementById('note-' + key)?.value || '';
+  const btn = document.querySelector('#note-block-' + key + ' .save-btn');
+  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
+  try {
+    await db.ref('produits/' + key + '/note').set(val || null);
+    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
+    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer la note';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
   } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
 };
 
