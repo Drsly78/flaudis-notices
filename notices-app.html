@@ -230,17 +230,15 @@ function renderAll() {
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
           ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
         </div>
-        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" class="notice-arrow">›</a>
+        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;letter-spacing:0.3px">Notice</a>
       </div>
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
           <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
-          <button class="tab-btn" onclick="showTab('${key}','vis',this)">🔩 Visserie</button>
-          <button class="tab-btn" onclick="showTab('${key}','stk',this)">📦 Stock</button>
+          <button class="tab-btn" onclick="showTab('${key}','inf',this)">📦 Stock & Visserie</button>
         </div>
         ${renderLocTab(key, loc)}
-        ${renderVisTab(key, vis)}
-        ${renderStkTab(key, stk)}
+        ${renderInfTab(key, vis, stk)}
       </div>
     </div>`;
   }).join('');
@@ -266,7 +264,7 @@ function renderLocTab(key, loc) {
     <div class="loc-step" id="step-cote-${key}" style="${isSol||!allee?'opacity:0.3;pointer-events:none':''}">
       <div class="loc-step-title${allee&&!isSol?' active-step':''}">Côté</div>
       <div class="loc-btns">
-        ${['Gauche','Droite'].map(v=>`<button class="loc-btn${cote===v?' sel':''}" onclick="pickLoc('${key}','cote','${v}')">${v}</button>`).join('')}
+        ${['G','D'].map(v=>`<button class="loc-btn${cote===v?' sel':''}" onclick="pickLoc('${key}','cote','${v}')">${v}</button>`).join('')}
       </div>
     </div>
     <div class="loc-step" id="step-rack-${key}" style="${isSol||!cote?'opacity:0.3;pointer-events:none':''}">
@@ -285,26 +283,22 @@ function renderLocTab(key, loc) {
   </div>`;
 }
 
-function renderVisTab(key, vis) {
-  return `<div class="tab-content" id="tab-vis-${key}">
-    <div class="vis-row">
-      <button class="vis-btn${vis===true?' sel-yes':''}" onclick="saveVis('${key}',true)">✅ Oui — visserie disponible</button>
-      <button class="vis-btn${vis===false?' sel-no':''}" onclick="saveVis('${key}',false)">❌ Non</button>
-    </div>
-    <p style="font-size:12px;color:var(--muted);text-align:center">Indique si la visserie de détail est disponible en stock pour cette référence.</p>
-  </div>`;
-}
-
-function renderStkTab(key, stk) {
+function renderInfTab(key, vis, stk) {
   const val = stk !== undefined && stk !== null ? stk : 0;
-  return `<div class="tab-content" id="tab-stk-${key}">
+  return `<div class="tab-content" id="tab-inf-${key}">
+    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
+    <div class="vis-row">
+      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
+      <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
+    </div>
+    <div style="height:1px;background:var(--border);margin:14px 0"></div>
     <div class="stock-label">Stock actuel</div>
     <div class="stock-row">
       <button class="stock-btn" onclick="adjustStock('${key}',-1)">−</button>
-      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0" onchange="saveStock('${key}')"/>
+      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0"/>
       <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
     </div>
-    <button class="save-btn orange" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
+    <button class="save-btn orange" id="stk-save-${key}" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
   </div>`;
 }
 
@@ -315,7 +309,7 @@ window.togglePanel = function(key) {
 };
 
 window.showTab = function(key, tab, btn) {
-  ['loc','vis','stk'].forEach(t => {
+  ['loc','inf'].forEach(t => {
     const el = document.getElementById('tab-' + t + '-' + key);
     if (el) el.classList.toggle('active', t === tab);
   });
@@ -364,6 +358,11 @@ window.saveLoc = async function(key) {
 };
 
 window.saveVis = async function(key, val) {
+  // Update visuel immédiat sans fermer le panel
+  const ouiBtn = document.getElementById('vis-oui-' + key);
+  const nonBtn = document.getElementById('vis-non-' + key);
+  if (ouiBtn) { ouiBtn.className = 'vis-btn' + (val === true ? ' sel-yes' : ''); }
+  if (nonBtn) { nonBtn.className = 'vis-btn' + (val === false ? ' sel-no' : ''); }
   try {
     await db.ref('produits/' + key + '/visserie').set(val);
   } catch(e) {}
