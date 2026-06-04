@@ -200,6 +200,25 @@
     padding: 14px 16px;
     background: #111;
   }
+  .loc-save-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--orange);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.15s;
+  }
+  .loc-save-btn:hover { opacity: 0.85; }
+  .loc-save-btn.saved {
+    background: var(--green);
+  }
   .loc-section {
     margin-bottom: 12px;
   }
@@ -276,25 +295,7 @@
     animation: spin 0.8s linear infinite;
   }
 
-  .refresh-btn {
-    position: fixed;
-    bottom: 24px;
-    right: 20px;
-    width: 48px;
-    height: 48px;
-    background: var(--orange);
-    border: none;
-    border-radius: 50%;
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(232,97,26,0.4);
-    transition: transform 0.2s;
-    z-index: 50;
-  }
 
-  .refresh-btn:hover { transform: rotate(180deg) scale(1.1); }
-  .refresh-btn.spinning { animation: spin 0.6s linear; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -348,7 +349,7 @@
   <div class="loader"><div class="spinner"></div></div>
 </div>
 
-<button class="refresh-btn" id="refresh-btn" title="Actualiser">↻</button>
+
 
 <!-- Firebase SDK -->
 <script type="module">
@@ -551,10 +552,36 @@ function renderLoc(noticeRef) {
         <div class="loc-btns">
           ${hauts.map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" onclick="toggleLoc('${noticeRef}','haut','${v}',this)">${v}</button>`).join('')}
         </div>
+        <button class="loc-save-btn" onclick="saveLoc('${n.ref}','${key}')">💾 Enregistrer l'emplacement</button>
       </div>
     </div>
   `;
 }
+
+// saveLoc — sauvegarde tout l'emplacement en une fois
+window.saveLoc = async function(noticeRef, key) {
+  const loc = emplacements[key] || {};
+  const btn = document.querySelector(`#locpanel-${key} .loc-save-btn`);
+  if (btn) { btn.textContent = '⏳ Sauvegarde…'; btn.disabled = true; }
+  try {
+    const clean = {};
+    if (loc.allee) clean.allee = loc.allee;
+    if (loc.cote)  clean.cote  = loc.cote;
+    if (loc.haut)  clean.haut  = loc.haut;
+    await set(ref(db, 'emplacements/' + key), Object.keys(clean).length ? clean : null);
+    if (btn) {
+      btn.textContent = '✓ Enregistré !';
+      btn.classList.add('saved');
+      setTimeout(() => {
+        btn.textContent = '💾 Enregistrer l'emplacement';
+        btn.classList.remove('saved');
+        btn.disabled = false;
+      }, 2000);
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '❌ Erreur'; btn.disabled = false; }
+  }
+};
 
 // toggleLoc — met à jour Firebase ET le DOM immédiatement sans re-render
 window.toggleLoc = async function(noticeRef, field, value) {
@@ -572,8 +599,7 @@ window.toggleLoc = async function(noticeRef, field, value) {
   // Mettre à jour le DOM du panel
   updatePanelDOM(key, noticeRef);
   
-  // Sauvegarder Firebase
-  await saveEmplacement(noticeRef, field, value);
+  // Ne pas sauvegarder automatiquement — l'utilisateur clique sur Enregistrer
 };
 
 function updatePanelDOM(key, noticeRef) {
@@ -710,13 +736,7 @@ document.getElementById('search').addEventListener('input', e => {
   searchTimer = setTimeout(renderAll, 80);
 });
 
-// Refresh
-document.getElementById('refresh-btn').addEventListener('click', () => {
-  const btn = document.getElementById('refresh-btn');
-  btn.classList.add('spinning');
-  setTimeout(() => btn.classList.remove('spinning'), 600);
-  loadNotices(true);
-});
+
 
 loadNotices();
 </script>
