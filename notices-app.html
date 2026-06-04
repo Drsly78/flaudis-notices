@@ -201,7 +201,7 @@ async function loadNotices() {
       const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
       const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
       return { ref, label: label||ref, year, filename: f.name,
-        pdfUrl: 'https://docs.google.com/viewer?url=' + encodeURIComponent(RAW_BASE + encodeURIComponent(f.name)) + '&embedded=true', rawUrl: RAW_BASE + encodeURIComponent(f.name) };
+        pdfUrl: RAW_BASE + encodeURIComponent(f.name), rawUrl: RAW_BASE + encodeURIComponent(f.name) };
     }).sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
     noticesReady = true; if (fbReady) renderAll();
