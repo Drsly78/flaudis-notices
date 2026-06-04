@@ -201,7 +201,7 @@ async function loadNotices() {
       const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
       const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
       return { ref, label: label||ref, year, filename: f.name,
-        pdfUrl: RAW_BASE + encodeURIComponent(f.name) };
+        pdfUrl: 'https://docs.google.com/viewer?url=' + encodeURIComponent(RAW_BASE + encodeURIComponent(f.name)) + '&embedded=true', rawUrl: RAW_BASE + encodeURIComponent(f.name) };
     }).sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
     noticesReady = true; if (fbReady) renderAll();
@@ -381,122 +381,111 @@ window.saveLoc = async function(key) {
   } catch(e) { if (btn) { btn.textContent = '❌ Erreur'; btn.disabled = false; } }
 };
 
-// ── PIÈCES ────────────────────────────────────────────────
+// ── PIÈCES (par carton) ──────────────────────────────────
 function buildPiecesTab(key, pieces) {
   const pids = Object.keys(pieces || {});
-  const piecesHtml = pids.map(pid => {
-    const p = pieces[pid];
-    const cartons = p.cartons ? Object.entries(p.cartons).sort((a,b) => a[0].localeCompare(b[0])) : [];
-    const total = cartons.reduce((s,[,c]) => s + (c.qte||0), 0);
-    const initial = p.initial || (cartons.length > 0 ? cartons[0][1].initial || cartons[0][1].qte : 0);
-    const pct = initial > 0 ? total/initial : 0;
-    const cls = total === 0 ? 'pt-zero' : pct < 0.3 ? 'pt-low' : 'pt-ok';
-    const expanded = expandedPieces.has(pid);
+  // Trouver tous les cartons distincts
+  const allCartonIds = new Set();
+  pids.forEach(pid => { Object.keys(pieces[pid].cartons || {}).forEach(cid => allCartonIds.add(cid)); });
+  const cartonIds = Array.from(allCartonIds).sort();
 
-    // Trouver le premier carton non vide
-    let currentIdx = cartons.findIndex(([,c]) => c.qte > 0);
-    if (currentIdx === -1 && cartons.length > 0) currentIdx = cartons.length - 1;
-
-    const cartonsHtml = cartons.map(([cid, c], idx) => {
-      const isCurrent = idx === currentIdx;
-      const qte = c.qte || 0;
-      const init = c.initial || qte;
-      const pct2 = init > 0 ? qte/init : 0;
-      const barCls = pct2 > 0.5 ? 'full' : pct2 > 0 ? 'mid' : 'empty';
-      return `<div class="carton-row${isCurrent?' current':''}">
-        <span class="carton-label${isCurrent?' current':''}">C${idx+1}${isCurrent?' ▶':''}</span>
-        <div class="carton-bar-wrap"><div class="carton-bar ${barCls}" style="width:${Math.round(pct2*100)}%"></div></div>
-        <span class="carton-count">${qte}/${init}</span>
+  const cartonsHtml = cartonIds.map((cid, cidx) => {
+    const isCurrent = cidx === cartonIds.findIndex(id => pids.some(pid => (pieces[pid].cartons?.[id]?.qte || 0) > 0));
+    const cartonPieces = pids.map(pid => {
+      const p = pieces[pid];
+      const c2 = p.cartons?.[cid];
+      if (!c2) return '';
+      const qte = c2.qte || 0;
+      const init = c2.initial || qte;
+      const pct = init > 0 ? qte/init : 0;
+      const cls = qte === 0 ? 'pt-zero' : pct < 0.3 ? 'pt-low' : 'pt-ok';
+      return `<div class="carton-row">
+        <span class="piece-name" style="font-size:12px;flex:1">${p.nom || pid}</span>
+        <div class="carton-bar-wrap"><div class="carton-bar ${pct>0.5?'full':pct>0?'mid':'empty'}" style="width:${Math.round(pct*100)}%"></div></div>
+        <span class="carton-count ${cls}">${qte}/${init}</span>
         <button class="btn-minus" onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''}>−</button>
       </div>`;
     }).join('');
 
-    return `<div class="piece-item" id="piece-${key}-${pid}" data-pid="${pid}" ${expanded?'data-expanded="1"':''}>
-      <div class="piece-header" onclick="togglePiece('${key}','${pid}')">
-        <span class="piece-name">${p.nom || pid}</span>
-        <span class="piece-total ${cls}">${total} pcs</span>
-        <button class="piece-expand">${expanded?'▲':'▼'}</button>
+    return `<div class="piece-item" id="carton-${key}-${cid}" style="margin-bottom:8px;border:1px solid ${isCurrent?'var(--orange)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--surface2)">
+      <div style="display:flex;align-items:center;padding:10px 12px;background:${isCurrent?'rgba(232,97,26,0.1)':'transparent'}">
+        <span style="font-size:12px;font-weight:700;color:${isCurrent?'var(--orange)':'var(--muted)'}">Carton ${cidx+1}${isCurrent?' ▶ En cours':''}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted)">${pids.filter(pid => (pieces[pid].cartons?.[cid]?.qte||0) > 0).length} pièces dispo</span>
       </div>
-      ${expanded ? `<div class="cartons-list">
-        ${cartonsHtml}
-        <button class="btn-open-carton" onclick="openCarton('${key}','${pid}',event)">+ Ouvrir un carton</button>
-      </div>` : ''}
+      <div style="padding:0 12px 10px">${cartonPieces}</div>
     </div>`;
   }).join('');
 
+  // Liste des pièces pour ce produit (pour le formulaire d'ajout)
+  const piecesListHtml = pids.length ? pids.map(pid => {
+    const p = pieces[pid];
+    const total = Object.values(p.cartons||{}).reduce((s,c2)=>s+(c2.qte||0),0);
+    return `<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="flex:1;color:var(--text)">${p.nom||pid}</span>
+      <span style="color:var(--muted)">${total} pcs total</span>
+    </div>`;
+  }).join('') : '';
+
   return `<div class="tab-content" id="tab-pieces-${key}">
-    ${pids.length ? piecesHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — ajoutez-en ci-dessous</div>'}
-    <div style="margin-top:10px">
-      <button class="btn-sm" style="width:100%" onclick="showAddPiece('${key}')">+ Ajouter une pièce</button>
-      <div id="add-piece-${key}" style="display:none;margin-top:8px">
-        <div class="add-piece-form">
-          <div class="form-row">
-            <div class="form-label">Nom / N° pièce</div>
-            <input class="form-input" id="ap-nom-${key}" placeholder="ex: Mât principal, Vis M6..."/>
-          </div>
-          <div class="form-row-2">
-            <div class="form-row" style="flex:1">
-              <div class="form-label">Qté / carton</div>
-              <input class="form-input" type="number" id="ap-qte-${key}" placeholder="8" min="1"/>
-            </div>
-            <div class="form-row" style="flex:1">
-              <div class="form-label">Nb cartons</div>
-              <input class="form-input" type="number" id="ap-nb-${key}" placeholder="3" min="1"/>
-            </div>
-          </div>
-          <button class="save-btn btn-orange" onclick="addPiece('${key}')">Ajouter</button>
+    ${cartonIds.length ? cartonsHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — scannez ou ajoutez manuellement</div>'}
+    
+    <button class="btn-open-carton" onclick="openCarton('${key}',event)" style="margin-top:4px">+ Ouvrir un nouveau carton</button>
+    
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn-sm" style="flex:1" onclick="showAddPiece('${key}')">+ Ajouter une pièce</button>
+      <button class="btn-sm" style="flex:1;border-color:var(--blue);color:#60a5fa" onclick="scanNotice('${key}')">🤖 Scanner IA</button>
+    </div>
+    
+    <div id="add-piece-${key}" style="display:none;margin-top:8px">
+      <div class="add-piece-form">
+        <div class="form-row">
+          <div class="form-label">Nom / N° pièce</div>
+          <input class="form-input" id="ap-nom-${key}" placeholder="ex: Mât principal, Vis M6..."/>
         </div>
+        <div class="form-row-2">
+          <div class="form-row" style="flex:1">
+            <div class="form-label">Qté / carton</div>
+            <input class="form-input" type="number" id="ap-qte-${key}" placeholder="8" min="1"/>
+          </div>
+          <div class="form-row" style="flex:1">
+            <div class="form-label">Nb cartons</div>
+            <input class="form-input" type="number" id="ap-nb-${key}" placeholder="3" min="1"/>
+          </div>
+        </div>
+        <button class="save-btn btn-orange" onclick="addPiece('${key}')">Ajouter</button>
       </div>
     </div>
   </div>`;
 }
 
-window.togglePiece = function(key, pid) {
-  if (expandedPieces.has(pid)) expandedPieces.delete(pid); else expandedPieces.add(pid);
-  // Re-render juste les pièces
-  const d = fbData[key] || {};
-  const tabEl = document.getElementById('tab-pieces-' + key);
-  if (tabEl) { const n = document.createElement('div'); n.innerHTML = buildPiecesTab(key, d.pieces || {}); tabEl.replaceWith(n.firstChild); }
-};
-
-window.takePiece = async function(key, pid, cid) {
-  const d = fbData[key] || {};
-  const current = d.pieces?.[pid]?.cartons?.[cid]?.qte || 0;
-  if (current <= 0) return;
-  await db.ref(`produits/${key}/pieces/${pid}/cartons/${cid}/qte`).set(current - 1);
-};
-
-window.openCarton = async function(key, pid, e) {
-  e.stopPropagation();
-  const d = fbData[key] || {};
-  const cartons = d.pieces?.[pid]?.cartons || {};
-  const count = Object.keys(cartons).length;
-  const initial = d.pieces?.[pid]?.initial || 0;
-  if (!initial) { alert('Qté initiale inconnue — modifiez la pièce d\'abord'); return; }
-  const newId = 'c' + (count + 1);
-  await db.ref(`produits/${key}/pieces/${pid}/cartons/${newId}`).set({ qte: initial, initial });
-};
-
-window.showAddPiece = function(key) {
-  const el = document.getElementById('add-piece-' + key);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-};
-
-window.addPiece = async function(key) {
-  const nom = document.getElementById('ap-nom-' + key)?.value.trim();
-  const qte = parseInt(document.getElementById('ap-qte-' + key)?.value) || 0;
-  const nb  = parseInt(document.getElementById('ap-nb-'  + key)?.value) || 1;
-  if (!nom || qte <= 0) { alert('Remplissez le nom et la quantité'); return; }
-  const pid = 'p' + Date.now();
-  const cartons = {};
-  for (let i = 1; i <= nb; i++) cartons['c' + i] = { qte, initial: qte };
-  await db.ref(`produits/${key}/pieces/${pid}`).set({ nom, initial: qte, cartons });
-  expandedPieces.add(pid);
-  document.getElementById('add-piece-' + key).style.display = 'none';
-};
-
 // ── INFO ──────────────────────────────────────────────────
 function buildInfTab(key, vis, note) {
+  const d = fbData[key] || {};
+  const pieces = d.pieces || {};
+  const pids = Object.keys(pieces);
+  const allCartonIds = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => allCartonIds.add(cid)));
+  const nbCartons = allCartonIds.size;
+
+  const recapHtml = pids.length ? `
+    <div class="section-title" style="margin-bottom:8px">Récapitulatif stock</div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;color:var(--muted);margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">
+        <span>Pièce</span><span>/ carton × ${nbCartons} = Total</span>
+      </div>
+      ${pids.map(pid => {
+        const p = pieces[pid];
+        const perCarton = p.initial || 0;
+        const total = Object.values(p.cartons||{}).reduce((s,c2)=>s+(c2.qte||0),0);
+        const cls = total === 0 ? 'color:var(--red)' : total < perCarton ? 'color:var(--yellow)' : 'color:var(--green)';
+        return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+          <span>${p.nom||pid}</span>
+          <span style="${cls};font-weight:700">${perCarton} × ${nbCartons} = ${total}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  ` : '';
+
   return `<div class="tab-content" id="tab-inf-${key}">
     <div class="section-title">Visserie disponible</div>
     <div class="vis-row">
@@ -504,6 +493,7 @@ function buildInfTab(key, vis, note) {
       <button class="vis-btn${vis===false?' sel-no':''}"  id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
     </div>
     <div class="divider"></div>
+    ${recapHtml}
     <div class="section-title">Note</div>
     <textarea class="note-textarea" id="note-${key}" rows="3" placeholder="Notes libres…">${note||''}</textarea>
     <button class="save-btn btn-orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
@@ -524,6 +514,56 @@ window.saveNote = async function(key) {
     await db.ref('produits/' + key + '/note').set(val || null);
     feedback(btn, '✓ Enregistré !', true);
   } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
+};
+
+// ── CARTONS ──────────────────────────────────────────────
+window.openCarton = async function(key, e) {
+  e.stopPropagation();
+  const d = fbData[key] || {};
+  const pieces = d.pieces || {};
+  const pids = Object.keys(pieces);
+  if (!pids.length) { alert('Ajoutez d\'abord des pièces'); return; }
+  const allIds = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => allIds.add(cid)));
+  const newId = 'c' + (allIds.size + 1);
+  const updates = {};
+  pids.forEach(pid => {
+    const initial = pieces[pid].initial || 0;
+    updates['produits/' + key + '/pieces/' + pid + '/cartons/' + newId] = { qte: initial, initial };
+  });
+  await db.ref().update(updates);
+};
+
+// ── SCAN IA ──────────────────────────────────────────────
+window.scanNotice = async function(key) {
+  const notice = allNotices.find(n => getKey(n.ref) === key);
+  if (!notice) return;
+  const btn = document.querySelector(`#tab-pieces-${key} .btn-sm:last-child`);
+  if (btn) { btn.textContent = '⏳ Scan…'; btn.disabled = true; }
+  try {
+    const res = await fetch('https://sav-server-production.up.railway.app/scan-notice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-app-secret': 'sav-flaudis-2024' },
+      body: JSON.stringify({ pdfUrl: notice.rawUrl, ref: notice.ref })
+    });
+    const data = await res.json();
+    if (!data.pieces || !data.pieces.length) throw new Error('Aucune pièce trouvée');
+    // Demander la quantité de cartons
+    const nbCartons = parseInt(prompt('Combien de cartons avez-vous ?', '1')) || 1;
+    const updates = {};
+    data.pieces.forEach((p, i) => {
+      const pid = 'p' + Date.now() + i;
+      const cartons = {};
+      for (let j = 1; j <= nbCartons; j++) cartons['c' + j] = { qte: p.qte, initial: p.qte };
+      updates[`produits/${key}/pieces/${pid}`] = { nom: p.nom, initial: p.qte, cartons };
+    });
+    await db.ref().update(updates);
+    if (btn) { btn.textContent = '✓ ' + data.pieces.length + ' pièces'; }
+    setTimeout(() => { if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} }, 3000);
+  } catch(e) {
+    alert('Erreur scan : ' + e.message);
+    if (btn) { btn.textContent = '🤖 Scanner IA'; btn.disabled = false; }
+  }
 };
 
 // ── UTILS ─────────────────────────────────────────────────
