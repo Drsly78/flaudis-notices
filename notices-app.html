@@ -3,331 +3,72 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="theme-color" content="#1a1a1a"/>
 <title>Notices Flaudis</title>
-<link rel="manifest" href="#"/>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
-
   :root {
     --orange: #E8611A;
-    --orange-light: #FF7A35;
     --bg: #0f0f0f;
     --surface: #1a1a1a;
     --surface2: #242424;
     --border: #2e2e2e;
     --text: #f0f0f0;
     --muted: #888;
-    --blue: #3B82F6;
-    --green: #22C55E;
+    --blue: #3b82f6;
+    --green: #22c55e;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px 0;
-  }
-
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 3px;
-    color: var(--orange);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .logo span {
-    color: var(--muted);
-    font-size: 13px;
-    letter-spacing: 1px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 300;
-    margin-top: 4px;
-  }
-
-  .search-wrap { position: relative; margin-bottom: 0; }
-
-  .search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    font-size: 16px;
-    pointer-events: none;
-  }
-
-  #search {
-    width: 100%;
-    padding: 14px 14px 14px 42px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px 12px 0 0;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 20px 0; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--orange); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .logo span { color: var(--muted); font-size: 13px; letter-spacing: 1px; font-family: 'DM Sans', sans-serif; font-weight: 300; margin-top: 4px; }
+  .search-wrap { position: relative; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  #search { width: 100%; padding: 14px 14px 14px 42px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px 12px 0 0; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; }
   #search:focus { border-color: var(--orange); }
   #search::placeholder { color: var(--muted); }
-
-  .search-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 4px 12px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .count-badge {
-    background: var(--orange);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-
+  .search-meta { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 12px; font-size: 12px; color: var(--muted); }
+  .count-badge { background: var(--orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   #results { padding: 8px 16px 40px; }
-
-  /* NOTICE CARD */
-  .notice-card {
-    margin-bottom: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    animation: fadeIn 0.2s ease both;
-    transition: border-color 0.15s;
-  }
-
-  .notice-card:has(.loc-active) {
-    border-color: var(--border);
-  }
-
-  .notice-main {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-    transition: background 0.15s;
-  }
-
+  .notice-card { margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: fadeIn 0.2s ease both; }
+  .notice-main { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; }
   .notice-main:hover { background: var(--surface2); }
-
-  .notice-icon {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--orange), var(--orange-light));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
+  .notice-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--orange), #FF7A35); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
   .notice-info { flex: 1; min-width: 0; }
-
-  .notice-ref {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 17px;
-    letter-spacing: 1px;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
+  .notice-ref { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notice-ref mark { background: none; color: var(--orange); }
-
-  .notice-name {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .notice-arrow { color: var(--muted); font-size: 14px; flex-shrink: 0; }
-
-  /* EMPLACEMENT BADGE */
-  .loc-badge {
-    display: none;
-    gap: 4px;
-    align-items: center;
-    margin-left: auto;
-    margin-right: 8px;
-  }
+  .notice-name { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notice-arrow { color: var(--muted); font-size: 14px; padding: 4px 8px; border-radius: 6px; background: var(--surface2); text-decoration: none; flex-shrink: 0; }
+  .loc-badge { display: none; gap: 4px; align-items: center; margin-left: auto; margin-right: 8px; }
   .loc-badge.visible { display: flex; }
-  .loc-chip {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 8px;
-    letter-spacing: 0.5px;
-  }
+  .loc-chip { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; letter-spacing: 0.5px; }
   .loc-chip.allee { background: rgba(59,130,246,0.25); color: #60a5fa; border: 1px solid rgba(59,130,246,0.4); }
   .loc-chip.cote  { background: rgba(232,97,26,0.25);  color: #fb923c; border: 1px solid rgba(232,97,26,0.4); }
   .loc-chip.haut  { background: rgba(34,197,94,0.25);  color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
-
-  /* PANEL EMPLACEMENT */
-  .loc-panel {
-    border-top: 1px solid var(--border);
-    padding: 14px 16px;
-    background: #111;
-  }
-  .loc-save-btn {
-    width: 100%;
-    margin-top: 14px;
-    padding: 12px;
-    background: var(--orange);
-    border: none;
-    border-radius: 10px;
-    color: white;
-    font-size: 13px;
-    font-weight: 700;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    transition: opacity 0.15s;
-  }
-  .loc-save-btn:hover { opacity: 0.85; }
-  .loc-save-btn.saved {
-    background: var(--green);
-  }
-  .loc-section {
-    margin-bottom: 12px;
-  }
-  .loc-section:last-child { margin-bottom: 0; }
-  .loc-section-title {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    text-align: center;
-  }
+  .loc-panel { border-top: 1px solid var(--border); padding: 14px 16px; background: #111; display: none; }
+  .loc-section { margin-bottom: 12px; }
+  .loc-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; text-align: center; }
   .loc-section-title.t-allee { color: #60a5fa; }
   .loc-section-title.t-cote  { color: #fb923c; }
   .loc-section-title.t-haut  { color: #4ade80; }
-  .loc-btns {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-  }
-  .loc-btn {
-    flex: 1;
-    max-width: 70px;
-    padding: 10px 6px;
-    border-radius: 10px;
-    border: 1.5px solid var(--border);
-    background: var(--surface2);
-    color: var(--muted);
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-    text-align: center;
-  }
-  .loc-btn.sel-allee {
-    background: rgba(59,130,246,0.2);
-    border-color: #3b82f6;
-    color: #60a5fa;
-    box-shadow: 0 0 10px rgba(59,130,246,0.3);
-  }
-  .loc-btn.sel-cote {
-    background: rgba(232,97,26,0.2);
-    border-color: var(--orange);
-    color: #fb923c;
-    box-shadow: 0 0 10px rgba(232,97,26,0.3);
-  }
-  .loc-btn.sel-haut {
-    background: rgba(34,197,94,0.2);
-    border-color: #22c55e;
-    color: #4ade80;
-    box-shadow: 0 0 10px rgba(34,197,94,0.3);
-  }
-
-  /* ÉTATS */
-  .state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
-
+  .loc-btns { display: flex; gap: 8px; justify-content: center; }
+  .loc-btn { flex: 1; max-width: 70px; padding: 10px 6px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; text-align: center; }
+  .loc-btn.sel-allee { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
+  .loc-btn.sel-cote  { background: rgba(232,97,26,0.2);  border-color: var(--orange); color: #fb923c; box-shadow: 0 0 10px rgba(232,97,26,0.3); }
+  .loc-btn.sel-haut  { background: rgba(34,197,94,0.2);  border-color: #22c55e; color: #4ade80; box-shadow: 0 0 10px rgba(34,197,94,0.3); }
+  .loc-save-btn { width: 100%; margin-top: 14px; padding: 12px; background: var(--orange); border: none; border-radius: 10px; color: white; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s; }
+  .loc-save-btn.saved { background: var(--green); }
+  .state { text-align: center; padding: 60px 20px; color: var(--muted); }
   .state-icon { font-size: 48px; margin-bottom: 16px; }
   .state-title { font-size: 18px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
   .state-sub { font-size: 13px; line-height: 1.5; }
-
   .loader { display: flex; justify-content: center; padding: 60px; }
-
-  .spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--border);
-    border-top-color: var(--orange);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-
-
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-  #install-banner {
-    display: none;
-    margin: 12px 16px 0;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #1e1e1e, #242424);
-    border: 1px solid var(--orange);
-    border-radius: 10px;
-    font-size: 13px;
-    align-items: center;
-    gap: 12px;
-  }
-
-  #install-banner button {
-    margin-left: auto;
-    background: var(--orange);
-    border: none;
-    color: white;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
-    font-family: 'DM Sans', sans-serif;
-  }
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">FLAUDIS <span>NOTICES PRODUITS</span></div>
   <div class="search-wrap">
@@ -335,30 +76,20 @@
     <input type="search" id="search" placeholder="Référence ou nom produit..." autocomplete="off" autocorrect="off" spellcheck="false"/>
   </div>
   <div class="search-meta">
-    <span id="search-hint">Tapez pour rechercher</span>
+    <span id="search-hint">Chargement…</span>
     <span id="count-badge" class="count-badge" style="display:none"></span>
   </div>
 </header>
 
-<div id="install-banner">
-  📲 Installer l'app sur cet appareil
-  <button id="install-btn">Installer</button>
-</div>
+<div id="results"><div class="loader"><div class="spinner"></div></div></div>
 
-<div id="results">
-  <div class="loader"><div class="spinner"></div></div>
-</div>
+<!-- Firebase compat (pas de module ES) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-
-
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-
-// ── CONFIG FIREBASE ──────────────────────────────────────
-// Remplace ces valeurs par celles de ta console Firebase
-const firebaseConfig = {
+<script>
+// ── FIREBASE ─────────────────────────────────────────────
+firebase.initializeApp({
   apiKey: "AIzaSyCrOySPI0DB-K0BBmc8lG3Z9Jno6j5fcuY",
   authDomain: "flaudis-notices.firebaseapp.com",
   databaseURL: "https://flaudis-notices-default-rtdb.europe-west1.firebasedatabase.app",
@@ -366,91 +97,43 @@ const firebaseConfig = {
   storageBucket: "flaudis-notices.firebasestorage.app",
   messagingSenderId: "1077210292192",
   appId: "1:1077210292192:web:d949dafeb5641b31d35585"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+});
+const db = firebase.database();
 
 // ── DONNÉES ──────────────────────────────────────────────
 const GITHUB_API = 'https://api.github.com/repos/Drsly78/sav-notices/contents/notices';
-const CACHE_KEY = 'flaudis_notices_cache';
+const CACHE_KEY = 'flaudis_notices_v2';
 const CACHE_TTL = 3600000;
 
 let allNotices = [];
-let emplacements = {}; // { ref: { allee, cote, haut } }
+let emplacements = {};
 let searchQuery = '';
-let deferredPrompt = null;
+let noticesReady = false;
+let fbReady = false;
 
-// Écouter les emplacements Firebase — mettre à jour le DOM sans re-render complet
-const empRef = ref(db, 'emplacements');
-let firstLoad = true;
-onValue(empRef, (snapshot) => {
-  emplacements = snapshot.val() || {};
-  if (firstLoad) {
-    firstLoad = false;
-    // Firebase a chargé — re-render pour appliquer les emplacements
-    if (allNotices.length > 0) renderAll();
-  } else {
-    // Mise à jour partielle : juste les badges et panels visibles
-    Object.keys(emplacements).forEach(key => {
-      const panel = document.getElementById('locpanel-' + key);
-      if (panel) {
-        // Trouver le noticeRef depuis un bouton du panel
-        const btn = panel.querySelector('.loc-btn');
-        if (btn) {
-          const ref = btn.getAttribute('onclick').match(/toggleLoc\('([^']+)'/)?.[1];
-          if (ref) updatePanelDOM(key, ref);
-        }
-      }
-      updatePanelDOM(key, key);
-    });
-  }
+// Charger emplacements Firebase
+db.ref('emplacements').on('value', snap => {
+  emplacements = snap.val() || {};
+  fbReady = true;
+  if (noticesReady) renderAll();
 });
 
-// Sauvegarder un emplacement
-async function saveEmplacement(noticeRef, field, value) {
-  const key = noticeRef.replace(/[.#$/[\]]/g, '_');
-  const current = emplacements[key] || {};
-  const updated = { ...current, [field]: value === current[field] ? null : value };
-  // Supprimer les nulls
-  Object.keys(updated).forEach(k => updated[k] === null && delete updated[k]);
-  await set(ref(db, 'emplacements/' + key), Object.keys(updated).length ? updated : null);
-}
+// ── NOTICES ───────────────────────────────────────────────
+async function loadNotices() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      allNotices = cached.data;
+      noticesReady = true;
+      if (fbReady) renderAll();
+      return;
+    }
+  } catch(e) {}
 
-// PWA install
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('install-banner').style.display = 'flex';
-});
-
-document.getElementById('install-btn').onclick = async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  document.getElementById('install-banner').style.display = 'none';
-};
-
-// Charger les notices
-async function loadNotices(forceRefresh = false) {
-  if (!forceRefresh) {
-    try {
-      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-      if (cached && Date.now() - cached.ts < CACHE_TTL) {
-        allNotices = cached.data;
-        renderAll();
-        return;
-      }
-    } catch(e) {}
-  }
-
-  showLoader();
   try {
     const res = await fetch(GITHUB_API);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const files = await res.json();
-
     allNotices = files
       .filter(f => f.name.toLowerCase().endsWith('.pdf'))
       .map(f => {
@@ -458,316 +141,150 @@ async function loadNotices(forceRefresh = false) {
         const parts = name.split(' ');
         const ref = parts[0] || name;
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
-        const productName = year ? parts.slice(1, -1).join(' ') : parts.slice(1).join(' ');
-        return {
-          filename: f.name,
-          fullname: name,
-          ref,
-          label: productName || ref,
-          year,
-          githubUrl: 'https://github.com/Drsly78/sav-notices/blob/main/notices/' + encodeURIComponent(f.name)
-        };
+        const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
+        return { filename: f.name, ref, label: label||ref, year,
+          githubUrl: 'https://github.com/Drsly78/sav-notices/blob/main/notices/' + encodeURIComponent(f.name) };
       })
-      .sort((a, b) => a.ref.localeCompare(b.ref));
-
+      .sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
-    renderAll();
+    noticesReady = true;
+    if (fbReady) renderAll();
   } catch(e) {
-    if (!firstLoad) renderAll();
-  } catch(e) {
-    showError(e.message);
+    document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">⚠️</div><div class="state-title">Erreur de chargement</div><div class="state-sub">${e.message}</div></div>`;
+    document.getElementById('search-hint').textContent = 'Erreur';
   }
 }
 
-function showLoader() {
-  document.getElementById('results').innerHTML = '<div class="loader"><div class="spinner"></div></div>';
-  document.getElementById('search-hint').textContent = 'Chargement…';
-  document.getElementById('count-badge').style.display = 'none';
+// ── RENDU ─────────────────────────────────────────────────
+function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
+
+function highlight(text, q) {
+  if (!q) return text;
+  return text.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark>$1</mark>');
 }
 
-function showError(msg) {
-  document.getElementById('results').innerHTML = `
-    <div class="state">
-      <div class="state-icon">⚠️</div>
-      <div class="state-title">Impossible de charger les notices</div>
-      <div class="state-sub">${msg}<br><br>Vérifiez votre connexion et réessayez.</div>
+function renderAll() {
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = q
+    ? allNotices.filter(n => n.ref.toLowerCase().includes(q) || n.label.toLowerCase().includes(q))
+    : allNotices;
+
+  const hint = document.getElementById('search-hint');
+  const badge = document.getElementById('count-badge');
+  hint.textContent = q ? filtered.length + ' résultat(s)' : allNotices.length + ' notices';
+  badge.textContent = filtered.length;
+  badge.style.display = q ? 'inline' : 'none';
+
+  if (filtered.length === 0) {
+    document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">🔎</div><div class="state-title">Aucun résultat</div></div>`;
+    return;
+  }
+
+  document.getElementById('results').innerHTML = filtered.map((n, i) => {
+    const key = getKey(n.ref);
+    const loc = emplacements[key] || {};
+    const al = loc.allee || null, co = loc.cote || null, ha = loc.haut || null;
+    const hasBadge = al || co || ha;
+    return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms">
+      <div class="notice-main" onclick="openPanel('${key}')">
+        <div class="notice-icon">📄</div>
+        <div class="notice-info">
+          <div class="notice-ref">${highlight(n.ref, q)}</div>
+          ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
+        </div>
+        <div class="loc-badge${hasBadge?' visible':''}" id="badge-${key}">
+          ${al?`<span class="loc-chip allee">A${al}</span>`:''}
+          ${co?`<span class="loc-chip cote">${co}</span>`:''}
+          ${ha?`<span class="loc-chip haut">H${ha}</span>`:''}
+        </div>
+        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" class="notice-arrow">›</a>
+      </div>
+      <div class="loc-panel" id="panel-${key}">
+        <div class="loc-section">
+          <div class="loc-section-title t-allee">Allée</div>
+          <div class="loc-btns" id="btns-allee-${key}">
+            ${['1','2','3'].map(v=>`<button class="loc-btn${al===v?' sel-allee':''}" onclick="pick('${key}','allee','${v}')">${v}</button>`).join('')}
+          </div>
+        </div>
+        <div class="loc-section">
+          <div class="loc-section-title t-cote">Côté</div>
+          <div class="loc-btns" id="btns-cote-${key}">
+            ${['G','D'].map(v=>`<button class="loc-btn${co===v?' sel-cote':''}" onclick="pick('${key}','cote','${v}')">${v}</button>`).join('')}
+          </div>
+        </div>
+        <div class="loc-section">
+          <div class="loc-section-title t-haut">Hauteur</div>
+          <div class="loc-btns" id="btns-haut-${key}">
+            ${['0','1','2','3'].map(v=>`<button class="loc-btn${ha===v?' sel-haut':''}" onclick="pick('${key}','haut','${v}')">${v}</button>`).join('')}
+          </div>
+        </div>
+        <button class="loc-save-btn" id="save-${key}" onclick="saveAll('${key}')">💾 Enregistrer</button>
+      </div>
     </div>`;
+  }).join('');
 }
 
-function highlight(text, query) {
-  if (!query) return text;
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
-}
+// ── INTERACTIONS ──────────────────────────────────────────
+window.openPanel = function(key) {
+  const p = document.getElementById('panel-' + key);
+  if (p) p.style.display = p.style.display === 'block' ? 'none' : 'block';
+};
 
-function filterNotices(query) {
-  if (!query) return allNotices;
-  const q = query.toLowerCase();
-  return allNotices.filter(n =>
-    n.ref.toLowerCase().includes(q) ||
-    n.label.toLowerCase().includes(q) ||
-    n.fullname.toLowerCase().includes(q)
-  );
-}
+window.pick = function(key, field, val) {
+  if (!emplacements[key]) emplacements[key] = {};
+  // Toggle
+  if (emplacements[key][field] === val) delete emplacements[key][field];
+  else emplacements[key][field] = val;
 
-function getLocKey(ref) {
-  return ref.replace(/[.#$/[\]]/g, '_');
-}
+  // Mettre à jour les boutons visuellement
+  const selClass = field === 'allee' ? 'sel-allee' : field === 'cote' ? 'sel-cote' : 'sel-haut';
+  const container = document.getElementById('btns-' + field + '-' + key);
+  if (container) {
+    container.querySelectorAll('.loc-btn').forEach(btn => {
+      btn.className = 'loc-btn' + (btn.textContent === val && emplacements[key][field] === val ? ' ' + selClass : '');
+    });
+  }
+};
 
-function renderLoc(noticeRef) {
-  const key = getLocKey(noticeRef);
-  const loc = emplacements[key] || {};
-  const allee = loc.allee || null;
-  const cote  = loc.cote  || null;
-  const haut  = loc.haut  || null;
-
-  const allees = ['1','2','3'];
-  const cotes  = ['G','D'];
-  const hauts  = ['0','1','2','3'];
-
-  const badgeVisible = allee || cote || haut;
-
-  return `
-    <div class="loc-badge ${badgeVisible ? 'visible' : ''}" id="badge-${key}">
-      ${allee ? `<span class="loc-chip allee">A${allee}</span>` : ''}
-      ${cote  ? `<span class="loc-chip cote">${cote}</span>` : ''}
-      ${haut  ? `<span class="loc-chip haut">H${haut}</span>` : ''}
-    </div>
-    <div class="loc-panel" id="locpanel-${key}" style="display:none">
-      <div class="loc-row">
-        <span class="loc-label">Allée</span>
-        <div class="loc-btns">
-          ${allees.map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" onclick="toggleLoc('${noticeRef}','allee','${v}',this)">${v}</button>`).join('')}
-        </div>
-      </div>
-      <div class="loc-row">
-        <span class="loc-label">Côté</span>
-        <div class="loc-btns">
-          ${cotes.map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" onclick="toggleLoc('${noticeRef}','cote','${v}',this)">${v}</button>`).join('')}
-        </div>
-      </div>
-      <div class="loc-row">
-        <span class="loc-label">Hauteur</span>
-        <div class="loc-btns">
-          ${hauts.map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" onclick="toggleLoc('${noticeRef}','haut','${v}',this)">${v}</button>`).join('')}
-        </div>
-        <button class="loc-save-btn" onclick="saveLoc('${n.ref}','${key}')">💾 Enregistrer l'emplacement</button>
-      </div>
-    </div>
-  `;
-}
-
-// saveLoc — sauvegarde tout l'emplacement en une fois
-window.saveLoc = async function(noticeRef, key) {
-  const loc = emplacements[key] || {};
-  const btn = document.querySelector(`#locpanel-${key} .loc-save-btn`);
+window.saveAll = async function(key) {
+  const btn = document.getElementById('save-' + key);
   if (btn) { btn.textContent = '⏳ Sauvegarde…'; btn.disabled = true; }
   try {
+    const loc = emplacements[key] || {};
     const clean = {};
     if (loc.allee) clean.allee = loc.allee;
     if (loc.cote)  clean.cote  = loc.cote;
     if (loc.haut)  clean.haut  = loc.haut;
-    await set(ref(db, 'emplacements/' + key), Object.keys(clean).length ? clean : null);
+    await db.ref('emplacements/' + key).set(Object.keys(clean).length ? clean : null);
+
+    // Mettre à jour le badge
+    const badge = document.getElementById('badge-' + key);
+    if (badge) {
+      const al = clean.allee, co = clean.cote, ha = clean.haut;
+      badge.className = 'loc-badge' + (al||co||ha?' visible':'');
+      badge.innerHTML = (al?`<span class="loc-chip allee">A${al}</span>`:'') +
+                        (co?`<span class="loc-chip cote">${co}</span>`:'')+
+                        (ha?`<span class="loc-chip haut">H${ha}</span>`:'');
+    }
     if (btn) {
       btn.textContent = '✓ Enregistré !';
       btn.classList.add('saved');
-      setTimeout(() => {
-        btn.textContent = '💾 Enregistrer l'emplacement';
-        btn.classList.remove('saved');
-        btn.disabled = false;
-      }, 2000);
+      setTimeout(() => { btn.textContent = '💾 Enregistrer'; btn.classList.remove('saved'); btn.disabled = false; }, 2000);
     }
   } catch(e) {
     if (btn) { btn.textContent = '❌ Erreur'; btn.disabled = false; }
   }
 };
 
-// toggleLoc — met à jour Firebase ET le DOM immédiatement sans re-render
-window.toggleLoc = async function(noticeRef, field, value) {
-  const key = noticeRef.replace(/[.#$\/\[\]]/g, '_');
-  const loc = emplacements[key] || {};
-  
-  // Toggle : si déjà sélectionné, désélectionner
-  const newVal = loc[field] === value ? null : value;
-  
-  // Mettre à jour localement immédiatement
-  if (!emplacements[key]) emplacements[key] = {};
-  if (newVal === null) delete emplacements[key][field];
-  else emplacements[key][field] = newVal;
-  
-  // Mettre à jour le DOM du panel
-  updatePanelDOM(key, noticeRef);
-  
-  // Ne pas sauvegarder automatiquement — l'utilisateur clique sur Enregistrer
-};
-
-function updatePanelDOM(key, noticeRef) {
-  const loc = emplacements[key] || {};
-  const allee = loc.allee || null;
-  const cote  = loc.cote  || null;
-  const haut  = loc.haut  || null;
-
-  // Mettre à jour les boutons
-  const panel = document.getElementById('locpanel-' + key);
-  if (!panel) return;
-
-  panel.querySelectorAll('.loc-btn').forEach(btn => {
-    const field = btn.dataset.field;
-    const val   = btn.dataset.val;
-    const selClass = field === 'allee' ? 'sel-allee' : field === 'cote' ? 'sel-cote' : 'sel-haut';
-    const isSelected = (field === 'allee' && allee === val) ||
-                       (field === 'cote'  && cote  === val) ||
-                       (field === 'haut'  && haut  === val);
-    btn.classList.toggle(selClass, isSelected);
-  });
-
-  // Mettre à jour le badge
-  const badge = document.getElementById('badge-' + key);
-  if (badge) {
-    badge.className = 'loc-badge' + (allee || cote || haut ? ' visible' : '');
-    badge.innerHTML = 
-      (allee ? `<span class="loc-chip allee">A${allee}</span>` : '') +
-      (cote  ? `<span class="loc-chip cote">${cote}</span>`   : '') +
-      (haut  ? `<span class="loc-chip haut">H${haut}</span>`  : '');
-  }
-}
-
-// Toggle panel
-window.toggleLocPanel = function(key) {
-  const panel = document.getElementById('locpanel-' + key);
-  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-};
-
-function renderAll() {
-  const query = searchQuery.trim();
-  const filtered = filterNotices(query);
-  const container = document.getElementById('results');
-  const hint = document.getElementById('search-hint');
-  const badge = document.getElementById('count-badge');
-
-  if (allNotices.length === 0) {
-    container.innerHTML = `<div class="state"><div class="state-icon">📂</div><div class="state-title">Aucune notice</div></div>`;
-    return;
-  }
-
-  if (filtered.length === 0) {
-    container.innerHTML = `<div class="state"><div class="state-icon">🔎</div><div class="state-title">Aucun résultat</div><div class="state-sub">Aucune notice ne correspond à "<strong>${query}</strong>"</div></div>`;
-    hint.textContent = 'Aucun résultat';
-    badge.textContent = '0';
-    badge.style.display = 'inline';
-    return;
-  }
-
-  hint.textContent = query ? `${filtered.length} résultat${filtered.length > 1 ? 's' : ''}` : `${allNotices.length} notices disponibles`;
-  badge.textContent = filtered.length;
-  badge.style.display = query ? 'inline' : 'none';
-
-  container.innerHTML = filtered.map((n, i) => {
-    const key = getLocKey(n.ref);
-    const loc = emplacements[key] || {};
-    const allee = loc.allee || null;
-    const cote  = loc.cote  || null;
-    const haut  = loc.haut  || null;
-    const badgeVisible = allee || cote || haut;
-    return `
-    <div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms">
-      <div class="notice-main" onclick="toggleLocPanel('${key}')">
-        <div class="notice-icon">📄</div>
-        <div class="notice-info">
-          <div class="notice-ref">${highlight(n.ref, query)}</div>
-          ${n.label ? `<div class="notice-name">${highlight(n.label, query)}${n.year ? ' · ' + n.year : ''}</div>` : ''}
-        </div>
-        <div class="loc-badge ${badgeVisible ? 'visible' : ''}" id="badge-${key}">
-          ${allee ? `<span class="loc-chip allee">A${allee}</span>` : ''}
-          ${cote  ? `<span class="loc-chip cote">${cote}</span>`   : ''}
-          ${haut  ? `<span class="loc-chip haut">H${haut}</span>`  : ''}
-        </div>
-        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="color:var(--muted);font-size:14px;padding:4px 8px;border-radius:6px;background:var(--surface2);margin-left:4px;text-decoration:none">›</a>
-      </div>
-      <div class="loc-panel" id="locpanel-${key}" style="display:none">
-        <div class="loc-section">
-          <div class="loc-section-title t-allee">Allée</div>
-          <div class="loc-btns">
-            ${['1','2','3'].map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" data-field="allee" data-val="${v}" onclick="toggleLoc('${n.ref}','allee','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <div class="loc-section">
-          <div class="loc-section-title t-cote">Côté</div>
-          <div class="loc-btns">
-            ${['G','D'].map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" data-field="cote" data-val="${v}" onclick="toggleLoc('${n.ref}','cote','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <div class="loc-section">
-          <div class="loc-section-title t-haut">Hauteur</div>
-          <div class="loc-btns">
-            ${['0','1','2','3'].map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" data-field="haut" data-val="${v}" onclick="toggleLoc('${n.ref}','haut','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <button class="loc-save-btn" onclick="saveLoc('${n.ref}','${key}')">💾 Enregistrer l'emplacement</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Réinjecter les panels correctement
-  container.innerHTML = filtered.map((n, i) => {
-    const key = getLocKey(n.ref);
-    const loc = emplacements[key] || {};
-    const allee = loc.allee || null;
-    const cote  = loc.cote  || null;
-    const haut  = loc.haut  || null;
-    const badgeVisible = allee || cote || haut;
-
-    return `
-    <div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms">
-      <div class="notice-main" onclick="toggleLocPanel('${key}')">
-        <div class="notice-icon">📄</div>
-        <div class="notice-info">
-          <div class="notice-ref">${highlight(n.ref, query)}</div>
-          ${n.label ? `<div class="notice-name">${highlight(n.label, query)}${n.year ? ' · ' + n.year : ''}</div>` : ''}
-        </div>
-        <div class="loc-badge ${badgeVisible ? 'visible' : ''}" id="badge-${key}">
-          ${allee ? `<span class="loc-chip allee">A${allee}</span>` : ''}
-          ${cote  ? `<span class="loc-chip cote">${cote}</span>`  : ''}
-          ${haut  ? `<span class="loc-chip haut">H${haut}</span>` : ''}
-        </div>
-        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="color:var(--muted);font-size:14px;padding:4px 8px;border-radius:6px;background:var(--surface2);margin-left:4px;text-decoration:none">›</a>
-      </div>
-      <div class="loc-panel" id="locpanel-${key}" style="display:none">
-        <div class="loc-section">
-          <div class="loc-section-title t-allee">Allée</div>
-          <div class="loc-btns">
-            ${['1','2','3'].map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" data-field="allee" data-val="${v}" onclick="toggleLoc('${n.ref}','allee','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <div class="loc-section">
-          <div class="loc-section-title t-cote">Côté</div>
-          <div class="loc-btns">
-            ${['G','D'].map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" data-field="cote" data-val="${v}" onclick="toggleLoc('${n.ref}','cote','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <div class="loc-section">
-          <div class="loc-section-title t-haut">Hauteur</div>
-          <div class="loc-btns">
-            ${['0','1','2','3'].map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" data-field="haut" data-val="${v}" onclick="toggleLoc('${n.ref}','haut','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Search
-let searchTimer;
+// ── SEARCH ────────────────────────────────────────────────
+let t;
 document.getElementById('search').addEventListener('input', e => {
-  clearTimeout(searchTimer);
+  clearTimeout(t);
   searchQuery = e.target.value;
-  searchTimer = setTimeout(renderAll, 80);
+  t = setTimeout(renderAll, 100);
 });
-
-
 
 loadNotices();
 </script>
-
 </body>
 </html>
