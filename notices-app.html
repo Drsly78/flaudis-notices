@@ -380,11 +380,29 @@ let emplacements = {}; // { ref: { allee, cote, haut } }
 let searchQuery = '';
 let deferredPrompt = null;
 
-// Écouter les emplacements Firebase en temps réel
+// Écouter les emplacements Firebase — mettre à jour le DOM sans re-render complet
 const empRef = ref(db, 'emplacements');
+let firstLoad = true;
 onValue(empRef, (snapshot) => {
   emplacements = snapshot.val() || {};
-  renderAll();
+  if (firstLoad) {
+    firstLoad = false;
+    renderAll(); // Premier chargement : render complet
+  } else {
+    // Mise à jour partielle : juste les badges et panels visibles
+    Object.keys(emplacements).forEach(key => {
+      const panel = document.getElementById('locpanel-' + key);
+      if (panel) {
+        // Trouver le noticeRef depuis un bouton du panel
+        const btn = panel.querySelector('.loc-btn');
+        if (btn) {
+          const ref = btn.getAttribute('onclick').match(/toggleLoc\('([^']+)'/)?.[1];
+          if (ref) updatePanelDOM(key, ref);
+        }
+      }
+      updatePanelDOM(key, key);
+    });
+  }
 });
 
 // Sauvegarder un emplacement
@@ -534,11 +552,56 @@ function renderLoc(noticeRef) {
   `;
 }
 
-// Exposer toggleLoc globalement
-window.toggleLoc = async function(noticeRef, field, value, btnEl) {
+// toggleLoc — met à jour Firebase ET le DOM immédiatement sans re-render
+window.toggleLoc = async function(noticeRef, field, value) {
+  const key = noticeRef.replace(/[.#$\/\[\]]/g, '_');
+  const loc = emplacements[key] || {};
+  
+  // Toggle : si déjà sélectionné, désélectionner
+  const newVal = loc[field] === value ? null : value;
+  
+  // Mettre à jour localement immédiatement
+  if (!emplacements[key]) emplacements[key] = {};
+  if (newVal === null) delete emplacements[key][field];
+  else emplacements[key][field] = newVal;
+  
+  // Mettre à jour le DOM du panel
+  updatePanelDOM(key, noticeRef);
+  
+  // Sauvegarder Firebase
   await saveEmplacement(noticeRef, field, value);
-  // Firebase onValue va déclencher un re-render automatiquement
 };
+
+function updatePanelDOM(key, noticeRef) {
+  const loc = emplacements[key] || {};
+  const allee = loc.allee || null;
+  const cote  = loc.cote  || null;
+  const haut  = loc.haut  || null;
+
+  // Mettre à jour les boutons
+  const panel = document.getElementById('locpanel-' + key);
+  if (!panel) return;
+
+  panel.querySelectorAll('.loc-btn').forEach(btn => {
+    const field = btn.dataset.field;
+    const val   = btn.dataset.val;
+    const selClass = field === 'allee' ? 'sel-allee' : field === 'cote' ? 'sel-cote' : 'sel-haut';
+    const isSelected = (field === 'allee' && allee === val) ||
+                       (field === 'cote'  && cote  === val) ||
+                       (field === 'haut'  && haut  === val);
+    btn.classList.toggle(selClass, isSelected);
+  });
+
+  // Mettre à jour le badge
+  const badge = document.getElementById('badge-' + key);
+  if (badge) {
+    badge.className = 'loc-badge' + (allee || cote || haut ? ' visible' : '');
+    badge.innerHTML = 
+      (allee ? `<span class="loc-chip allee">A${allee}</span>` : '') +
+      (cote  ? `<span class="loc-chip cote">${cote}</span>`   : '') +
+      (haut  ? `<span class="loc-chip haut">H${haut}</span>`  : '');
+  }
+}
 
 // Toggle panel
 window.toggleLocPanel = function(key) {
@@ -615,19 +678,19 @@ function renderAll() {
         <div class="loc-section">
           <div class="loc-section-title t-allee">Allée</div>
           <div class="loc-btns">
-            ${['1','2','3'].map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" onclick="toggleLoc('${n.ref}','allee','${v}')">${v}</button>`).join('')}
+            ${['1','2','3'].map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" data-field="allee" data-val="${v}" onclick="toggleLoc('${n.ref}','allee','${v}')">${v}</button>`).join('')}
           </div>
         </div>
         <div class="loc-section">
           <div class="loc-section-title t-cote">Côté</div>
           <div class="loc-btns">
-            ${['G','D'].map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" onclick="toggleLoc('${n.ref}','cote','${v}')">${v}</button>`).join('')}
+            ${['G','D'].map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" data-field="cote" data-val="${v}" onclick="toggleLoc('${n.ref}','cote','${v}')">${v}</button>`).join('')}
           </div>
         </div>
         <div class="loc-section">
           <div class="loc-section-title t-haut">Hauteur</div>
           <div class="loc-btns">
-            ${['0','1','2','3'].map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" onclick="toggleLoc('${n.ref}','haut','${v}')">${v}</button>`).join('')}
+            ${['0','1','2','3'].map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" data-field="haut" data-val="${v}" onclick="toggleLoc('${n.ref}','haut','${v}')">${v}</button>`).join('')}
           </div>
         </div>
       </div>
