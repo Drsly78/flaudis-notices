@@ -17,12 +17,14 @@
     --blue: #3b82f6;
     --green: #22c55e;
     --red: #ef4444;
+    --yellow: #f59e0b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
   header { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 20px 0; }
   .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--orange); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .logo span { color: var(--muted); font-size: 13px; letter-spacing: 1px; font-family: 'DM Sans', sans-serif; font-weight: 300; margin-top: 4px; }
+  .logo span { color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 300; margin-top: 4px; }
   .search-wrap { position: relative; }
   .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
   #search { width: 100%; padding: 14px 14px 14px 42px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px 12px 0 0; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; }
@@ -30,65 +32,101 @@
   #search::placeholder { color: var(--muted); }
   .search-meta { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 12px; font-size: 12px; color: var(--muted); }
   .count-badge { background: var(--orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-  #results { padding: 8px 16px 40px; }
-
-  /* CARD */
+  
+  #results { padding: 8px 16px 60px; }
+  
   .notice-card { margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: fadeIn 0.2s ease both; }
-  .notice-main { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; user-select: none; }
+  .notice-main { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; transition: background 0.15s; }
   .notice-main:hover { background: var(--surface2); }
-  .notice-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--orange), #FF7A35); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .notice-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--orange), #FF7A35); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
   .notice-info { flex: 1; min-width: 0; }
-  .notice-ref { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notice-ref { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notice-ref mark { background: none; color: var(--orange); }
-  .notice-name { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-left: auto; margin-right: 8px; max-width: 140px; justify-content: flex-end; }
-  .mini-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.3px; white-space: nowrap; }
-  .mb-loc  { background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-  .mb-vis  { background: rgba(34,197,94,0.2);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
-  .mb-novis{ background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-  .mb-stock{ background: rgba(232,97,26,0.2);  color: #fb923c; border: 1px solid rgba(232,97,26,0.3); }
-  .notice-arrow { color: var(--muted); font-size: 14px; padding: 4px 8px; border-radius: 6px; background: var(--surface2); text-decoration: none; flex-shrink: 0; }
+  .notice-name { font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  .card-badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; max-width: 120px; }
+  .mini-badge { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 5px; white-space: nowrap; }
+  .mb-loc   { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .mb-vis   { background: rgba(34,197,94,0.2);  color: #4ade80; }
+  .mb-novis { background: rgba(239,68,68,0.2);  color: #f87171; }
+  .mb-stock { background: rgba(232,97,26,0.2);  color: #fb923c; }
+  .mb-warn  { background: rgba(245,158,11,0.2); color: #fbbf24; }
 
-  /* PANEL INTERNE */
+  .btn-notice { background: var(--orange); color: white; font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; text-decoration: none; flex-shrink: 0; white-space: nowrap; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
   .detail-panel { display: none; border-top: 1px solid var(--border); }
-
-  /* ONGLETS */
   .tabs { display: flex; border-bottom: 1px solid var(--border); background: #0d0d0d; }
-  .tab-btn { flex: 1; padding: 10px 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab-btn { flex: 1; padding: 10px 4px; font-size: 11px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; border-bottom: 2px solid transparent; transition: all 0.15s; }
   .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
-  .tab-content { display: none; padding: 16px; background: #111; }
+  .tab-content { display: none; padding: 14px; background: #111; }
   .tab-content.active { display: block; }
 
   /* EMPLACEMENT */
-  .loc-step { margin-bottom: 14px; }
-  .loc-step-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; text-align: center; color: var(--muted); }
-  .loc-step-title.active-step { color: var(--orange); }
-  .loc-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-  .loc-btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 52px; text-align: center; }
-  .loc-btn.sel { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 8px rgba(59,130,246,0.25); }
-  .loc-btn.disabled { opacity: 0.25; pointer-events: none; }
-  .loc-summary { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; min-height: 18px; }
-  .loc-summary span { color: #60a5fa; font-weight: 600; }
+  .loc-step { margin-bottom: 12px; opacity: 0.35; pointer-events: none; transition: opacity 0.2s; }
+  .loc-step.enabled { opacity: 1; pointer-events: all; }
+  .loc-step-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 7px; text-align: center; color: var(--muted); }
+  .loc-step.enabled .loc-step-title { color: var(--orange); }
+  .loc-btns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .loc-btn { padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 46px; text-align: center; }
+  .loc-btn.sel { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 8px rgba(59,130,246,0.2); }
+  .loc-summary { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 10px; min-height: 18px; }
+  .loc-summary b { color: #60a5fa; }
 
-  /* SAVE BTN */
-  .save-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; margin-top: 4px; }
-  .save-btn.orange { background: var(--orange); color: white; }
-  .save-btn.green  { background: var(--green);  color: white; }
-  .save-btn:disabled { opacity: 0.5; }
-
-  /* VISSERIE */
-  .vis-row { display: flex; gap: 12px; margin-bottom: 16px; }
-  .vis-btn { flex: 1; padding: 16px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; text-align: center; }
+  /* STOCK & VISSERIE */
+  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+  .vis-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .vis-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; text-align: center; }
   .vis-btn.sel-yes { background: rgba(34,197,94,0.15); border-color: var(--green); color: #4ade80; }
-  .vis-btn.sel-no  { background: rgba(239,68,68,0.15);  border-color: var(--red);   color: #f87171; }
+  .vis-btn.sel-no  { background: rgba(239,68,68,0.15); border-color: var(--red); color: #f87171; }
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
 
-  /* STOCK */
-  .stock-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-  .stock-btn { width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
-  .stock-btn:hover { border-color: var(--orange); color: var(--orange); }
-  .stock-input { flex: 1; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 700; text-align: center; padding: 10px; outline: none; }
-  .stock-input:focus { border-color: var(--orange); }
-  .stock-label { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+  /* PIÈCES */
+  .pieces-section { }
+  .piece-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+  .piece-header { display: flex; align-items: center; padding: 10px 12px; gap: 8px; }
+  .piece-name { flex: 1; font-size: 13px; font-weight: 600; }
+  .piece-total { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .pt-ok   { background: rgba(34,197,94,0.2); color: #4ade80; }
+  .pt-low  { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .pt-zero { background: rgba(239,68,68,0.2); color: #f87171; }
+  .piece-expand { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 4px; }
+  
+  .cartons-list { border-top: 1px solid var(--border); padding: 10px 12px; }
+  .carton-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 10px; background: #1a1a1a; border-radius: 8px; border: 1px solid var(--border); }
+  .carton-row.current { border-color: var(--orange); }
+  .carton-label { font-size: 11px; font-weight: 600; color: var(--muted); flex-shrink: 0; }
+  .carton-label.current { color: var(--orange); }
+  .carton-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .carton-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .carton-bar.full  { background: var(--green); }
+  .carton-bar.mid   { background: var(--yellow); }
+  .carton-bar.empty { background: var(--red); }
+  .carton-count { font-size: 12px; font-weight: 700; min-width: 40px; text-align: right; }
+  .btn-minus { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 6px; font-size: 16px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .btn-minus:hover { border-color: var(--orange); color: var(--orange); }
+  .btn-minus:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-open-carton { width: 100%; padding: 10px; background: none; border: 1.5px dashed var(--border); border-radius: 10px; color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 4px; transition: all 0.15s; }
+  .btn-open-carton:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* AJOUTER PIÈCE */
+  .add-piece-form { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .form-row { margin-bottom: 8px; }
+  .form-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px; }
+  .form-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 10px; outline: none; }
+  .form-input:focus { border-color: var(--orange); }
+  .form-row-2 { display: flex; gap: 8px; }
+
+  /* BTNS */
+  .save-btn { width: 100%; padding: 11px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; margin-top: 6px; }
+  .btn-orange { background: var(--orange); color: white; }
+  .btn-green  { background: var(--green);  color: white; }
+  .btn-sm { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-sm:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* NOTE */
+  .note-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px; outline: none; resize: vertical; }
+  .note-textarea:focus { border-color: var(--orange); }
 
   .state { text-align: center; padding: 60px 20px; color: var(--muted); }
   .state-icon { font-size: 48px; margin-bottom: 16px; }
@@ -128,22 +166,14 @@ firebase.initializeApp({
 const db = firebase.database();
 
 const GITHUB_API = 'https://api.github.com/repos/Drsly78/sav-notices/contents/notices';
-const CACHE_KEY = 'flaudis_notices_v3';
-const CACHE_TTL = 3600000;
+const RAW_BASE   = 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/';
+const CACHE_KEY  = 'flaudis_v4';
+const CACHE_TTL  = 3600000;
 
-let allNotices = [];
-let fbData = {}; // { [key]: { loc, visserie, stock } }
-let searchQuery = '';
-let noticesReady = false;
-let fbReady = false;
-// État local des sélections en cours (avant save)
-let localState = {};
+let allNotices = [], fbData = {}, searchQuery = '';
+let noticesReady = false, fbReady = false;
+let openPanels = new Set(), activeTabs = {}, expandedPieces = new Set();
 
-// Stocker l'état des panels ouverts et onglets actifs
-let openPanels = new Set();
-let activeTabs = {};
-
-// Firebase — écoute temps réel
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
   fbReady = true;
@@ -156,44 +186,49 @@ async function loadNotices() {
   try {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      allNotices = cached.data;
-      noticesReady = true;
-      if (fbReady) renderAll();
-      return;
+      allNotices = cached.data; noticesReady = true;
+      if (fbReady) renderAll(); return;
     }
   } catch(e) {}
   try {
     const res = await fetch(GITHUB_API);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const files = await res.json();
-    allNotices = files
-      .filter(f => f.name.toLowerCase().endsWith('.pdf'))
-      .map(f => {
-        const name = f.name.replace(/\.pdf$/i, '');
-        const parts = name.split(' ');
-        const ref = parts[0] || name;
-        const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
-        const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
-        return { ref, label: label||ref, year,
-          githubUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
-      })
-      .sort((a,b) => a.ref.localeCompare(b.ref));
+    allNotices = files.filter(f => f.name.toLowerCase().endsWith('.pdf')).map(f => {
+      const name = f.name.replace(/\.pdf$/i, '');
+      const parts = name.split(' ');
+      const ref = parts[0] || name;
+      const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
+      const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
+      return { ref, label: label||ref, year, filename: f.name,
+        pdfUrl: RAW_BASE + encodeURIComponent(f.name) };
+    }).sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
-    noticesReady = true;
-    if (fbReady) renderAll();
+    noticesReady = true; if (fbReady) renderAll();
   } catch(e) {
-    document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">⚠️</div><div class="state-title">Erreur de chargement</div><div class="state-sub">${e.message}</div></div>`;
+    document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">⚠️</div><div class="state-title">Erreur</div><div class="state-sub">${e.message}</div></div>`;
     document.getElementById('search-hint').textContent = 'Erreur';
   }
 }
 
+function calcTotal(pieces) {
+  if (!pieces) return {};
+  const totals = {};
+  Object.entries(pieces).forEach(([pid, piece]) => {
+    let total = 0;
+    if (piece.cartons) Object.values(piece.cartons).forEach(c => { total += (c.qte || 0); });
+    totals[pid] = { nom: piece.nom, total, initial: piece.initial || 0 };
+  });
+  return totals;
+}
+
 function locLabel(loc) {
-  if (!loc || !loc.allee) return null;
+  if (!loc?.allee) return null;
   if (loc.allee === 'SOL') return 'SOL';
   let s = 'A' + loc.allee;
   if (loc.cote) s += ' ' + loc.cote;
   if (loc.rack) s += ' R' + loc.rack;
-  if (loc.hauteur !== undefined && loc.hauteur !== null) s += ' H' + loc.hauteur;
+  if (loc.hauteur !== null && loc.hauteur !== undefined) s += ' H' + loc.hauteur;
   return s;
 }
 
@@ -203,251 +238,320 @@ function highlight(text, q) {
 }
 
 function renderAll() {
+  // Sauvegarder état
+  document.querySelectorAll('.detail-panel[style*="block"]').forEach(p => openPanels.add(p.id.replace('panel-','')));
+  document.querySelectorAll('.piece-item[data-expanded="1"]').forEach(p => expandedPieces.add(p.dataset.pid));
+
   const q = searchQuery.trim().toLowerCase();
   const filtered = q ? allNotices.filter(n => n.ref.toLowerCase().includes(q) || n.label.toLowerCase().includes(q)) : allNotices;
   document.getElementById('search-hint').textContent = q ? filtered.length + ' résultat(s)' : allNotices.length + ' notices';
   const badge = document.getElementById('count-badge');
-  badge.textContent = filtered.length;
-  badge.style.display = q ? 'inline' : 'none';
+  badge.textContent = filtered.length; badge.style.display = q ? 'inline' : 'none';
 
   if (!filtered.length) {
     document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">🔎</div><div class="state-title">Aucun résultat</div></div>`;
     return;
   }
 
-  // Sauvegarder panels ouverts
-  document.querySelectorAll('.detail-panel').forEach(p => {
-    if (p.style.display === 'block') openPanels.add(p.id.replace('panel-',''));
-  });
-  document.querySelectorAll('.tab-btn.active').forEach(btn => {
-    const key = btn.closest('.detail-panel')?.id.replace('panel-','');
-    if (key) activeTabs[key] = btn.textContent.includes('Emplacement') ? 'loc' : 'inf';
-  });
-
   document.getElementById('results').innerHTML = filtered.map((n, i) => {
     const key = getKey(n.ref);
     const d = fbData[key] || {};
-    const loc = d.loc || {};
-    const vis = d.visserie;
-    const stk = d.stock;
+    const loc = d.loc || {}, vis = d.visserie, stk = d.stock;
+    const pieces = d.pieces || {};
+    const totals = calcTotal(pieces);
+    const totalPieces = Object.values(totals).reduce((s,t) => s + t.total, 0);
+    const hasWarning = Object.values(totals).some(t => t.initial > 0 && t.total === 0);
     const locStr = locLabel(loc);
+
     return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms" id="card-${key}">
       <div class="notice-main" onclick="togglePanel('${key}')">
         <div class="notice-icon">📄</div>
         <div class="notice-info">
           <div class="notice-ref">${highlight(n.ref, q)}</div>
-          ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
+          ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}</div>` : ''}
         </div>
         <div class="card-badges">
-          ${locStr ? `<span class="mini-badge mb-loc">📍 ${locStr}</span>` : ''}
-          ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
-          ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
+          ${locStr ? `<span class="mini-badge mb-loc">📍${locStr}</span>` : ''}
+          ${vis === true ? `<span class="mini-badge mb-vis">🔩</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩✗</span>` : ''}
+          ${totalPieces > 0 ? `<span class="mini-badge mb-stock">📦${totalPieces}</span>` : ''}
+          ${hasWarning ? `<span class="mini-badge mb-warn">⚠️</span>` : ''}
         </div>
-        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;letter-spacing:0.3px">Notice</a>
+        <a href="${n.pdfUrl}" target="_blank" onclick="event.stopPropagation()" class="btn-notice">Notice</a>
       </div>
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
           <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
-          <button class="tab-btn" onclick="showTab('${key}','inf',this)">📦 Stock & Visserie</button>
+          <button class="tab-btn" onclick="showTab('${key}','pieces',this)">📦 Pièces</button>
+          <button class="tab-btn" onclick="showTab('${key}','inf',this)">ℹ️ Info</button>
         </div>
-        ${renderLocTab(key, loc)}
-        ${renderInfTab(key, vis, stk)}
+        ${buildLocTab(key, d.loc, d._locstate)}
+        ${buildPiecesTab(key, pieces)}
+        ${buildInfTab(key, vis, d.note)}
       </div>
     </div>`;
   }).join('');
 
-  // Restaurer panels ouverts
+  // Restaurer
   openPanels.forEach(key => {
     const p = document.getElementById('panel-' + key);
     if (p) p.style.display = 'block';
-    // Restaurer onglet actif
     const tab = activeTabs[key] || 'loc';
-    const tabEl = document.getElementById('tab-' + tab + '-' + key);
-    if (tabEl) {
-      document.getElementById('tab-loc-' + key)?.classList.toggle('active', tab === 'loc');
-      document.getElementById('tab-inf-' + key)?.classList.toggle('active', tab === 'inf');
-      const tabs = p?.querySelectorAll('.tab-btn');
-      if (tabs) tabs.forEach(btn => btn.classList.toggle('active', 
-        (tab === 'loc' && btn.textContent.includes('Emplacement')) ||
-        (tab === 'inf' && btn.textContent.includes('Stock'))
-      ));
-    }
+    ['loc','pieces','inf'].forEach(t => {
+      document.getElementById('tab-' + t + '-' + key)?.classList.toggle('active', t === tab);
+    });
+    p?.querySelectorAll('.tab-btn').forEach((btn,i) => {
+      btn.classList.toggle('active', i === ['loc','pieces','inf'].indexOf(tab));
+    });
   });
 }
 
-function renderLocTab(key, loc) {
-  const ls = localState[key] || {};
-  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-  const isSol = allee === 'SOL';
-  const locStr = locLabel({ allee, cote, rack, hauteur: haut });
+// ── EMPLACEMENT ───────────────────────────────────────────
+function buildLocTab(key, loc, ls) {
+  ls = ls || {};
+  const al = ls.allee ?? loc?.allee ?? null;
+  const co = ls.cote  ?? loc?.cote  ?? null;
+  const ra = ls.rack  ?? loc?.rack  ?? null;
+  const ha = ls.haut  ?? (loc?.hauteur !== undefined ? loc.hauteur : null);
+  const isSol = al === 'SOL';
+  let summary = '';
+  if (al) { summary = al === 'SOL' ? 'SOL' : 'Allée ' + al + (co?' · '+co:'') + (ra?' · Rack '+ra:'') + (ha!==null?' · H'+ha:''); }
 
   return `<div class="tab-content active" id="tab-loc-${key}">
-    <div class="loc-summary">${locStr ? `Emplacement : <span>${locStr}</span>` : 'Sélectionnez un emplacement'}</div>
-    <div class="loc-step">
-      <div class="loc-step-title active-step">Allée</div>
+    <div class="loc-summary">${summary ? `<b>${summary}</b>` : 'Sélectionnez un emplacement'}</div>
+    <div class="loc-step enabled">
+      <div class="loc-step-title">Allée</div>
       <div class="loc-btns">
-        ${['1','2','3','SOL'].map(v=>`<button class="loc-btn${allee===v?' sel':''}" onclick="pickLoc('${key}','allee','${v}')">${v}</button>`).join('')}
+        ${['1','2','3','SOL'].map(v=>`<button class="loc-btn${al===v?' sel':''}" onclick="pickLoc('${key}','allee','${v}')">${v}</button>`).join('')}
       </div>
     </div>
-    <div class="loc-step" id="step-cote-${key}" style="${isSol||!allee?'opacity:0.3;pointer-events:none':''}">
-      <div class="loc-step-title${allee&&!isSol?' active-step':''}">Côté</div>
+    <div class="loc-step${!isSol&&al?' enabled':''}">
+      <div class="loc-step-title">Côté</div>
       <div class="loc-btns">
-        ${['G','D'].map(v=>`<button class="loc-btn${cote===v?' sel':''}" onclick="pickLoc('${key}','cote','${v}')">${v}</button>`).join('')}
+        ${['G','D'].map(v=>`<button class="loc-btn${co===v?' sel':''}" onclick="pickLoc('${key}','cote','${v}')">${v}</button>`).join('')}
       </div>
     </div>
-    <div class="loc-step" id="step-rack-${key}" style="${isSol||!cote?'opacity:0.3;pointer-events:none':''}">
-      <div class="loc-step-title${cote?' active-step':''}">Rack</div>
+    <div class="loc-step${!isSol&&co?' enabled':''}">
+      <div class="loc-step-title">Rack</div>
       <div class="loc-btns">
-        ${[1,2,3,4,5,6,7].map(v=>`<button class="loc-btn${rack===v?' sel':''}" onclick="pickLoc('${key}','rack',${v})">${v}</button>`).join('')}
+        ${[1,2,3,4,5,6,7].map(v=>`<button class="loc-btn${ra===v?' sel':''}" onclick="pickLoc('${key}','rack',${v})">${v}</button>`).join('')}
       </div>
     </div>
-    <div class="loc-step" id="step-haut-${key}" style="${isSol||!rack?'opacity:0.3;pointer-events:none':''}">
-      <div class="loc-step-title${rack!==null&&rack!==undefined?' active-step':''}">Hauteur</div>
+    <div class="loc-step${!isSol&&ra!==null&&ra!==undefined?' enabled':''}">
+      <div class="loc-step-title">Hauteur</div>
       <div class="loc-btns">
-        ${[0,1,2,3].map(v=>`<button class="loc-btn${haut===v?' sel':''}" onclick="pickLoc('${key}','haut',${v})">${v}</button>`).join('')}
+        ${[0,1,2,3].map(v=>`<button class="loc-btn${ha===v?' sel':''}" onclick="pickLoc('${key}','haut',${v})">${v}</button>`).join('')}
       </div>
     </div>
-    <button class="save-btn orange" onclick="saveLoc('${key}')">💾 Enregistrer l'emplacement</button>
+    <button class="save-btn btn-orange" onclick="saveLoc('${key}')">💾 Enregistrer</button>
   </div>`;
 }
-
-function renderInfTab(key, vis, stk) {
-  const val = stk !== undefined && stk !== null ? stk : 0;
-  return `<div class="tab-content" id="tab-inf-${key}">
-    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
-    <div class="vis-row">
-      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
-      <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
-    </div>
-    <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Stock actuel</div>
-    <div class="stock-row">
-      <button class="stock-btn" onclick="adjustStock('${key}',-1)">−</button>
-      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0"/>
-      <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
-    </div>
-    <button class="save-btn orange" id="stk-save-${key}" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
-    <div style="margin-top:12px">
-      <button style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="toggleNote('${key}')">📝 Note</button>
-      <div id="note-block-${key}" style="display:none;margin-top:8px">
-        <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${fbData[key]?.note || ''}</textarea>
-        <button class="save-btn orange" style="margin-top:6px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ── INTERACTIONS ──────────────────────────────────────────
-window.togglePanel = function(key) {
-  const p = document.getElementById('panel-' + key);
-  if (!p) return;
-  const isOpen = p.style.display === 'block';
-  p.style.display = isOpen ? 'none' : 'block';
-  if (isOpen) openPanels.delete(key); else openPanels.add(key);
-};
-
-window.showTab = function(key, tab, btn) {
-  ['loc','inf'].forEach(t => {
-    const el = document.getElementById('tab-' + t + '-' + key);
-    if (el) el.classList.toggle('active', t === tab);
-  });
-  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-};
 
 window.pickLoc = function(key, field, val) {
-  if (!localState[key]) localState[key] = {};
-  // Toggle
-  if (localState[key][field] === val) { delete localState[key][field]; }
-  else { localState[key][field] = val; }
-  // Reset les étapes suivantes si on change en amont
-  if (field === 'allee') { delete localState[key].cote; delete localState[key].rack; delete localState[key].haut; }
-  if (field === 'cote')  { delete localState[key].rack; delete localState[key].haut; }
-  if (field === 'rack')  { delete localState[key].haut; }
-
-  // Re-rendre le tab emplacement
   const d = fbData[key] || {};
+  if (!d._locstate) d._locstate = {};
+  const ls = d._locstate;
+  ls[field] = ls[field] === val ? null : val;
+  if (field === 'allee') { delete ls.cote; delete ls.rack; delete ls.haut; }
+  if (field === 'cote')  { delete ls.rack; delete ls.haut; }
+  if (field === 'rack')  { delete ls.haut; }
+  fbData[key] = d;
   const tabEl = document.getElementById('tab-loc-' + key);
-  if (tabEl) tabEl.outerHTML = renderLocTab(key, d.loc || {});
+  if (tabEl) { const newEl = document.createElement('div'); newEl.innerHTML = buildLocTab(key, d.loc, ls); tabEl.replaceWith(newEl.firstChild); }
 };
 
 window.saveLoc = async function(key) {
-  const ls = localState[key] || {};
   const d = fbData[key] || {};
+  const ls = d._locstate || {};
   const loc = d.loc || {};
-  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-
+  const al = ls.allee ?? loc.allee ?? null;
+  const co = ls.cote  ?? loc.cote  ?? null;
+  const ra = ls.rack  ?? loc.rack  ?? null;
+  const ha = ls.haut  ?? (loc.hauteur !== undefined ? loc.hauteur : null);
   const btn = document.querySelector(`#tab-loc-${key} .save-btn`);
   if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
     const newLoc = {};
-    if (allee) newLoc.allee = allee;
-    if (allee !== 'SOL' && cote) newLoc.cote = cote;
-    if (allee !== 'SOL' && rack !== null) newLoc.rack = rack;
-    if (allee !== 'SOL' && haut !== null) newLoc.hauteur = haut;
+    if (al) newLoc.allee = al;
+    if (al !== 'SOL' && co) newLoc.cote = co;
+    if (al !== 'SOL' && ra !== null && ra !== undefined) newLoc.rack = ra;
+    if (al !== 'SOL' && ha !== null && ha !== undefined) newLoc.hauteur = ha;
     await db.ref('produits/' + key + '/loc').set(Object.keys(newLoc).length ? newLoc : null);
-    delete localState[key];
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer l\'emplacement';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
+    delete d._locstate;
+    feedback(btn, '✓ Enregistré !', true);
+  } catch(e) { if (btn) { btn.textContent = '❌ Erreur'; btn.disabled = false; } }
 };
+
+// ── PIÈCES ────────────────────────────────────────────────
+function buildPiecesTab(key, pieces) {
+  const pids = Object.keys(pieces || {});
+  const piecesHtml = pids.map(pid => {
+    const p = pieces[pid];
+    const cartons = p.cartons ? Object.entries(p.cartons).sort((a,b) => a[0].localeCompare(b[0])) : [];
+    const total = cartons.reduce((s,[,c]) => s + (c.qte||0), 0);
+    const initial = p.initial || (cartons.length > 0 ? cartons[0][1].initial || cartons[0][1].qte : 0);
+    const pct = initial > 0 ? total/initial : 0;
+    const cls = total === 0 ? 'pt-zero' : pct < 0.3 ? 'pt-low' : 'pt-ok';
+    const expanded = expandedPieces.has(pid);
+
+    // Trouver le premier carton non vide
+    let currentIdx = cartons.findIndex(([,c]) => c.qte > 0);
+    if (currentIdx === -1 && cartons.length > 0) currentIdx = cartons.length - 1;
+
+    const cartonsHtml = cartons.map(([cid, c], idx) => {
+      const isCurrent = idx === currentIdx;
+      const qte = c.qte || 0;
+      const init = c.initial || qte;
+      const pct2 = init > 0 ? qte/init : 0;
+      const barCls = pct2 > 0.5 ? 'full' : pct2 > 0 ? 'mid' : 'empty';
+      return `<div class="carton-row${isCurrent?' current':''}">
+        <span class="carton-label${isCurrent?' current':''}">C${idx+1}${isCurrent?' ▶':''}</span>
+        <div class="carton-bar-wrap"><div class="carton-bar ${barCls}" style="width:${Math.round(pct2*100)}%"></div></div>
+        <span class="carton-count">${qte}/${init}</span>
+        <button class="btn-minus" onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''}>−</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="piece-item" id="piece-${key}-${pid}" data-pid="${pid}" ${expanded?'data-expanded="1"':''}>
+      <div class="piece-header" onclick="togglePiece('${key}','${pid}')">
+        <span class="piece-name">${p.nom || pid}</span>
+        <span class="piece-total ${cls}">${total} pcs</span>
+        <button class="piece-expand">${expanded?'▲':'▼'}</button>
+      </div>
+      ${expanded ? `<div class="cartons-list">
+        ${cartonsHtml}
+        <button class="btn-open-carton" onclick="openCarton('${key}','${pid}',event)">+ Ouvrir un carton</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="tab-content" id="tab-pieces-${key}">
+    ${pids.length ? piecesHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — ajoutez-en ci-dessous</div>'}
+    <div style="margin-top:10px">
+      <button class="btn-sm" style="width:100%" onclick="showAddPiece('${key}')">+ Ajouter une pièce</button>
+      <div id="add-piece-${key}" style="display:none;margin-top:8px">
+        <div class="add-piece-form">
+          <div class="form-row">
+            <div class="form-label">Nom / N° pièce</div>
+            <input class="form-input" id="ap-nom-${key}" placeholder="ex: Mât principal, Vis M6..."/>
+          </div>
+          <div class="form-row-2">
+            <div class="form-row" style="flex:1">
+              <div class="form-label">Qté / carton</div>
+              <input class="form-input" type="number" id="ap-qte-${key}" placeholder="8" min="1"/>
+            </div>
+            <div class="form-row" style="flex:1">
+              <div class="form-label">Nb cartons</div>
+              <input class="form-input" type="number" id="ap-nb-${key}" placeholder="3" min="1"/>
+            </div>
+          </div>
+          <button class="save-btn btn-orange" onclick="addPiece('${key}')">Ajouter</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.togglePiece = function(key, pid) {
+  if (expandedPieces.has(pid)) expandedPieces.delete(pid); else expandedPieces.add(pid);
+  // Re-render juste les pièces
+  const d = fbData[key] || {};
+  const tabEl = document.getElementById('tab-pieces-' + key);
+  if (tabEl) { const n = document.createElement('div'); n.innerHTML = buildPiecesTab(key, d.pieces || {}); tabEl.replaceWith(n.firstChild); }
+};
+
+window.takePiece = async function(key, pid, cid) {
+  const d = fbData[key] || {};
+  const current = d.pieces?.[pid]?.cartons?.[cid]?.qte || 0;
+  if (current <= 0) return;
+  await db.ref(`produits/${key}/pieces/${pid}/cartons/${cid}/qte`).set(current - 1);
+};
+
+window.openCarton = async function(key, pid, e) {
+  e.stopPropagation();
+  const d = fbData[key] || {};
+  const cartons = d.pieces?.[pid]?.cartons || {};
+  const count = Object.keys(cartons).length;
+  const initial = d.pieces?.[pid]?.initial || 0;
+  if (!initial) { alert('Qté initiale inconnue — modifiez la pièce d\'abord'); return; }
+  const newId = 'c' + (count + 1);
+  await db.ref(`produits/${key}/pieces/${pid}/cartons/${newId}`).set({ qte: initial, initial });
+};
+
+window.showAddPiece = function(key) {
+  const el = document.getElementById('add-piece-' + key);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+window.addPiece = async function(key) {
+  const nom = document.getElementById('ap-nom-' + key)?.value.trim();
+  const qte = parseInt(document.getElementById('ap-qte-' + key)?.value) || 0;
+  const nb  = parseInt(document.getElementById('ap-nb-'  + key)?.value) || 1;
+  if (!nom || qte <= 0) { alert('Remplissez le nom et la quantité'); return; }
+  const pid = 'p' + Date.now();
+  const cartons = {};
+  for (let i = 1; i <= nb; i++) cartons['c' + i] = { qte, initial: qte };
+  await db.ref(`produits/${key}/pieces/${pid}`).set({ nom, initial: qte, cartons });
+  expandedPieces.add(pid);
+  document.getElementById('add-piece-' + key).style.display = 'none';
+};
+
+// ── INFO ──────────────────────────────────────────────────
+function buildInfTab(key, vis, note) {
+  return `<div class="tab-content" id="tab-inf-${key}">
+    <div class="section-title">Visserie disponible</div>
+    <div class="vis-row">
+      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
+      <button class="vis-btn${vis===false?' sel-no':''}"  id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
+    </div>
+    <div class="divider"></div>
+    <div class="section-title">Note</div>
+    <textarea class="note-textarea" id="note-${key}" rows="3" placeholder="Notes libres…">${note||''}</textarea>
+    <button class="save-btn btn-orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
+  </div>`;
+}
 
 window.saveVis = async function(key, val) {
-  // Update visuel immédiat sans fermer le panel
-  const ouiBtn = document.getElementById('vis-oui-' + key);
-  const nonBtn = document.getElementById('vis-non-' + key);
-  if (ouiBtn) { ouiBtn.className = 'vis-btn' + (val === true ? ' sel-yes' : ''); }
-  if (nonBtn) { nonBtn.className = 'vis-btn' + (val === false ? ' sel-no' : ''); }
-  try {
-    await db.ref('produits/' + key + '/visserie').set(val);
-  } catch(e) {}
-};
-
-window.adjustStock = function(key, delta) {
-  const input = document.getElementById('stk-' + key);
-  if (!input) return;
-  input.value = Math.max(0, (parseInt(input.value) || 0) + delta);
-};
-
-window.saveStock = async function(key) {
-  const input = document.getElementById('stk-' + key);
-  const val = parseInt(input?.value) || 0;
-  const btn = document.querySelector(`#tab-stk-${key} .save-btn`);
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
-  try {
-    await db.ref('produits/' + key + '/stock').set(val);
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer le stock';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
-};
-
-window.toggleNote = function(key) {
-  const block = document.getElementById('note-block-' + key);
-  if (block) block.style.display = block.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('vis-oui-' + key).className = 'vis-btn' + (val===true?' sel-yes':'');
+  document.getElementById('vis-non-' + key).className = 'vis-btn' + (val===false?' sel-no':'');
+  await db.ref('produits/' + key + '/visserie').set(val);
 };
 
 window.saveNote = async function(key) {
   const val = document.getElementById('note-' + key)?.value || '';
-  const btn = document.querySelector('#note-block-' + key + ' .save-btn');
+  const btn = document.querySelector(`#tab-inf-${key} .save-btn`);
   if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
     await db.ref('produits/' + key + '/note').set(val || null);
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer la note';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
+    feedback(btn, '✓ Enregistré !', true);
+  } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
 };
+
+// ── UTILS ─────────────────────────────────────────────────
+window.togglePanel = function(key) {
+  const p = document.getElementById('panel-' + key);
+  if (!p) return;
+  const open = p.style.display === 'block';
+  p.style.display = open ? 'none' : 'block';
+  if (open) openPanels.delete(key); else openPanels.add(key);
+};
+
+window.showTab = function(key, tab, btn) {
+  ['loc','pieces','inf'].forEach(t => document.getElementById('tab-' + t + '-' + key)?.classList.toggle('active', t === tab));
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeTabs[key] = tab;
+};
+
+function feedback(btn, msg, ok) {
+  if (!btn) return;
+  btn.textContent = msg;
+  if (ok) btn.classList.replace('btn-orange','btn-green');
+  setTimeout(() => { btn.textContent = '💾 Enregistrer'; btn.classList.replace('btn-green','btn-orange'); btn.disabled = false; }, 2000);
+}
 
 let t;
 document.getElementById('search').addEventListener('input', e => {
-  clearTimeout(t);
-  searchQuery = e.target.value;
-  t = setTimeout(renderAll, 100);
+  clearTimeout(t); searchQuery = e.target.value; t = setTimeout(renderAll, 100);
 });
 
 loadNotices();
