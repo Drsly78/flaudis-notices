@@ -16,6 +16,7 @@
     --muted: #888;
     --blue: #3b82f6;
     --green: #22c55e;
+    --red: #ef4444;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -30,38 +31,68 @@
   .search-meta { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 12px; font-size: 12px; color: var(--muted); }
   .count-badge { background: var(--orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   #results { padding: 8px 16px 40px; }
+
+  /* CARD */
   .notice-card { margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: fadeIn 0.2s ease both; }
-  .notice-main { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; }
+  .notice-main { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; user-select: none; }
   .notice-main:hover { background: var(--surface2); }
   .notice-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--orange), #FF7A35); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
   .notice-info { flex: 1; min-width: 0; }
   .notice-ref { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notice-ref mark { background: none; color: var(--orange); }
   .notice-name { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-left: auto; margin-right: 8px; max-width: 140px; justify-content: flex-end; }
+  .mini-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.3px; white-space: nowrap; }
+  .mb-loc  { background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .mb-vis  { background: rgba(34,197,94,0.2);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .mb-novis{ background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .mb-stock{ background: rgba(232,97,26,0.2);  color: #fb923c; border: 1px solid rgba(232,97,26,0.3); }
   .notice-arrow { color: var(--muted); font-size: 14px; padding: 4px 8px; border-radius: 6px; background: var(--surface2); text-decoration: none; flex-shrink: 0; }
-  .loc-badge { display: none; gap: 4px; align-items: center; margin-left: auto; margin-right: 8px; }
-  .loc-badge.visible { display: flex; }
-  .loc-chip { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; letter-spacing: 0.5px; }
-  .loc-chip.allee { background: rgba(59,130,246,0.25); color: #60a5fa; border: 1px solid rgba(59,130,246,0.4); }
-  .loc-chip.cote  { background: rgba(232,97,26,0.25);  color: #fb923c; border: 1px solid rgba(232,97,26,0.4); }
-  .loc-chip.haut  { background: rgba(34,197,94,0.25);  color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
-  .loc-panel { border-top: 1px solid var(--border); padding: 14px 16px; background: #111; display: none; }
-  .loc-section { margin-bottom: 12px; }
-  .loc-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; text-align: center; }
-  .loc-section-title.t-allee { color: #60a5fa; }
-  .loc-section-title.t-cote  { color: #fb923c; }
-  .loc-section-title.t-haut  { color: #4ade80; }
-  .loc-btns { display: flex; gap: 8px; justify-content: center; }
-  .loc-btn { flex: 1; max-width: 70px; padding: 10px 6px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; text-align: center; }
-  .loc-btn.sel-allee { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
-  .loc-btn.sel-cote  { background: rgba(232,97,26,0.2);  border-color: var(--orange); color: #fb923c; box-shadow: 0 0 10px rgba(232,97,26,0.3); }
-  .loc-btn.sel-haut  { background: rgba(34,197,94,0.2);  border-color: #22c55e; color: #4ade80; box-shadow: 0 0 10px rgba(34,197,94,0.3); }
-  .loc-save-btn { width: 100%; margin-top: 14px; padding: 12px; background: var(--orange); border: none; border-radius: 10px; color: white; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s; }
-  .loc-save-btn.saved { background: var(--green); }
+
+  /* PANEL INTERNE */
+  .detail-panel { display: none; border-top: 1px solid var(--border); }
+
+  /* ONGLETS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: #0d0d0d; }
+  .tab-btn { flex: 1; padding: 10px 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+  .tab-content { display: none; padding: 16px; background: #111; }
+  .tab-content.active { display: block; }
+
+  /* EMPLACEMENT */
+  .loc-step { margin-bottom: 14px; }
+  .loc-step-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; text-align: center; color: var(--muted); }
+  .loc-step-title.active-step { color: var(--orange); }
+  .loc-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .loc-btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 52px; text-align: center; }
+  .loc-btn.sel { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 8px rgba(59,130,246,0.25); }
+  .loc-btn.disabled { opacity: 0.25; pointer-events: none; }
+  .loc-summary { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; min-height: 18px; }
+  .loc-summary span { color: #60a5fa; font-weight: 600; }
+
+  /* SAVE BTN */
+  .save-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; margin-top: 4px; }
+  .save-btn.orange { background: var(--orange); color: white; }
+  .save-btn.green  { background: var(--green);  color: white; }
+  .save-btn:disabled { opacity: 0.5; }
+
+  /* VISSERIE */
+  .vis-row { display: flex; gap: 12px; margin-bottom: 16px; }
+  .vis-btn { flex: 1; padding: 16px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; text-align: center; }
+  .vis-btn.sel-yes { background: rgba(34,197,94,0.15); border-color: var(--green); color: #4ade80; }
+  .vis-btn.sel-no  { background: rgba(239,68,68,0.15);  border-color: var(--red);   color: #f87171; }
+
+  /* STOCK */
+  .stock-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .stock-btn { width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .stock-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .stock-input { flex: 1; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 700; text-align: center; padding: 10px; outline: none; }
+  .stock-input:focus { border-color: var(--orange); }
+  .stock-label { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+
   .state { text-align: center; padding: 60px 20px; color: var(--muted); }
   .state-icon { font-size: 48px; margin-bottom: 16px; }
   .state-title { font-size: 18px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
-  .state-sub { font-size: 13px; line-height: 1.5; }
   .loader { display: flex; justify-content: center; padding: 60px; }
   .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -80,15 +111,11 @@
     <span id="count-badge" class="count-badge" style="display:none"></span>
   </div>
 </header>
-
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
 
-<!-- Firebase compat (pas de module ES) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <script>
-// ── FIREBASE ─────────────────────────────────────────────
 firebase.initializeApp({
   apiKey: "AIzaSyCrOySPI0DB-K0BBmc8lG3Z9Jno6j5fcuY",
   authDomain: "flaudis-notices.firebaseapp.com",
@@ -100,25 +127,27 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// ── DONNÉES ──────────────────────────────────────────────
 const GITHUB_API = 'https://api.github.com/repos/Drsly78/sav-notices/contents/notices';
-const CACHE_KEY = 'flaudis_notices_v2';
+const CACHE_KEY = 'flaudis_notices_v3';
 const CACHE_TTL = 3600000;
 
 let allNotices = [];
-let emplacements = {};
+let fbData = {}; // { [key]: { loc, visserie, stock } }
 let searchQuery = '';
 let noticesReady = false;
 let fbReady = false;
+// État local des sélections en cours (avant save)
+let localState = {};
 
-// Charger emplacements Firebase
-db.ref('emplacements').on('value', snap => {
-  emplacements = snap.val() || {};
+// Firebase — écoute temps réel
+db.ref('produits').on('value', snap => {
+  fbData = snap.val() || {};
   fbReady = true;
   if (noticesReady) renderAll();
 });
 
-// ── NOTICES ───────────────────────────────────────────────
+function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
+
 async function loadNotices() {
   try {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
@@ -129,7 +158,6 @@ async function loadNotices() {
       return;
     }
   } catch(e) {}
-
   try {
     const res = await fetch(GITHUB_API);
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -142,7 +170,7 @@ async function loadNotices() {
         const ref = parts[0] || name;
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
         const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
-        return { filename: f.name, ref, label: label||ref, year,
+        return { ref, label: label||ref, year,
           githubUrl: 'https://github.com/Drsly78/sav-notices/blob/main/notices/' + encodeURIComponent(f.name) };
       })
       .sort((a,b) => a.ref.localeCompare(b.ref));
@@ -155,8 +183,15 @@ async function loadNotices() {
   }
 }
 
-// ── RENDU ─────────────────────────────────────────────────
-function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
+function locLabel(loc) {
+  if (!loc || !loc.allee) return null;
+  if (loc.allee === 'SOL') return 'SOL';
+  let s = 'A' + loc.allee;
+  if (loc.cote) s += ' ' + loc.cote;
+  if (loc.rack) s += ' R' + loc.rack;
+  if (loc.hauteur !== undefined && loc.hauteur !== null) s += ' H' + loc.hauteur;
+  return s;
+}
 
 function highlight(text, q) {
   if (!q) return text;
@@ -165,118 +200,193 @@ function highlight(text, q) {
 
 function renderAll() {
   const q = searchQuery.trim().toLowerCase();
-  const filtered = q
-    ? allNotices.filter(n => n.ref.toLowerCase().includes(q) || n.label.toLowerCase().includes(q))
-    : allNotices;
-
-  const hint = document.getElementById('search-hint');
+  const filtered = q ? allNotices.filter(n => n.ref.toLowerCase().includes(q) || n.label.toLowerCase().includes(q)) : allNotices;
+  document.getElementById('search-hint').textContent = q ? filtered.length + ' résultat(s)' : allNotices.length + ' notices';
   const badge = document.getElementById('count-badge');
-  hint.textContent = q ? filtered.length + ' résultat(s)' : allNotices.length + ' notices';
   badge.textContent = filtered.length;
   badge.style.display = q ? 'inline' : 'none';
 
-  if (filtered.length === 0) {
+  if (!filtered.length) {
     document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">🔎</div><div class="state-title">Aucun résultat</div></div>`;
     return;
   }
 
   document.getElementById('results').innerHTML = filtered.map((n, i) => {
     const key = getKey(n.ref);
-    const loc = emplacements[key] || {};
-    const al = loc.allee || null, co = loc.cote || null, ha = loc.haut || null;
-    const hasBadge = al || co || ha;
-    return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms">
-      <div class="notice-main" onclick="openPanel('${key}')">
+    const d = fbData[key] || {};
+    const loc = d.loc || {};
+    const vis = d.visserie;
+    const stk = d.stock;
+    const locStr = locLabel(loc);
+    return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms" id="card-${key}">
+      <div class="notice-main" onclick="togglePanel('${key}')">
         <div class="notice-icon">📄</div>
         <div class="notice-info">
           <div class="notice-ref">${highlight(n.ref, q)}</div>
           ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
         </div>
-        <div class="loc-badge${hasBadge?' visible':''}" id="badge-${key}">
-          ${al?`<span class="loc-chip allee">A${al}</span>`:''}
-          ${co?`<span class="loc-chip cote">${co}</span>`:''}
-          ${ha?`<span class="loc-chip haut">H${ha}</span>`:''}
+        <div class="card-badges">
+          ${locStr ? `<span class="mini-badge mb-loc">📍 ${locStr}</span>` : ''}
+          ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
+          ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
         </div>
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" class="notice-arrow">›</a>
       </div>
-      <div class="loc-panel" id="panel-${key}">
-        <div class="loc-section">
-          <div class="loc-section-title t-allee">Allée</div>
-          <div class="loc-btns" id="btns-allee-${key}">
-            ${['1','2','3'].map(v=>`<button class="loc-btn${al===v?' sel-allee':''}" onclick="pick('${key}','allee','${v}')">${v}</button>`).join('')}
-          </div>
+      <div class="detail-panel" id="panel-${key}">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
+          <button class="tab-btn" onclick="showTab('${key}','vis',this)">🔩 Visserie</button>
+          <button class="tab-btn" onclick="showTab('${key}','stk',this)">📦 Stock</button>
         </div>
-        <div class="loc-section">
-          <div class="loc-section-title t-cote">Côté</div>
-          <div class="loc-btns" id="btns-cote-${key}">
-            ${['G','D'].map(v=>`<button class="loc-btn${co===v?' sel-cote':''}" onclick="pick('${key}','cote','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <div class="loc-section">
-          <div class="loc-section-title t-haut">Hauteur</div>
-          <div class="loc-btns" id="btns-haut-${key}">
-            ${['0','1','2','3'].map(v=>`<button class="loc-btn${ha===v?' sel-haut':''}" onclick="pick('${key}','haut','${v}')">${v}</button>`).join('')}
-          </div>
-        </div>
-        <button class="loc-save-btn" id="save-${key}" onclick="saveAll('${key}')">💾 Enregistrer</button>
+        ${renderLocTab(key, loc)}
+        ${renderVisTab(key, vis)}
+        ${renderStkTab(key, stk)}
       </div>
     </div>`;
   }).join('');
 }
 
+function renderLocTab(key, loc) {
+  const ls = localState[key] || {};
+  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
+  const isSol = allee === 'SOL';
+  const locStr = locLabel({ allee, cote, rack, hauteur: haut });
+
+  return `<div class="tab-content active" id="tab-loc-${key}">
+    <div class="loc-summary">${locStr ? `Emplacement : <span>${locStr}</span>` : 'Sélectionnez un emplacement'}</div>
+    <div class="loc-step">
+      <div class="loc-step-title active-step">Allée</div>
+      <div class="loc-btns">
+        ${['1','2','3','SOL'].map(v=>`<button class="loc-btn${allee===v?' sel':''}" onclick="pickLoc('${key}','allee','${v}')">${v}</button>`).join('')}
+      </div>
+    </div>
+    <div class="loc-step" id="step-cote-${key}" style="${isSol||!allee?'opacity:0.3;pointer-events:none':''}">
+      <div class="loc-step-title${allee&&!isSol?' active-step':''}">Côté</div>
+      <div class="loc-btns">
+        ${['Gauche','Droite'].map(v=>`<button class="loc-btn${cote===v?' sel':''}" onclick="pickLoc('${key}','cote','${v}')">${v}</button>`).join('')}
+      </div>
+    </div>
+    <div class="loc-step" id="step-rack-${key}" style="${isSol||!cote?'opacity:0.3;pointer-events:none':''}">
+      <div class="loc-step-title${cote?' active-step':''}">Rack</div>
+      <div class="loc-btns">
+        ${[1,2,3,4,5,6,7].map(v=>`<button class="loc-btn${rack===v?' sel':''}" onclick="pickLoc('${key}','rack',${v})">${v}</button>`).join('')}
+      </div>
+    </div>
+    <div class="loc-step" id="step-haut-${key}" style="${isSol||!rack?'opacity:0.3;pointer-events:none':''}">
+      <div class="loc-step-title${rack!==null&&rack!==undefined?' active-step':''}">Hauteur</div>
+      <div class="loc-btns">
+        ${[0,1,2,3].map(v=>`<button class="loc-btn${haut===v?' sel':''}" onclick="pickLoc('${key}','haut',${v})">${v}</button>`).join('')}
+      </div>
+    </div>
+    <button class="save-btn orange" onclick="saveLoc('${key}')">💾 Enregistrer l'emplacement</button>
+  </div>`;
+}
+
+function renderVisTab(key, vis) {
+  return `<div class="tab-content" id="tab-vis-${key}">
+    <div class="vis-row">
+      <button class="vis-btn${vis===true?' sel-yes':''}" onclick="saveVis('${key}',true)">✅ Oui — visserie disponible</button>
+      <button class="vis-btn${vis===false?' sel-no':''}" onclick="saveVis('${key}',false)">❌ Non</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);text-align:center">Indique si la visserie de détail est disponible en stock pour cette référence.</p>
+  </div>`;
+}
+
+function renderStkTab(key, stk) {
+  const val = stk !== undefined && stk !== null ? stk : 0;
+  return `<div class="tab-content" id="tab-stk-${key}">
+    <div class="stock-label">Stock actuel</div>
+    <div class="stock-row">
+      <button class="stock-btn" onclick="adjustStock('${key}',-1)">−</button>
+      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0" onchange="saveStock('${key}')"/>
+      <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
+    </div>
+    <button class="save-btn orange" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
+  </div>`;
+}
+
 // ── INTERACTIONS ──────────────────────────────────────────
-window.openPanel = function(key) {
+window.togglePanel = function(key) {
   const p = document.getElementById('panel-' + key);
   if (p) p.style.display = p.style.display === 'block' ? 'none' : 'block';
 };
 
-window.pick = function(key, field, val) {
-  if (!emplacements[key]) emplacements[key] = {};
+window.showTab = function(key, tab, btn) {
+  ['loc','vis','stk'].forEach(t => {
+    const el = document.getElementById('tab-' + t + '-' + key);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.pickLoc = function(key, field, val) {
+  if (!localState[key]) localState[key] = {};
   // Toggle
-  if (emplacements[key][field] === val) delete emplacements[key][field];
-  else emplacements[key][field] = val;
+  if (localState[key][field] === val) { delete localState[key][field]; }
+  else { localState[key][field] = val; }
+  // Reset les étapes suivantes si on change en amont
+  if (field === 'allee') { delete localState[key].cote; delete localState[key].rack; delete localState[key].haut; }
+  if (field === 'cote')  { delete localState[key].rack; delete localState[key].haut; }
+  if (field === 'rack')  { delete localState[key].haut; }
 
-  // Mettre à jour les boutons visuellement
-  const selClass = field === 'allee' ? 'sel-allee' : field === 'cote' ? 'sel-cote' : 'sel-haut';
-  const container = document.getElementById('btns-' + field + '-' + key);
-  if (container) {
-    container.querySelectorAll('.loc-btn').forEach(btn => {
-      btn.className = 'loc-btn' + (btn.textContent === val && emplacements[key][field] === val ? ' ' + selClass : '');
-    });
-  }
+  // Re-rendre le tab emplacement
+  const d = fbData[key] || {};
+  const tabEl = document.getElementById('tab-loc-' + key);
+  if (tabEl) tabEl.outerHTML = renderLocTab(key, d.loc || {});
 };
 
-window.saveAll = async function(key) {
-  const btn = document.getElementById('save-' + key);
-  if (btn) { btn.textContent = '⏳ Sauvegarde…'; btn.disabled = true; }
+window.saveLoc = async function(key) {
+  const ls = localState[key] || {};
+  const d = fbData[key] || {};
+  const loc = d.loc || {};
+  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
+
+  const btn = document.querySelector(`#tab-loc-${key} .save-btn`);
+  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
-    const loc = emplacements[key] || {};
-    const clean = {};
-    if (loc.allee) clean.allee = loc.allee;
-    if (loc.cote)  clean.cote  = loc.cote;
-    if (loc.haut)  clean.haut  = loc.haut;
-    await db.ref('emplacements/' + key).set(Object.keys(clean).length ? clean : null);
-
-    // Mettre à jour le badge
-    const badge = document.getElementById('badge-' + key);
-    if (badge) {
-      const al = clean.allee, co = clean.cote, ha = clean.haut;
-      badge.className = 'loc-badge' + (al||co||ha?' visible':'');
-      badge.innerHTML = (al?`<span class="loc-chip allee">A${al}</span>`:'') +
-                        (co?`<span class="loc-chip cote">${co}</span>`:'')+
-                        (ha?`<span class="loc-chip haut">H${ha}</span>`:'');
-    }
-    if (btn) {
-      btn.textContent = '✓ Enregistré !';
-      btn.classList.add('saved');
-      setTimeout(() => { btn.textContent = '💾 Enregistrer'; btn.classList.remove('saved'); btn.disabled = false; }, 2000);
-    }
-  } catch(e) {
-    if (btn) { btn.textContent = '❌ Erreur'; btn.disabled = false; }
-  }
+    const newLoc = {};
+    if (allee) newLoc.allee = allee;
+    if (allee !== 'SOL' && cote) newLoc.cote = cote;
+    if (allee !== 'SOL' && rack !== null) newLoc.rack = rack;
+    if (allee !== 'SOL' && haut !== null) newLoc.hauteur = haut;
+    await db.ref('produits/' + key + '/loc').set(Object.keys(newLoc).length ? newLoc : null);
+    delete localState[key];
+    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
+    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer l\'emplacement';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
+  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
 };
 
-// ── SEARCH ────────────────────────────────────────────────
+window.saveVis = async function(key, val) {
+  try {
+    await db.ref('produits/' + key + '/visserie').set(val);
+  } catch(e) {}
+};
+
+window.adjustStock = function(key, delta) {
+  const input = document.getElementById('stk-' + key);
+  if (!input) return;
+  input.value = Math.max(0, (parseInt(input.value) || 0) + delta);
+};
+
+window.saveStock = async function(key) {
+  const input = document.getElementById('stk-' + key);
+  const val = parseInt(input?.value) || 0;
+  const btn = document.querySelector(`#tab-stk-${key} .save-btn`);
+  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
+  try {
+    await db.ref('produits/' + key + '/stock').set(val);
+    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
+    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer le stock';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
+  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
+};
+
 let t;
 document.getElementById('search').addEventListener('input', e => {
   clearTimeout(t);
