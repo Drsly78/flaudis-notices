@@ -174,94 +174,84 @@
 
   .notice-arrow { color: var(--muted); font-size: 14px; flex-shrink: 0; }
 
-  /* EMPLACEMENT BADGE sur la card */
+  /* EMPLACEMENT BADGE */
   .loc-badge {
     display: none;
     gap: 4px;
+    align-items: center;
     margin-left: auto;
     margin-right: 8px;
   }
-
   .loc-badge.visible { display: flex; }
-
   .loc-chip {
     font-size: 10px;
     font-weight: 700;
-    padding: 2px 7px;
+    padding: 3px 8px;
     border-radius: 8px;
     letter-spacing: 0.5px;
   }
+  .loc-chip.allee { background: rgba(59,130,246,0.25); color: #60a5fa; border: 1px solid rgba(59,130,246,0.4); }
+  .loc-chip.cote  { background: rgba(232,97,26,0.25);  color: #fb923c; border: 1px solid rgba(232,97,26,0.4); }
+  .loc-chip.haut  { background: rgba(34,197,94,0.25);  color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
 
-  .loc-chip.allee { background: rgba(59,130,246,0.2); color: var(--blue); }
-  .loc-chip.cote  { background: rgba(232,97,26,0.2);  color: var(--orange); }
-  .loc-chip.haut  { background: rgba(34,197,94,0.2);  color: var(--green); }
-
-  /* EMPLACEMENT PANEL */
+  /* PANEL EMPLACEMENT */
   .loc-panel {
     border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    background: var(--surface2);
+    padding: 14px 16px;
+    background: #111;
   }
-
-  .loc-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+  .loc-section {
+    margin-bottom: 12px;
   }
-
-  .loc-row:last-child { margin-bottom: 0; }
-
-  .loc-label {
+  .loc-section:last-child { margin-bottom: 0; }
+  .loc-section-title {
     font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-    font-weight: 600;
-    width: 52px;
-    flex-shrink: 0;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-align: center;
   }
-
-  .loc-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-
+  .loc-section-title.t-allee { color: #60a5fa; }
+  .loc-section-title.t-cote  { color: #fb923c; }
+  .loc-section-title.t-haut  { color: #4ade80; }
+  .loc-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
   .loc-btn {
-    padding: 5px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: none;
+    flex: 1;
+    max-width: 70px;
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
     color: var(--muted);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     transition: all 0.15s;
+    text-align: center;
   }
-
-  .loc-btn:hover { border-color: var(--muted); color: var(--text); }
-
   .loc-btn.sel-allee {
-    background: rgba(59,130,246,0.15);
-    border-color: var(--blue);
-    color: var(--blue);
+    background: rgba(59,130,246,0.2);
+    border-color: #3b82f6;
+    color: #60a5fa;
+    box-shadow: 0 0 10px rgba(59,130,246,0.3);
   }
-
   .loc-btn.sel-cote {
-    background: rgba(232,97,26,0.15);
+    background: rgba(232,97,26,0.2);
     border-color: var(--orange);
-    color: var(--orange);
+    color: #fb923c;
+    box-shadow: 0 0 10px rgba(232,97,26,0.3);
   }
-
   .loc-btn.sel-haut {
-    background: rgba(34,197,94,0.15);
-    border-color: var(--green);
-    color: var(--green);
-  }
-
-  .loc-saving {
-    font-size: 10px;
-    color: var(--muted);
-    margin-left: auto;
-    font-style: italic;
+    background: rgba(34,197,94,0.2);
+    border-color: #22c55e;
+    color: #4ade80;
+    box-shadow: 0 0 10px rgba(34,197,94,0.3);
   }
 
   /* ÉTATS */
@@ -622,22 +612,22 @@ function renderAll() {
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="color:var(--muted);font-size:14px;padding:4px 8px;border-radius:6px;background:var(--surface2);margin-left:4px;text-decoration:none">›</a>
       </div>
       <div class="loc-panel" id="locpanel-${key}" style="display:none">
-        <div class="loc-row">
-          <span class="loc-label">Allée</span>
+        <div class="loc-section">
+          <div class="loc-section-title t-allee">Allée</div>
           <div class="loc-btns">
-            ${['1','2','3'].map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" onclick="toggleLoc('${n.ref}','allee','${v}',this)">${v}</button>`).join('')}
+            ${['1','2','3'].map(v => `<button class="loc-btn ${allee===v?'sel-allee':''}" onclick="toggleLoc('${n.ref}','allee','${v}')">${v}</button>`).join('')}
           </div>
         </div>
-        <div class="loc-row">
-          <span class="loc-label">Côté</span>
+        <div class="loc-section">
+          <div class="loc-section-title t-cote">Côté</div>
           <div class="loc-btns">
-            ${['G','D'].map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" onclick="toggleLoc('${n.ref}','cote','${v}',this)">${v}</button>`).join('')}
+            ${['G','D'].map(v => `<button class="loc-btn ${cote===v?'sel-cote':''}" onclick="toggleLoc('${n.ref}','cote','${v}')">${v}</button>`).join('')}
           </div>
         </div>
-        <div class="loc-row">
-          <span class="loc-label">Hauteur</span>
+        <div class="loc-section">
+          <div class="loc-section-title t-haut">Hauteur</div>
           <div class="loc-btns">
-            ${['0','1','2','3'].map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" onclick="toggleLoc('${n.ref}','haut','${v}',this)">${v}</button>`).join('')}
+            ${['0','1','2','3'].map(v => `<button class="loc-btn ${haut===v?'sel-haut':''}" onclick="toggleLoc('${n.ref}','haut','${v}')">${v}</button>`).join('')}
           </div>
         </div>
       </div>
