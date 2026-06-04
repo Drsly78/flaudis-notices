@@ -387,7 +387,8 @@ onValue(empRef, (snapshot) => {
   emplacements = snapshot.val() || {};
   if (firstLoad) {
     firstLoad = false;
-    renderAll(); // Premier chargement : render complet
+    // Firebase a chargé — render complet si les notices sont déjà là
+    if (allNotices.length > 0) renderAll();
   } else {
     // Mise à jour partielle : juste les badges et panels visibles
     Object.keys(emplacements).forEach(key => {
@@ -437,7 +438,8 @@ async function loadNotices(forceRefresh = false) {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
       if (cached && Date.now() - cached.ts < CACHE_TTL) {
         allNotices = cached.data;
-        renderAll();
+        // Ne pas appeler renderAll() ici — Firebase onValue s'en chargera
+        if (!firstLoad) renderAll();
         return;
       }
     } catch(e) {}
@@ -469,7 +471,9 @@ async function loadNotices(forceRefresh = false) {
       .sort((a, b) => a.ref.localeCompare(b.ref));
 
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
-    renderAll();
+    // Ne pas appeler renderAll() ici — Firebase onValue s'en chargera
+    // Si Firebase a déjà chargé, render maintenant
+    if (!firstLoad) renderAll();
   } catch(e) {
     showError(e.message);
   }
