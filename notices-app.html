@@ -375,8 +375,9 @@ function renderPiecesTab(key, pieces) {
         <span style="font-size:11px;flex:1">${p.nom||pid}</span>
         <div style="width:50px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;width:${Math.round(pct*100)}%;background:${pct>0.5?'var(--green)':pct>0?'#f59e0b':'var(--red)'}"></div></div>
         <span style="font-size:11px;font-weight:700;min-width:32px;text-align:center;color:${col}">${qte}/${init}</span>
-        <button onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''} style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#f87171;cursor:pointer;font-size:16px;font-weight:700">−</button>
-        <button onclick="addPieceQte('${key}','${pid}','${cid}')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.15);color:#4ade80;cursor:pointer;font-size:16px;font-weight:700">+</button>
+        <button onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''} style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#f87171;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">−</button>
+        <input type="number" id="qty-${key}-${pid}-${cid}" value="1" min="1" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;padding:4px 2px;outline:none;flex-shrink:0"/>
+        <button onclick="addPieceQte('${key}','${pid}','${cid}')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.15);color:#4ade80;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">+</button>
       </div>`;
     }).join('');
     const cartonId = 'carton-body-${key}-'+cid;
@@ -398,12 +399,12 @@ function renderPiecesTab(key, pieces) {
     ${cartonIds.length ? cartonsHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — ajoutez manuellement ou scannez</div>'}
 
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="showAddPiece('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter une pièce</button>
-      <button onclick="scanNotice('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🤖 Scanner IA</button>
+      <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Nouveau carton</button>
+      <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton perso</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Ouvrir un carton standard</button>
-      <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton personnalisé</button>
+      <button onclick="showAddPiece('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid #a855f7;background:rgba(168,85,247,0.1);color:#c084fc;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter une pièce</button>
+      <button onclick="scanNotice('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🤖 Scanner IA</button>
     </div>
     <div id="add-piece-${key}" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px">
       <div style="margin-bottom:8px"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Nom / N° pièce</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" id="ap-nom-${key}" placeholder="ex: Mât principal"/></div>
@@ -545,11 +546,15 @@ window.saveNote = async function(key) {
 window.takePiece = async function(key, pid, cid) {
   const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte || 0;
   if (qte <= 0) return;
-  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte-1);
+  const inputEl = document.getElementById('qty-'+key+'-'+pid+'-'+cid);
+  const delta = Math.min(parseInt(inputEl?.value)||1, qte);
+  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte - delta);
 };
 window.addPieceQte = async function(key, pid, cid) {
   const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte || 0;
-  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte+1);
+  const inputEl = document.getElementById('qty-'+key+'-'+pid+'-'+cid);
+  const delta = parseInt(inputEl?.value)||1;
+  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte + delta);
 };
 window.deleteCarton = async function(key, cid, e) {
   e.stopPropagation();
@@ -601,24 +606,15 @@ window.toggleCartonBody = function(id) {
 
 window.openCartonCustom = async function(key, e) {
   e.stopPropagation();
-  const nom = prompt('Nom du carton (ex: Pièce A, Visserie, etc.)');
+  const nom = prompt('Nom du carton personnalisé (ex: Pièce A seule, Visserie, etc.)');
   if (!nom) return;
-  const pieces = (fbData[key]||{}).pieces || {};
-  const pids = Object.keys(pieces);
-  const newId = 'custom_' + nom.trim().replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
-  // Ce carton n'a qu'une seule "pièce générique" ou on peut l'ajouter vide
-  // On le crée pour toutes les pièces existantes avec qte 0 (il devra être rempli manuellement)
-  const qteStr = prompt('Quantité initiale pour ce carton ?', '0');
+  const newId = 'custom_' + nom.trim().replace(/[^a-zA-Z0-9]/g,'_').toLowerCase() + '_' + Date.now();
+  // Carton personnalisé = une nouvelle pièce dédiée avec ce nom
+  const qteStr = prompt('Quantité dans ce carton ?', '8');
   const qte = parseInt(qteStr) || 0;
-  if (pids.length > 0) {
-    const upd = {};
-    pids.forEach(pid => { upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId] = {qte, initial:qte}; });
-    await db.ref().update(upd);
-  } else {
-    // Pas de pièces — créer une pièce générique avec ce carton
-    const pid = 'p'+Date.now();
-    await db.ref('produits/'+key+'/pieces/'+pid).set({nom, initial:qte, cartons:{[newId]:{qte,initial:qte}}});
-  }
+  if (qte <= 0) return;
+  const pid = 'p'+Date.now();
+  await db.ref('produits/'+key+'/pieces/'+pid).set({nom, initial:qte, cartons:{[newId]:{qte, initial:qte}}});
 };
 
 window.scanNotice = async function(key) {
@@ -692,6 +688,14 @@ function showTabSilent(key, tab) {
     );
   });
 }
+
+// ── SEARCH ────────────────────────────────────────────────
+let searchTimer;
+document.getElementById('search').addEventListener('input', function(e) {
+  clearTimeout(searchTimer);
+  searchQuery = e.target.value;
+  searchTimer = setTimeout(renderAll, 100);
+});
 
 loadNotices();
 </script>
