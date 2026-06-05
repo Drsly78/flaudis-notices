@@ -425,11 +425,11 @@ function renderPiecesTab(key, pieces) {
           ${isCustom?'✏️ ':''}{cartonLabel}${isCur?' ▶ En cours':''}
         </span>
         <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <span id="arrow-${cartonId}" style="color:var(--muted);font-size:12px">▼</span>
+          <span id="arrow-${cartonId}" style="color:var(--muted);font-size:12px">${isCur?'▼':'▶'}</span>
           <button onclick="deleteCarton('${key}','${cid}',event)" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
         </span>
       </div>
-      <div id="${cartonId}" style="padding:0 12px 8px">${rows}</div>
+      <div id="${cartonId}" style="padding:0 12px 8px;display:${isCur?'block':'none'}">${rows}</div>
     </div>`.replace('{cartonLabel}', cartonLabel);
   }).join('');
 
@@ -603,7 +603,10 @@ window.openCarton = async function(key, e) {
   if (!pids.length) { alert("Ajoutez d'abord des pièces"); return; }
   const cids = new Set();
   pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  const newId = 'c'+(cids.size+1);
+  // Trouver le prochain numéro en ne comptant que les cartons c1, c2... (pas custom)
+  const normalNums = Array.from(cids).filter(cid => /^c\d+$/.test(cid)).map(cid => parseInt(cid.replace('c',''))).sort((a,b)=>a-b);
+  const nextNum = (normalNums[normalNums.length-1]||0) + 1;
+  const newId = 'c'+nextNum;
   const upd = {};
   pids.forEach(pid => { const init=pieces[pid].initial||0; upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init}; });
   await db.ref().update(upd);
@@ -669,13 +672,13 @@ window.openCartonCustom = async function(key, e) {
     pid = pids[choix];
     const upd = {};
     for (let i=1; i<=nb; i++) {
-      upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte };
+      upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte, order: i };
     }
     await db.ref().update(upd);
   } else {
     const newPid = 'p'+Date.now();
     const cartons = {};
-    for (let i=1; i<=nb; i++) cartons[cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte };
+    for (let i=1; i<=nb; i++) cartons[cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte, order: i };
     await db.ref('produits/'+key+'/pieces/'+newPid).set({ nom: nomCarton, initial: pieceQte, cartons });
   }
 };
@@ -709,12 +712,8 @@ window.scanNotice = async function(key) {
     const upd = {};
     data.pieces.forEach((p,i) => {
       const pid = 'p'+Date.now()+i;
-      const cartons = {};
-      cartons['c1'] = { qte: p.qte, initial: p.qte };
-      for (let j=2; j<=nb; j++) {
-        cartons['c'+j] = { qte: p.qte, initial: p.qte };
-      }
-      upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, cartons };
+      // Seul carton c1 est créé et ouvert — les autres s'ouvrent manuellement
+      upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, totalCartons: nb, cartons: { c1: { qte: p.qte, initial: p.qte } } };
     });
     await db.ref().update(upd);
     if (btn) { btn.textContent='✓ '+data.pieces.length+' pièces / '+nb+' cartons'; btn.style.transform=''; }
