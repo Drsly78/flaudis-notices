@@ -67,7 +67,7 @@
   .loc-btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 52px; text-align: center; }
   .loc-btn.sel { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 8px rgba(59,130,246,0.25); }
   .loc-btn.disabled { opacity: 0.25; pointer-events: none; }
-  .loc-summary { font-size: 14px; color: #60a5fa; text-align: center; margin-bottom: 12px; min-height: 22px; font-weight: 600; }
+  .loc-summary { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; min-height: 18px; }
   .loc-summary span { color: #60a5fa; font-weight: 600; }
 
   /* SAVE BTN */
@@ -144,10 +144,10 @@ let openPanels = new Set();
 let activeTabs = {};
 
 // Firebase — écoute temps réel
-fbReady = true; // Afficher sans attendre Firebase
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
-  if (noticesReady) renderAllSoft(); // Mise à jour douce
+  fbReady = true;
+  if (noticesReady) renderAll();
 });
 
 function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
@@ -158,7 +158,7 @@ async function loadNotices() {
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
       allNotices = cached.data;
       noticesReady = true;
-      renderAll();
+      if (fbReady) renderAll();
       return;
     }
   } catch(e) {}
@@ -175,13 +175,12 @@ async function loadNotices() {
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
         const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
         return { ref, label: label||ref, year,
-          githubUrl: 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent('https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name)),
-          rawUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
+          githubUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
       })
       .sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
     noticesReady = true;
-    renderAll();
+    if (fbReady) renderAll();
   } catch(e) {
     document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">⚠️</div><div class="state-title">Erreur de chargement</div><div class="state-sub">${e.message}</div></div>`;
     document.getElementById('search-hint').textContent = 'Erreur';
@@ -240,29 +239,22 @@ function renderAll() {
           ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
         </div>
         <div class="card-badges">
-          ${(()=>{const d2=fbData[key]||{};const locs=d2.locs||(d2.loc?{loc0:d2.loc}:{});const parts=Object.values(locs).map(loc=>{if(!loc?.allee)return null;if(loc.allee==='SOL')return'SOL';let s='A'+loc.allee;if(loc.cote)s+=' '+loc.cote;if(loc.rack)s+=' R'+loc.rack;if(loc.hauteur!=null)s+=' H'+loc.hauteur;return s;}).filter(Boolean);return parts.length?'<span class="mini-badge mb-loc">📍'+parts.join(' | ')+'</span>':''})()}
-          ${vis === true ? `<span class="mini-badge mb-vis">🔩 Oui</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
-          ${(()=>{const fp=Object.values(fbData[key]?.pieces||{})[0];if(!fp)return'';const tc=fp.totalCartons||0;const oc=Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x)).length;if(!tc&&!oc)return'';const col=oc<(tc||oc)?'#fbbf24':'#4ade80';return'<span class="mini-badge" style="background:rgba(59,130,246,0.15);color:'+col+'">📦'+oc+(tc?'/'+tc:'')+'</span>';})()}
+          ${locStr ? `<span class="mini-badge mb-loc">📍 ${locStr}</span>` : ''}
+          ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
+          ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
         </div>
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;letter-spacing:0.3px">Notice</a>
       </div>
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
           <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
-          <button class="tab-btn" onclick="showTab('${key}','pieces',this)">📦 Pièces</button>
-          <button class="tab-btn" onclick="showTab('${key}','inf',this)">ℹ️ Info</button>
+          <button class="tab-btn" onclick="showTab('${key}','inf',this)">📦 Stock & Visserie</button>
         </div>
         ${renderLocTab(key, loc)}
-        ${renderPiecesTab(key, (fbData[key]||{}).pieces)}
         ${renderInfTab(key, vis, stk)}
       </div>
     </div>`;
   }).join('');
-
-  // Remplir les onglets emplacement
-  document.querySelectorAll('[data-lockey]').forEach(el => {
-    el.innerHTML = buildLocContent(el.dataset.lockey);
-  });
 
   // Restaurer panels ouverts
   openPanels.forEach(key => {
@@ -284,112 +276,46 @@ function renderAll() {
 }
 
 function renderLocTab(key, loc) {
-  const ls = localState[key] || {};
-  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-  const isSol = allee === 'SOL';
-  const locStr = locLabel({ allee, cote, rack, hauteur: haut });
+  return `<div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>`;
+}
 
-  return `<div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>
-        <div class="tab-content" id="tab-inf-${key}">
+function renderInfTab(key, vis, stk) {
+  const val = stk !== undefined && stk !== null ? stk : 0;
+  return `<div class="tab-content" id="tab-inf-${key}">
     <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
     <div class="vis-row">
       <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
-      <button class="vis-btn${vis===false?' sel-no':''}"  id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
+      <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
     </div>
     <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Note</div>
-    <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${(fbData[key]||{}).note||''}</textarea>
-    <button class="save-btn btn-orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-  </div>`;
-}
-
-function renderPiecesTab(key, pieces) {
-  pieces = pieces || {};
-  // Trier pièces : lettres d'abord (A, B...) puis chiffres (1, 2...)
-  const pids = Object.keys(pieces).sort((a,b) => {
-    const na = pieces[a]?.nom||'', nb = pieces[b]?.nom||'';
-    const pa = na.match(/^([A-Za-z]+|\d+)/)?.[1]||na;
-    const pb2 = nb.match(/^([A-Za-z]+|\d+)/)?.[1]||nb;
-    const aIsNum = /^\d+$/.test(pa), bIsNum = /^\d+$/.test(pb2);
-    if (!aIsNum && bIsNum) return -1;
-    if (aIsNum && !bIsNum) return 1;
-    if (aIsNum && bIsNum) return parseInt(pa)-parseInt(pb2);
-    return pa.localeCompare(pb2, 'fr');
-  });
-  const cids = new Set();
-  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  const cartonIds = Array.from(cids).sort();
-  const curIdx = cartonIds.findIndex(cid => pids.some(pid => (pieces[pid].cartons?.[cid]?.qte||0) > 0));
-
-  const cartonsHtml = cartonIds.map((cid, cidx) => {
-    const isCur = cidx === curIdx;
-    const firstNormalPid = pids.find(pid => pieces[pid] && pieces[pid].totalCartons);
-    const totalCartonsInfo = firstNormalPid ? pieces[firstNormalPid].totalCartons : 0;
-    const cartonNum = cidx + 1;
-    const isCustom = cid.startsWith('custom_');
-    // Nom lisible : retirer le suffixe timestamp et nettoyer
-    // Nom custom : retirer préfixe custom_, suffixe numérique, restaurer espaces
-    const cartonLabel = isCustom
-      ? '📦 ' + cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ')
-      : 'Carton ' + (cidx+1);
-    const rows = pids.map(pid => {
-      const p = pieces[pid], cart = p.cartons?.[cid];
-      if (!cart) return '';
-      const qte = cart.qte||0, init = cart.initial||qte;
-      const pct = init>0 ? qte/init : 0;
-      const col = qte===0?'#f87171':pct<0.3?'#fbbf24':'#4ade80';
-      return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:11px;flex:1">${p.nom||pid}</span>
-        <div style="width:50px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;width:${Math.round(pct*100)}%;background:${pct>0.5?'var(--green)':pct>0?'#f59e0b':'var(--red)'}"></div></div>
-        <span style="font-size:11px;font-weight:700;min-width:32px;text-align:center;color:${col}">${qte}/${init}</span>
-        <button onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''} style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#f87171;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">−</button>
-        <input type="number" id="qty-${key}-${pid}-${cid}" value="1" min="1" style="width:44px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;padding:4px 2px;outline:none;flex-shrink:0"/>
-        <button onclick="addPieceQte('${key}','${pid}','${cid}')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.15);color:#4ade80;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">+</button>
-      </div>`;
-    }).join('');
-    const cartonId = 'carton-body-${key}-'+cid;
-    return `<div style="margin-bottom:8px;border:1px solid ${isCur?'var(--orange)':isCustom?'var(--green)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--surface2)">
-      <div style="display:flex;align-items:center;padding:9px 12px;background:${isCur?'rgba(232,97,26,0.1)':isCustom?'rgba(34,197,94,0.05)':''};cursor:pointer" onclick="toggleCartonBody('${cartonId}')">
-        <span style="font-size:12px;font-weight:700;color:${isCur?'var(--orange)':isCustom?'#4ade80':'var(--muted)'}">
-          ${isCustom?'📦 ':''}{cartonLabel}${isCur?' ▶ En cours':''}
-          ${!isCustom&&totalCartonsInfo>1?' <span style=\"font-size:10px;color:var(--muted);font-weight:400\"> ('+cartonNum+'/'+totalCartonsInfo+')</span>':''}
-        </span>
-        <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <span id="arrow-${cartonId}" style="color:var(--muted);font-size:12px">${(isCur||(isCustom&&cid.endsWith('_1')))?'▼':'▶'}</span>
-          <button onclick="deleteCarton('${key}','${cid}',event)" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
-        </span>
+    <div class="stock-label">Stock actuel</div>
+    <div class="stock-row">
+      <button class="stock-btn" onclick="adjustStock('${key}',-1)">−</button>
+      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0"/>
+      <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
+    </div>
+    <button class="save-btn orange" id="stk-save-${key}" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
+    <div style="margin-top:12px">
+      <button style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="toggleNote('${key}')">📝 Note</button>
+      <div id="note-block-${key}" style="display:none;margin-top:8px">
+        <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${fbData[key]?.note || ''}</textarea>
+        <button class="save-btn orange" style="margin-top:6px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
       </div>
-      <div id="${cartonId}" style="padding:0 12px 8px;display:${(isCur||(isCustom&&cid.endsWith('_1')))?'block':'none'}">${rows}</div>
-    </div>`.replace('{cartonLabel}', cartonLabel);
-  }).join('');
-
-  return `<div class="tab-content" id="tab-pieces-${key}">
-    ${cartonIds.length ? cartonsHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — ajoutez manuellement ou scannez</div>'}
-
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Nouveau carton</button>
-      <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton perso</button>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button onclick="scanNotice('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform 0.1s">🤖 Scanner IA</button>
-      <button onclick="resetScan('${key}')" style="padding:11px 14px;border-radius:12px;border:1.5px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Reset</button>
-    </div>
-
   </div>`;
 }
 
+// ── INTERACTIONS ──────────────────────────────────────────
 window.togglePanel = function(key) {
   const p = document.getElementById('panel-' + key);
   if (!p) return;
-  const open = p.style.display === 'block';
-  p.style.display = open ? 'none' : 'block';
+  const isOpen = p.style.display === 'block';
+  p.style.display = isOpen ? 'none' : 'block';
+  if (isOpen) openPanels.delete(key); else openPanels.add(key);
 };
 
 window.showTab = function(key, tab, btn) {
-  ['loc','pieces','inf'].forEach(t => {
+  ['loc','inf'].forEach(t => {
     const el = document.getElementById('tab-' + t + '-' + key);
     if (el) el.classList.toggle('active', t === tab);
   });
@@ -397,548 +323,96 @@ window.showTab = function(key, tab, btn) {
   btn.classList.add('active');
 };
 
-window.pickLoc = function(key, field, val, locId) {
-  locId = locId || 'loc0';
-  if (!window._locState) window._locState = {};
-  if (!window._locState[key]) window._locState[key] = {};
-  if (!window._locState[key][locId]) window._locState[key][locId] = {};
-  const ls = window._locState[key][locId];
-  ls[field] = ls[field] === val ? null : val;
-  if (field === 'allee') { delete ls.cote; delete ls.rack; delete ls.haut; }
-  if (field === 'cote') { delete ls.rack; delete ls.haut; }
-  if (field === 'rack') { delete ls.haut; }
+window.pickLoc = function(key, field, val) {
+  if (!localState[key]) localState[key] = {};
+  // Toggle
+  if (localState[key][field] === val) { delete localState[key][field]; }
+  else { localState[key][field] = val; }
+  // Reset les étapes suivantes si on change en amont
+  if (field === 'allee') { delete localState[key].cote; delete localState[key].rack; delete localState[key].haut; }
+  if (field === 'cote')  { delete localState[key].rack; delete localState[key].haut; }
+  if (field === 'rack')  { delete localState[key].haut; }
+
+  // Re-rendre le tab emplacement
+  const d = fbData[key] || {};
   const tabEl = document.getElementById('tab-loc-' + key);
-  if (tabEl) tabEl.innerHTML = buildLocContent(key);
+  if (tabEl) tabEl.outerHTML = renderLocTab(key, d.loc || {});
 };
 
-function buildLocContent(key) {
+window.saveLoc = async function(key) {
+  const ls = localState[key] || {};
   const d = fbData[key] || {};
-  const locs = d.locs || (d.loc ? { loc0: d.loc } : {});
-  const locIds = Object.keys(locs).sort();
+  const loc = d.loc || {};
+  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
 
-  function buildOneLoc(locId, loc) {
-    const ls = ((window._locState||{})[key]||{})[locId] || {};
-    const al = ls.allee !== undefined ? ls.allee : (loc?.allee || null);
-    const co = ls.cote  !== undefined ? ls.cote  : (loc?.cote  || null);
-    const ra = ls.rack  !== undefined ? ls.rack  : (loc?.rack  || null);
-    const ha = ls.haut  !== undefined ? ls.haut  : (loc?.hauteur ?? null);
-    const sol = al === 'SOL';
-    let sum = '';
-    if (al) sum = sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'');
-
-    function locBtn(field, val, current) {
-      const sel = current === val || (typeof current === 'number' && current === Number(val));
-      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-locid="'+locId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
-    }
-
-    const body = '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez')+'</div>'+
-      '<div class="loc-step on"><div class="loc-step-title">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>locBtn('allee',v,al)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>locBtn('cote',v,co)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>locBtn('rack',v,ra)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>locBtn('haut',v,ha)).join('')+'</div></div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<button class="save-btn btn-orange" style="flex:1" id="sloc-'+key+'-'+locId+'" data-key="'+key+'" data-locid="'+locId+'" onclick="saveLocBtn(this)">💾 Enregistrer</button>'+
-        (locIds.length > 1 ? '<button data-key="'+key+'" data-locid="'+locId+'" onclick="deleteLocBtn(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:12px">🗑</button>' : '')+
-      '</div>';
-
-    const idx = locIds.indexOf(locId);
-    const label = sum || ('Emplacement '+(idx+1));
-    return '<div class="loc-bloc">'+
-      '<div class="loc-bloc-hdr" data-id="loc-body-'+key+'-'+locId+'" onclick="toggleLocBloc(this.dataset.id)">'+
-        '<span style="font-size:12px;font-weight:600;flex:1">📍 '+label+'</span>'+
-        '<span style="color:var(--muted);font-size:12px" id="arr-loc-'+key+'-'+locId+'">▼</span>'+
-      '</div>'+
-      '<div class="loc-bloc-body" id="loc-body-'+key+'-'+locId+'">'+ body +'</div>'+
-    '</div>';
-  }
-
-  let html = locIds.map(locId => buildOneLoc(locId, locs[locId]||{})).join('');
-  if (!locIds.length) html = buildOneLoc('loc0', {});
-  html += '<button data-key="'+key+'" onclick="addLocBtn(this)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
-  return html;
-}
-
-window.saveLocBtn = function(btn) { saveLoc(btn.dataset.key, btn.dataset.locid); };
-window.deleteLocBtn = function(btn) { deleteLoc(btn.dataset.key, btn.dataset.locid); };
-window.addLocBtn = function(btn) { addLoc(btn.dataset.key); };
-window.toggleLocBloc = function(id) {
-  const el = document.getElementById(id);
-  const arr = document.getElementById(id.replace('loc-body-','arr-loc-'));
-  if (!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : '';
-  if (arr) arr.textContent = open ? '▶' : '▼';
-};
-
-window.addLoc = async function(key) {
-  const d = fbData[key] || {};
-  const newId = 'loc'+Date.now();
-  if (d.loc && !d.locs) {
-    // Migrer ancien format loc → locs
-    await db.ref('produits/'+key+'/locs').set({ loc0: d.loc, [newId]: {} });
-    await db.ref('produits/'+key+'/loc').remove();
-  } else {
-    // Ajouter directement dans locs (même si vide)
-    await db.ref('produits/'+key+'/locs/'+newId).set({ allee: null });
-  }
-};
-
-window.deleteLoc = async function(key, locId) {
-  if (!confirm('Supprimer cet emplacement ?')) return;
-  await db.ref('produits/'+key+'/locs/'+locId).remove();
-};
-
-
-window.pickLocBtn = function(btn) {
-  const key = btn.dataset.key;
-  const locId = btn.dataset.locid || 'loc0';
-  const field = btn.dataset.field;
-  const val = ['rack','haut'].includes(field) ? Number(btn.dataset.val) : btn.dataset.val;
-  pickLoc(key, field, val, locId);
-};
-
-window.saveLoc = async function(key, locId) {
-  locId = locId || 'loc0';
-  const d = fbData[key] || {};
-  const existingLoc = (d.locs && d.locs[locId]) || d.loc || {};
-  const ls = ((window._locState||{})[key]||{})[locId] || {};
-  const al = ls.allee !== undefined ? ls.allee : (existingLoc.allee || null);
-  const co = ls.cote  !== undefined ? ls.cote  : (existingLoc.cote  || null);
-  const ra = ls.rack  !== undefined ? ls.rack  : (existingLoc.rack  || null);
-  const ha = ls.haut  !== undefined ? ls.haut  : (existingLoc.hauteur ?? null);
-  const btn = document.getElementById('sloc-'+key+'-'+locId);
+  const btn = document.querySelector(`#tab-loc-${key} .save-btn`);
   if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
-    const nl = {};
-    if (al) nl.allee = al;
-    if (al !== 'SOL' && co) nl.cote = co;
-    if (al !== 'SOL' && ra != null) nl.rack = ra;
-    if (al !== 'SOL' && ha != null) nl.hauteur = ha;
-    // Utiliser locs si déjà migré, sinon créer locs et supprimer loc
-    if (d.locs || Object.keys(d.locs||{}).length > 1) {
-      await db.ref('produits/'+key+'/locs/'+locId).set(Object.keys(nl).length ? nl : null);
-    } else {
-      await db.ref('produits/'+key+'/locs').set({ [locId]: Object.keys(nl).length ? nl : null });
-      if (d.loc) await db.ref('produits/'+key+'/loc').remove();
-    }
-    if (window._locState?.[key]) delete window._locState[key][locId];
-    if (btn) { btn.textContent = '✓'; btn.className = btn.className.replace('btn-orange','btn-green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer';btn.className=btn.className.replace('btn-green','btn-orange');btn.disabled=false;} }, 2000);
-  } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
+    const newLoc = {};
+    if (allee) newLoc.allee = allee;
+    if (allee !== 'SOL' && cote) newLoc.cote = cote;
+    if (allee !== 'SOL' && rack !== null) newLoc.rack = rack;
+    if (allee !== 'SOL' && haut !== null) newLoc.hauteur = haut;
+    await db.ref('produits/' + key + '/loc').set(Object.keys(newLoc).length ? newLoc : null);
+    delete localState[key];
+    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
+    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer l\'emplacement';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
+  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
 };
 
-function renderInfTab(key, vis, stk) {
-  const d = fbData[key] || {};
-  const pieces = d.pieces || {};
-  const pids = Object.keys(pieces);
-  const cids = new Set();
-  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  const normalCids = Array.from(cids).filter(cid => /^c[0-9]+$/.test(cid));
-  const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
-  const recapId = 'recap-'+key;
-
-  let recapHtml = '';
-  if (pids.length) {
-    let html = '';
-    pids.forEach(pid => {
-      const p = pieces[pid];
-      if (!normalCids.length && !p.totalCartons) return;
-      const normalQte = normalCids.reduce((s,cid) => s+((p.cartons?.[cid]?.qte)||0), 0);
-      const totalC = p.totalCartons || normalCids.length;
-      const fullQte = totalC * (p.initial||0);
-      const col = normalQte===0?'#f87171':normalQte<fullQte?'#fbbf24':'#4ade80';
-      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
-        '<span>'+(p.nom||pid)+'</span>'+
-        '<span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+' ('+totalC+' carton'+(totalC>1?'s':'')+')</span>'+
-        '</div>';
-    });
-    if (customCids.length) {
-      const customGroups = {};
-      pids.forEach(pid => {
-        const p = pieces[pid];
-        customCids.forEach(cid => {
-          if (!p.cartons?.[cid]) return;
-          const base = cid.replace(/_[0-9]+$/,'');
-          const nomC = base.replace(/^custom_/,'').replace(/_/g,' ');
-          if (!customGroups[base]) customGroups[base] = {nom:nomC, pids:[], cids:[]};
-          if (!customGroups[base].pids.includes(pid)) customGroups[base].pids.push(pid);
-          if (!customGroups[base].cids.includes(cid)) customGroups[base].cids.push(cid);
-        });
-      });
-      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)">'+
-        '<div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
-      Object.values(customGroups).forEach(grp => {
-        const pid = grp.pids[0];
-        const p = pieces[pid];
-        const totalQte = grp.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
-        const totalInit = grp.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.initial)||0),0);
-        const nb = grp.cids.length;
-        const col = totalQte===0?'#f87171':totalQte<totalInit?'#fbbf24':'#4ade80';
-        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
-          '<span style="color:#60a5fa">'+grp.nom+'</span>'+
-          '<span style="color:'+col+';font-weight:700">'+totalQte+' / '+totalInit+' ('+nb+' carton'+(nb>1?'s':'')+')</span>'+
-          '</div>';
-      });
-      html += '</div>';
-    }
-    recapHtml = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
-      '<div style="display:flex;align-items:center;padding:10px 12px;cursor:pointer;background:#1e1e1e" data-id="'+recapId+'" onclick="toggleRecap(this.dataset.id)">'+
-        '<span style="font-size:12px;font-weight:700;color:var(--orange);flex:1">📊 Récapitulatif stock</span>'+
-        '<span id="arr-'+recapId+'" style="color:var(--muted);font-size:12px">▼</span>'+
-      '</div>'+
-      '<div id="'+recapId+'" style="padding:10px;font-size:12px">'+html+'</div>'+
-    '</div>';
-  }
-
-  const fp = pids.length ? pieces[pids[0]] : null;
-  const tc = fp?.totalCartons || normalCids.length;
-
-  return `<div class="tab-content" id="tab-inf-${key}">
-    ${recapHtml}
-    <div class="stock-label" style="margin-bottom:8px">Gestion cartons</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button data-key="${key}" onclick="removeLastCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
-      <span style="flex:1;text-align:center;font-size:14px;font-weight:700;color:var(--text)">${tc} carton${tc>1?'s':''}</span>
-      <button data-key="${key}" onclick="addNewCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
-    </div>
-    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
-    <div class="vis-row">
-      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
-      <button class="vis-btn${vis===false?' sel-no':''}"  id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
-    </div>
-    <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Note</div>
-    <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${(fbData[key]||{}).note||''}</textarea>
-    <button class="save-btn btn-orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-  </div>`;
-}
-
 window.saveVis = async function(key, val) {
-  const ob = document.getElementById('vis-oui-' + key);
-  const nb = document.getElementById('vis-non-' + key);
-  if (ob) ob.className = 'vis-btn' + (val === true ? ' sel-yes' : '');
-  if (nb) nb.className = 'vis-btn' + (val === false ? ' sel-no' : '');
-  await db.ref('produits/' + key + '/visserie').set(val);
+  // Update visuel immédiat sans fermer le panel
+  const ouiBtn = document.getElementById('vis-oui-' + key);
+  const nonBtn = document.getElementById('vis-non-' + key);
+  if (ouiBtn) { ouiBtn.className = 'vis-btn' + (val === true ? ' sel-yes' : ''); }
+  if (nonBtn) { nonBtn.className = 'vis-btn' + (val === false ? ' sel-no' : ''); }
+  try {
+    await db.ref('produits/' + key + '/visserie').set(val);
+  } catch(e) {}
 };
 
 window.adjustStock = function(key, delta) {
   const input = document.getElementById('stk-' + key);
-  if (input) input.value = Math.max(0, (parseInt(input.value)||0) + delta);
+  if (!input) return;
+  input.value = Math.max(0, (parseInt(input.value) || 0) + delta);
 };
 
 window.saveStock = async function(key) {
-  const val = parseInt(document.getElementById('stk-' + key)?.value) || 0;
-  const btn = document.querySelector('#tab-inf-' + key + ' .save-btn');
+  const input = document.getElementById('stk-' + key);
+  const val = parseInt(input?.value) || 0;
+  const btn = document.querySelector(`#tab-stk-${key} .save-btn`);
   if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
     await db.ref('produits/' + key + '/stock').set(val);
-    if (btn) { btn.textContent = '✓'; btn.className = btn.className.replace('btn-orange','btn-green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer';btn.className=btn.className.replace('btn-green','btn-orange');btn.disabled=false;} }, 2000);
-  } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
+    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
+    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer le stock';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
+  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
 };
 
 window.toggleNote = function(key) {
-  const el = document.getElementById('note-block-' + key);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  const block = document.getElementById('note-block-' + key);
+  if (block) block.style.display = block.style.display === 'none' ? 'block' : 'none';
 };
 
 window.saveNote = async function(key) {
   const val = document.getElementById('note-' + key)?.value || '';
-  const btn = document.querySelector('#tab-inf-' + key + ' .save-btn');
+  const btn = document.querySelector('#note-block-' + key + ' .save-btn');
   if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
     await db.ref('produits/' + key + '/note').set(val || null);
-    if (btn) { btn.textContent = '✓'; btn.className = btn.className.replace('btn-orange','btn-green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer la note';btn.className=btn.className.replace('btn-green','btn-orange');btn.disabled=false;} }, 2000);
-  } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
+    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
+    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer la note';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
+  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
 };
 
-window.takePiece = async function(key, pid, cid) {
-  const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte || 0;
-  if (qte <= 0) return;
-  const inputEl = document.getElementById('qty-'+key+'-'+pid+'-'+cid);
-  const delta = Math.min(parseInt(inputEl?.value)||1, qte);
-  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte - delta);
-};
-window.addPieceQte = async function(key, pid, cid) {
-  const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte || 0;
-  const inputEl = document.getElementById('qty-'+key+'-'+pid+'-'+cid);
-  const delta = parseInt(inputEl?.value)||1;
-  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte + delta);
-};
-window.deleteCarton = async function(key, cid, e) {
-  e.stopPropagation();
-  if (!confirm('Supprimer ce carton ?')) return;
-  const pids = Object.keys((fbData[key]||{}).pieces||{});
-  const upd = {};
-  pids.forEach(pid => upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cid] = null);
-  await db.ref().update(upd);
-  // Firebase va déclencher renderAllSoft automatiquement
-};
-window.openCarton = async function(key, e) {
-  e.stopPropagation();
-  const pieces = (fbData[key]||{}).pieces || {};
-  const pids = Object.keys(pieces);
-  if (!pids.length) { alert("Ajoutez d'abord des pièces"); return; }
-  const cids = new Set();
-  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  // Trouver le prochain numéro en ne comptant que les cartons c1, c2... (pas custom)
-  const normalNums = Array.from(cids).filter(cid => /^c\d+$/.test(cid)).map(cid => parseInt(cid.replace('c',''))).sort((a,b)=>a-b);
-  const nextNum = (normalNums[normalNums.length-1]||0) + 1;
-  const newId = 'c'+nextNum;
-  const upd = {};
-  pids.forEach(pid => { const init=pieces[pid].initial||0; upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init}; });
-  await db.ref().update(upd);
-};
-window.showAddPiece = function(key) {
-  const el = document.getElementById('add-piece-'+key);
-  if (el) el.style.display = el.style.display==='none'?'block':'none';
-};
-window.addPiece = async function(key) {
-  const nom = document.getElementById('ap-nom-'+key)?.value.trim();
-  const qte = parseInt(document.getElementById('ap-qte-'+key)?.value)||0;
-  if (!nom||qte<=0) { alert('Remplissez le nom et la quantité'); return; }
-  const pid = 'p'+Date.now();
-  // Créer uniquement Carton 1 — utiliser "+ Ouvrir un carton" pour les suivants
-  const existingCartons = (fbData[key]||{}).pieces || {};
-  const cids = new Set();
-  Object.values(existingCartons).forEach(p => Object.keys(p.cartons||{}).forEach(cid => cids.add(cid)));
-  const firstCid = cids.size > 0 ? Array.from(cids).sort()[0] : 'c1';
-  await db.ref('produits/'+key+'/pieces/'+pid).set({nom, initial:qte, cartons:{[firstCid]:{qte,initial:qte}}});
-  document.getElementById('ap-nom-'+key).value='';
-  document.getElementById('ap-qte-'+key).value='';
-};
-window.toggleCartonBody = function(id) {
-  const el = document.getElementById(id);
-  const arrow = document.getElementById('arrow-' + id);
-  if (!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : '';
-  if (arrow) arrow.textContent = open ? '▶' : '▼';
-};
-
-window.openCartonCustom = async function(key, e) {
-  e.stopPropagation();
-  const pieces = (fbData[key]||{}).pieces || {};
-  const pids = Object.keys(pieces).sort((a,b) => {
-    const na=pieces[a]?.nom||'', nb2=pieces[b]?.nom||'';
-    const pa=na.match(/^([A-Za-z]+|\d+)/)?.[1]||na, pb=nb2.match(/^([A-Za-z]+|\d+)/)?.[1]||nb2;
-    const aNum=/^\d+$/.test(pa), bNum=/^\d+$/.test(pb);
-    if(!aNum&&bNum) return -1; if(aNum&&!bNum) return 1;
-    if(aNum&&bNum) return parseInt(pa)-parseInt(pb);
-    return pa.localeCompare(pb,'fr');
-  });
-
-  // Afficher une modal HTML
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
-  const box = document.createElement('div');
-  box.style.cssText = 'background:#1a1a1a;border:1px solid #2e2e2e;border-radius:16px;padding:20px;width:100%;max-width:380px';
-  box.innerHTML = '<div style="font-size:14px;font-weight:700;color:#E8611A;margin-bottom:16px">Carton personnalisé</div>' +
-    '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Nom du carton</div>' +
-    '<input id="cc-nom" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:12px" placeholder="ex: Pièce A seule"/>' +
-    '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Nb de cartons identiques</div>' +
-    '<input id="cc-nb" type="number" value="1" min="1" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:12px"/>' +
-    (pids.length ? '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Pièce concernée</div>' +
-    '<select id="cc-piece" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:12px">' +
-    pids.map(pid => '<option value="'+pid+'">'+pieces[pid].nom+'</option>').join('') +
-    '</select>' : '') +
-    '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Quantité par carton</div>' +
-    '<input id="cc-qte" type="number" value="8" min="1" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:16px"/>' +
-    '<div style="display:flex;gap:8px">' +
-    '<button id="cc-cancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid #2e2e2e;background:#242424;color:#888;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer">Annuler</button>' +
-    '<button id="cc-ok" style="flex:1;padding:10px;border-radius:10px;border:none;background:#E8611A;color:white;font-family:DM Sans,sans-serif;font-size:13px;font-weight:700;cursor:pointer">Créer</button>' +
-    '</div>';
-  modal.appendChild(box);
-  document.body.appendChild(modal);
-
-  await new Promise(resolve => {
-    document.getElementById('cc-cancel').onclick = () => { modal.remove(); resolve(null); };
-    document.getElementById('cc-ok').onclick = async () => {
-      const nomCarton = document.getElementById('cc-nom').value.trim();
-      const nb = parseInt(document.getElementById('cc-nb').value)||1;
-      const pieceQte = parseInt(document.getElementById('cc-qte').value)||0;
-      const selPid = pids.length ? document.getElementById('cc-piece')?.value : null;
-      modal.remove();
-      if (!nomCarton || pieceQte <= 0) { resolve(null); return; }
-
-      const nomId = Array.from(nomCarton).map(ch => {
-        const map = {'à':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','î':'i','ï':'i','ô':'o','ö':'o','ù':'u','û':'u','ü':'u','ç':'c',' ':'_'};
-        return map[ch.toLowerCase()] || (ch.match(/[a-zA-Z0-9_]/) ? ch.toLowerCase() : '');
-      }).join('').replace(/_+/g,'_').replace(/^_|_$/g,'');
-      const cidBase = 'custom_' + nomId;
-
-      const upd = {};
-      if (selPid && pids.includes(selPid)) {
-        for (let i=1; i<=nb; i++) upd['produits/'+key+'/pieces/'+selPid+'/cartons/'+cidBase+'_'+i] = {qte:pieceQte, initial:pieceQte, order:i};
-      } else {
-        const newPid = 'p'+Date.now();
-        const cartons = {};
-        for (let i=1; i<=nb; i++) cartons[cidBase+'_'+i] = {qte:pieceQte, initial:pieceQte, order:i};
-        upd['produits/'+key+'/pieces/'+newPid] = {nom:nomCarton, initial:pieceQte, cartons};
-      }
-      await db.ref().update(upd);
-      resolve(true);
-    };
-  });
-  return;
-
-  // 3. Quelle pièce ? Liste des pièces existantes
-  let pieceNom, pieceQte, pid;
-};
-
-window.scanNotice = async function(key) {
-  const notice = allNotices.find(n => getKey(n.ref)===key);
-  if (!notice) return;
-  const btn = document.querySelector('#tab-pieces-'+key+' button[onclick*="scanNotice"]');
-  if (btn) { btn.textContent='⏳ Analyse…'; btn.disabled=true; btn.style.transform='scale(0.95)'; }
-  try {
-    const res = await fetch('https://sav-server-production.up.railway.app/scan-notice',{
-      method:'POST', headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
-      body: JSON.stringify({pdfUrl:notice.rawUrl, ref:notice.ref})
-    });
-    const data = await res.json();
-    if (!data.pieces?.length) throw new Error('Aucune pièce trouvée');
-
-    const nb = parseInt(prompt('Combien de cartons au total ?','1'))||1;
-    // Trier les pièces : alphabétique naturel (A, B, C... puis 1, 2, 3...)
-    data.pieces.sort((a,b) => {
-      const na = a.nom||'', nb2 = b.nom||'';
-      // Extraire préfixe lettre ou chiffre
-      const pa = na.match(/^([A-Za-z]+|\d+)/)?.[1]||na;
-      const pb = nb2.match(/^([A-Za-z]+|\d+)/)?.[1]||nb2;
-      const aIsNum = /^\d+$/.test(pa), bIsNum = /^\d+$/.test(pb);
-      if (!aIsNum && bIsNum) return -1; // lettres avant chiffres
-      if (aIsNum && !bIsNum) return 1;
-      if (aIsNum && bIsNum) return parseInt(pa)-parseInt(pb);
-      return pa.localeCompare(pb, 'fr');
-    });
-    const existingPieces = (fbData[key]||{}).pieces || {};
-    // Map nom normalisé → pid existant
-    const existingByNom = {};
-    Object.entries(existingPieces).forEach(([pid, p]) => {
-      existingByNom[(p.nom||'').trim().toUpperCase()] = pid;
-    });
-
-    const upd = {};
-    data.pieces.forEach((p, i) => {
-      const nomKey = (p.nom||'').trim().toUpperCase();
-      const existingPid = existingByNom[nomKey];
-      if (existingPid) {
-        // Mettre à jour totalCartons uniquement si la pièce existe déjà
-        upd['produits/'+key+'/pieces/'+existingPid+'/totalCartons'] = nb;
-        upd['produits/'+key+'/pieces/'+existingPid+'/initial'] = p.qte;
-      } else {
-        const pid = 'p'+Date.now()+i;
-        upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, totalCartons: nb, cartons: { c1: { qte: p.qte, initial: p.qte } } };
-      }
-    });
-    await db.ref().update(upd);
-    if (btn) { btn.textContent='✓ '+data.pieces.length+' pièces / '+nb+' cartons'; btn.style.transform=''; }
-    setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },3000);
-  } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.style.transform='';btn.disabled=false;} }
-};
-
-// Re-render doux — ne ferme pas les panels ouverts
-function renderAllSoft() {
-  // Sauvegarder panels ouverts et onglets actifs
-  const openKeys = new Set();
-  const tabs = {};
-  document.querySelectorAll('.detail-panel').forEach(p => {
-    if (p.style.display === 'block') {
-      const key = p.id.replace('panel-', '');
-      openKeys.add(key);
-      const activeTab = p.querySelector('.tab-btn.active');
-      if (activeTab) {
-        if (activeTab.textContent.includes('Emplacement')) tabs[key] = 'loc';
-        else if (activeTab.textContent.includes('Pièces')) tabs[key] = 'pieces';
-        else tabs[key] = 'inf';
-      }
-    }
-  });
-
-  renderAll();
-
-  // Restaurer panels et onglets
-  openKeys.forEach(key => {
-    const p = document.getElementById('panel-' + key);
-    if (p) {
-      p.style.display = 'block';
-      const tab = tabs[key] || 'loc';
-      showTabSilent(key, tab);
-    }
-  });
-}
-
-function showTabSilent(key, tab) {
-  ['loc','pieces','inf'].forEach(t => {
-    const el = document.getElementById('tab-' + t + '-' + key);
-    if (el) el.classList.toggle('active', t === tab);
-  });
-  const panel = document.getElementById('panel-' + key);
-  if (panel) panel.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active',
-      (tab === 'loc' && btn.textContent.includes('Emplacement')) ||
-      (tab === 'pieces' && btn.textContent.includes('Pièces')) ||
-      (tab === 'inf' && btn.textContent.includes('Info'))
-    );
-  });
-}
-
-window.toggleRecap = function(id) {
-  const el = document.getElementById(id);
-  const arr = document.getElementById('arr-'+id);
-  if (!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : '';
-  if (arr) arr.textContent = open ? '▶' : '▼';
-};
-
-window.addNewCarton = async function(key) {
-  const pieces = (fbData[key]||{}).pieces || {};
-  const pids = Object.keys(pieces);
-  if (!pids.length) { alert('Aucune pièce définie'); return; }
-  const cids = new Set();
-  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  const normalNums = Array.from(cids).filter(cid => /^c[0-9]+$/.test(cid)).map(cid => parseInt(cid.replace('c',''))).sort((a,b)=>a-b);
-  const nextNum = (normalNums[normalNums.length-1]||0) + 1;
-  const newId = 'c'+nextNum;
-  const upd = {};
-  pids.forEach(pid => { const init=pieces[pid].initial||0; upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init}; });
-  // Mettre à jour totalCartons
-  pids.forEach(pid => { upd['produits/'+key+'/pieces/'+pid+'/totalCartons'] = nextNum; });
-  await db.ref().update(upd);
-};
-
-window.removeLastCarton = async function(key) {
-  const pieces = (fbData[key]||{}).pieces || {};
-  const pids = Object.keys(pieces);
-  if (!pids.length) return;
-  const cids = new Set();
-  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  const normalNums = Array.from(cids).filter(cid => /^c[0-9]+$/.test(cid)).map(cid => parseInt(cid.replace('c',''))).sort((a,b)=>a-b);
-  if (normalNums.length <= 1) { alert('Il faut garder au moins 1 carton'); return; }
-  if (!confirm('Supprimer le dernier carton (Carton '+normalNums[normalNums.length-1]+') ?')) return;
-  const lastId = 'c'+normalNums[normalNums.length-1];
-  const upd = {};
-  pids.forEach(pid => {
-    upd['produits/'+key+'/pieces/'+pid+'/cartons/'+lastId] = null;
-    upd['produits/'+key+'/pieces/'+pid+'/totalCartons'] = normalNums.length - 1;
-  });
-  await db.ref().update(upd);
-};
-
-window.resetScan = async function(key) {
-  if (!confirm('Supprimer toutes les pièces et repartir de zéro ?')) return;
-  await db.ref('produits/'+key+'/pieces').remove();
-};
-
-// ── SEARCH ────────────────────────────────────────────────
-let searchTimer;
-document.getElementById('search').addEventListener('input', function(e) {
-  clearTimeout(searchTimer);
+let t;
+document.getElementById('search').addEventListener('input', e => {
+  clearTimeout(t);
   searchQuery = e.target.value;
-  searchTimer = setTimeout(renderAll, 100);
+  t = setTimeout(renderAll, 100);
 });
 
 loadNotices();
