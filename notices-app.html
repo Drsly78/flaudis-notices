@@ -193,11 +193,13 @@ function pieceBadge(key) {
   const pids = Object.keys(pieces);
   if (!pids.length) return '';
   const fp = pieces[pids[0]];
-  const tc = fp.totalCartons||0;
-  const oc = Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x)).length;
-  if (!tc&&!oc) return '';
-  const col = oc<(tc||oc)?'#fbbf24':'#4ade80';
-  return '<span class="mini-badge" style="background:rgba(59,130,246,0.15);color:'+col+'">📦'+oc+(tc?'/'+tc:'')+'</span>';
+  const allC = Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x));
+  const openC = allC.filter(cid=>!fp.cartons[cid]?.sealed).length;
+  const tc = fp.totalCartons || allC.length;
+  if (!tc) return '';
+  // openC - tc : cartons ouverts - total
+  const col = openC===0?'#f87171':openC<tc?'#fbbf24':'#4ade80';
+  return '<span class="mini-badge" style="background:rgba(139,92,246,0.2);color:'+col+';border:1px solid rgba(139,92,246,0.35)">📦 '+openC+' · '+tc+'</span>';
 }
 
 // ── Render ────────────────────────────────────────────────
