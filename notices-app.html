@@ -336,27 +336,45 @@ function renderInfTab(key, vis, stk) {
     html += '<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px">';
     pids.forEach(pid => {
       const p = pieces[pid];
-      if (normalCids.length === 0) return;
+      if (normalCids.length === 0 && !p.totalCartons) return;
       const normalQte = normalCids.reduce((s,cid) => s + ((p.cartons?.[cid]?.qte)||0), 0);
-      const fullQte = normalCids.reduce((s,cid) => s + ((p.cartons?.[cid]?.initial)||0), 0);
+      // Stock prévu = initial × totalCartons (si défini) sinon somme des cartons ouverts
+      const totalC = p.totalCartons || normalCids.length;
+      const fullQte = totalC * (p.initial||0);
       const col = normalQte===0?'#f87171':normalQte<fullQte?'#fbbf24':'#4ade80';
-      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>' + (p.nom||pid) + '</span><span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+'</span></div>';
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">' +
+        '<span>' + (p.nom||pid) + '</span>' +
+        '<span style="color:'+col+';font-weight:700">' + normalQte + ' / ' + fullQte + ' (' + totalC + ' carton' + (totalC>1?'s':'') + ')</span>' +
+        '</div>';
     });
     if (customCids.length) {
       // Collecter les suppléments uniques par cidBase
-      const seenCids = new Set();
-      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
+      // Grouper les cartons custom par nom de base (cidBase)
+      const customGroups = {};
       pids.forEach(pid => {
         const p = pieces[pid];
         customCids.forEach(cid => {
-          if (seenCids.has(cid)) return;
-          seenCids.add(cid);
-          const cart = p.cartons?.[cid];
-          if (!cart) return;
-          const nomC = cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ');
-          const col = cart.qte===0?'#f87171':cart.qte<cart.initial?'#fbbf24':'#4ade80';
-          html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:#60a5fa">'+nomC+'</span><span style="color:'+col+';font-weight:700">'+cart.qte+' / '+cart.initial+'</span></div>';
+          if (!p.cartons?.[cid]) return;
+          // cidBase = tout sauf le suffixe _N final
+          const base = cid.replace(/_\d+$/, '');
+          const nomC = base.replace(/^custom_/, '').replace(/_/g, ' ');
+          if (!customGroups[base]) customGroups[base] = { nom: nomC, pids: [], cids: [] };
+          if (!customGroups[base].pids.includes(pid)) customGroups[base].pids.push(pid);
+          if (!customGroups[base].cids.includes(cid)) customGroups[base].cids.push(cid);
         });
+      });
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
+      Object.values(customGroups).forEach(grp => {
+        const pid = grp.pids[0];
+        const p = pieces[pid];
+        const totalQte = grp.cids.reduce((s,cid) => s + ((p.cartons?.[cid]?.qte)||0), 0);
+        const totalInit = grp.cids.reduce((s,cid) => s + ((p.cartons?.[cid]?.initial)||0), 0);
+        const nb = grp.cids.length;
+        const col = totalQte===0?'#f87171':totalQte<totalInit?'#fbbf24':'#4ade80';
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">' +
+          '<span style="color:#60a5fa">' + grp.nom + '</span>' +
+          '<span style="color:'+col+';font-weight:700">'+totalQte+' / '+totalInit+' ('+nb+' carton'+(nb>1?'s':'')+')</span>' +
+          '</div>';
       });
       html += '</div>';
     }
@@ -422,14 +440,15 @@ function renderPiecesTab(key, pieces) {
     return `<div style="margin-bottom:8px;border:1px solid ${isCur?'var(--orange)':isCustom?'var(--green)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--surface2)">
       <div style="display:flex;align-items:center;padding:9px 12px;background:${isCur?'rgba(232,97,26,0.1)':isCustom?'rgba(34,197,94,0.05)':''};cursor:pointer" onclick="toggleCartonBody('${cartonId}')">
         <span style="font-size:12px;font-weight:700;color:${isCur?'var(--orange)':isCustom?'#4ade80':'var(--muted)'}">
-          ${isCustom?'✏️ ':''}{cartonLabel}${isCur?' ▶ En cours':''}
+          ${isCustom?'📦 ':''}{cartonLabel}${isCur?' ▶ En cours':''}
+          ${isCur&&pieces[pids[0]]?.totalCartons>1?' <span style=\"font-size:10px;color:var(--muted);font-weight:400\"> (1/'+pieces[pids[0]].totalCartons+' cartons)</span>':''}
         </span>
         <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <span id="arrow-${cartonId}" style="color:var(--muted);font-size:12px">${isCur?'▼':'▶'}</span>
+          <span id="arrow-${cartonId}" style="color:var(--muted);font-size:12px">${(isCur||(isCustom&&cid.endsWith('_1')))?'▼':'▶'}</span>
           <button onclick="deleteCarton('${key}','${cid}',event)" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
         </span>
       </div>
-      <div id="${cartonId}" style="padding:0 12px 8px;display:${isCur?'block':'none'}">${rows}</div>
+      <div id="${cartonId}" style="padding:0 12px 8px;display:${(isCur||(isCustom&&cid.endsWith('_1')))?'block':'none'}">${rows}</div>
     </div>`.replace('{cartonLabel}', cartonLabel);
   }).join('');
 
@@ -641,46 +660,71 @@ window.toggleCartonBody = function(id) {
 window.openCartonCustom = async function(key, e) {
   e.stopPropagation();
   const pieces = (fbData[key]||{}).pieces || {};
-  const pids = Object.keys(pieces);
+  const pids = Object.keys(pieces).sort((a,b) => {
+    const na=pieces[a]?.nom||'', nb2=pieces[b]?.nom||'';
+    const pa=na.match(/^([A-Za-z]+|\d+)/)?.[1]||na, pb=nb2.match(/^([A-Za-z]+|\d+)/)?.[1]||nb2;
+    const aNum=/^\d+$/.test(pa), bNum=/^\d+$/.test(pb);
+    if(!aNum&&bNum) return -1; if(aNum&&!bNum) return 1;
+    if(aNum&&bNum) return parseInt(pa)-parseInt(pb);
+    return pa.localeCompare(pb,'fr');
+  });
 
-  // 1. Nom du carton
-  const nomCarton = prompt('Nom du carton personnalisé (ex: Pièce A seule, Visserie) :');
-  if (!nomCarton) return;
+  // Afficher une modal HTML
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#1a1a1a;border:1px solid #2e2e2e;border-radius:16px;padding:20px;width:100%;max-width:380px';
+  box.innerHTML = '<div style="font-size:14px;font-weight:700;color:#E8611A;margin-bottom:16px">Carton personnalisé</div>' +
+    '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Nom du carton</div>' +
+    '<input id="cc-nom" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:12px" placeholder="ex: Pièce A seule"/>' +
+    '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Nb de cartons identiques</div>' +
+    '<input id="cc-nb" type="number" value="1" min="1" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:12px"/>' +
+    (pids.length ? '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Pièce concernée</div>' +
+    '<select id="cc-piece" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:12px">' +
+    pids.map(pid => '<option value="'+pid+'">'+pieces[pid].nom+'</option>').join('') +
+    '</select>' : '') +
+    '<div style="font-size:11px;text-transform:uppercase;color:#888;margin-bottom:4px">Quantité par carton</div>' +
+    '<input id="cc-qte" type="number" value="8" min="1" style="width:100%;background:#242424;border:1px solid #2e2e2e;border-radius:8px;color:#f0f0f0;font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:16px"/>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button id="cc-cancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid #2e2e2e;background:#242424;color:#888;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer">Annuler</button>' +
+    '<button id="cc-ok" style="flex:1;padding:10px;border-radius:10px;border:none;background:#E8611A;color:white;font-family:DM Sans,sans-serif;font-size:13px;font-weight:700;cursor:pointer">Créer</button>' +
+    '</div>';
+  modal.appendChild(box);
+  document.body.appendChild(modal);
 
-  // 2. Nb cartons identiques
-  const nbStr = prompt('Combien de cartons identiques de ce type ?', '1');
-  const nb = parseInt(nbStr)||1;
+  await new Promise(resolve => {
+    document.getElementById('cc-cancel').onclick = () => { modal.remove(); resolve(null); };
+    document.getElementById('cc-ok').onclick = async () => {
+      const nomCarton = document.getElementById('cc-nom').value.trim();
+      const nb = parseInt(document.getElementById('cc-nb').value)||1;
+      const pieceQte = parseInt(document.getElementById('cc-qte').value)||0;
+      const selPid = pids.length ? document.getElementById('cc-piece')?.value : null;
+      modal.remove();
+      if (!nomCarton || pieceQte <= 0) { resolve(null); return; }
+
+      const nomId = Array.from(nomCarton).map(ch => {
+        const map = {'à':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','î':'i','ï':'i','ô':'o','ö':'o','ù':'u','û':'u','ü':'u','ç':'c',' ':'_'};
+        return map[ch.toLowerCase()] || (ch.match(/[a-zA-Z0-9_]/) ? ch.toLowerCase() : '');
+      }).join('').replace(/_+/g,'_').replace(/^_|_$/g,'');
+      const cidBase = 'custom_' + nomId;
+
+      const upd = {};
+      if (selPid && pids.includes(selPid)) {
+        for (let i=1; i<=nb; i++) upd['produits/'+key+'/pieces/'+selPid+'/cartons/'+cidBase+'_'+i] = {qte:pieceQte, initial:pieceQte, order:i};
+      } else {
+        const newPid = 'p'+Date.now();
+        const cartons = {};
+        for (let i=1; i<=nb; i++) cartons[cidBase+'_'+i] = {qte:pieceQte, initial:pieceQte, order:i};
+        upd['produits/'+key+'/pieces/'+newPid] = {nom:nomCarton, initial:pieceQte, cartons};
+      }
+      await db.ref().update(upd);
+      resolve(true);
+    };
+  });
+  return;
 
   // 3. Quelle pièce ? Liste des pièces existantes
   let pieceNom, pieceQte, pid;
-  // Générer un ID propre sans accents ni chiffres parasites
-  const nomId = nomCarton.trim().split('').map(ch => {
-    const map = {'à':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','î':'i','ï':'i','ô':'o','ö':'o','ù':'u','û':'u','ü':'u','ç':'c',' ':'_'};
-    return map[ch.toLowerCase()] || (ch.match(/[a-zA-Z0-9_]/) ? ch.toLowerCase() : '');
-  }).join('').replace(/_+/g,'_').replace(/^_|_$/g,'');
-  const cidBase = 'custom_' + nomId;
-
-  const qteStr = prompt('Quantité de pièces par carton ?', '8');
-  pieceQte = parseInt(qteStr)||0;
-  if (pieceQte <= 0) return;
-
-  if (pids.length > 0) {
-    // Afficher un select via un dialog HTML — simulé avec prompt numéroté
-    const choixStr = prompt(pids.map((p,i)=>(i+1)+'. '+pieces[p].nom).join('\n')+'\n\nNuméro de la pièce :');
-    const choix = parseInt(choixStr)-1;
-    if (isNaN(choix) || choix < 0 || choix >= pids.length) { alert('Choix invalide'); return; }
-    pid = pids[choix];
-    const upd = {};
-    for (let i=1; i<=nb; i++) {
-      upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte, order: i };
-    }
-    await db.ref().update(upd);
-  } else {
-    const newPid = 'p'+Date.now();
-    const cartons = {};
-    for (let i=1; i<=nb; i++) cartons[cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte, order: i };
-    await db.ref('produits/'+key+'/pieces/'+newPid).set({ nom: nomCarton, initial: pieceQte, cartons });
-  }
 };
 
 window.scanNotice = async function(key) {
