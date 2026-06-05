@@ -490,13 +490,12 @@ window.addLocSlot = async function(key) {
   let i = 2;
   while (d['loc'+i] !== undefined) i++;
   const newSlot = 'loc'+i;
-  try {
-    await db.ref('produits/'+key+'/'+newSlot).set({ allee: null });
-    console.log('Emplacement créé:', newSlot);
-  } catch(e) {
-    console.error('Erreur addLocSlot:', e);
-    alert('Erreur: ' + e.message);
-  }
+  await db.ref('produits/'+key+'/'+newSlot).set({ allee: null });
+  // Forcer rechargement immédiat du tab loc sans attendre Firebase
+  fbData[key] = fbData[key] || {};
+  fbData[key][newSlot] = { allee: null };
+  const tabEl = document.getElementById('tab-loc-'+key);
+  if (tabEl) tabEl.innerHTML = buildLocContent(key);
 };
 
 window.saveLocSlot = function(btn) {
@@ -528,7 +527,9 @@ window.deleteLocSlot = function(btn) {
 
 window.toggleLocBloc = function(id) {
   const el = document.getElementById(id);
-  const arr = document.getElementById(id.replace('loc-body-','arr-loc-'));
+  // Chercher l'arrow avec les deux préfixes possibles
+  const arr = document.getElementById(id.replace('locbody-','arrloc-')) ||
+              document.getElementById(id.replace('loc-body-','arr-loc-'));
   if (!el) return;
   const open = el.style.display !== 'none';
   el.style.display = open ? 'none' : '';
@@ -805,7 +806,20 @@ window.toggleRecap = function(id) {
 // Remplir les tabs loc après render
 function fillLocTabs() {
   document.querySelectorAll('[data-lockey]').forEach(el => {
-    el.innerHTML = buildLocContent(el.dataset.lockey);
+    const key = el.dataset.lockey;
+    // Sauvegarder l'état ouvert/fermé des tiroirs
+    const openBlocs = new Set();
+    el.querySelectorAll('[id^="locbody-"]').forEach(bloc => {
+      if (bloc.style.display !== 'none') openBlocs.add(bloc.id);
+    });
+    el.innerHTML = buildLocContent(key);
+    // Restaurer l'état
+    openBlocs.forEach(id => {
+      const bloc = document.getElementById(id);
+      const arr = document.getElementById(id.replace('locbody-','arrloc-'));
+      if (bloc) bloc.style.display = '';
+      if (arr) arr.textContent = '▼';
+    });
   });
 }
 
