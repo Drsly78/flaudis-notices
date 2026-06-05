@@ -7,101 +7,112 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
   :root {
-    --orange: #E8611A;
-    --bg: #0f0f0f;
-    --surface: #1a1a1a;
-    --surface2: #242424;
-    --border: #2e2e2e;
-    --text: #f0f0f0;
-    --muted: #888;
-    --blue: #3b82f6;
-    --green: #22c55e;
-    --red: #ef4444;
+    --orange:#E8611A; --bg:#0f0f0f; --surface:#1a1a1a; --surface2:#242424;
+    --border:#2e2e2e; --text:#f0f0f0; --muted:#888; --blue:#3b82f6;
+    --green:#22c55e; --red:#ef4444; --yellow:#f59e0b;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-  header { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 20px 0; }
-  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--orange); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .logo span { color: var(--muted); font-size: 13px; letter-spacing: 1px; font-family: 'DM Sans', sans-serif; font-weight: 300; margin-top: 4px; }
-  .search-wrap { position: relative; }
-  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
-  #search { width: 100%; padding: 14px 14px 14px 42px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px 12px 0 0; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; }
-  #search:focus { border-color: var(--orange); }
-  #search::placeholder { color: var(--muted); }
-  .search-meta { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 12px; font-size: 12px; color: var(--muted); }
-  .count-badge { background: var(--orange); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-  #results { padding: 8px 16px 40px; }
-
-  /* CARD */
-  .notice-card { margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: fadeIn 0.2s ease both; }
-  .notice-main { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; user-select: none; }
-  .notice-main:hover { background: var(--surface2); }
-  .notice-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--orange), #FF7A35); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .notice-info { flex: 1; min-width: 0; }
-  .notice-ref { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .notice-ref mark { background: none; color: var(--orange); }
-  .notice-name { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-left: auto; margin-right: 8px; max-width: 140px; justify-content: flex-end; }
-  .mini-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.3px; white-space: nowrap; }
-  .mb-loc  { background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-  .mb-vis  { background: rgba(34,197,94,0.2);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
-  .mb-novis{ background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-  .mb-stock{ background: rgba(232,97,26,0.2);  color: #fb923c; border: 1px solid rgba(232,97,26,0.3); }
-  .notice-arrow { color: var(--muted); font-size: 14px; padding: 4px 8px; border-radius: 6px; background: var(--surface2); text-decoration: none; flex-shrink: 0; }
-
-  /* PANEL INTERNE */
-  .detail-panel { display: none; border-top: 1px solid var(--border); }
-
-  /* ONGLETS */
-  .tabs { display: flex; border-bottom: 1px solid var(--border); background: #0d0d0d; }
-  .tab-btn { flex: 1; padding: 10px 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; border-bottom: 2px solid transparent; transition: all 0.15s; }
-  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
-  .tab-content { display: none; padding: 16px; background: #111; }
-  .tab-content.active { display: block; }
-
-  /* EMPLACEMENT */
-  .loc-step { margin-bottom: 14px; }
-  .loc-step-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; text-align: center; color: var(--muted); }
-  .loc-step-title.active-step { color: var(--orange); }
-  .loc-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-  .loc-btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 52px; text-align: center; }
-  .loc-btn.sel { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 8px rgba(59,130,246,0.25); }
-  .loc-btn.disabled { opacity: 0.25; pointer-events: none; }
-  .loc-summary { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; min-height: 18px; }
-  .loc-summary span { color: #60a5fa; font-weight: 600; }
-
-  /* SAVE BTN */
-  .save-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; margin-top: 4px; }
-  .save-btn.orange { background: var(--orange); color: white; }
-  .save-btn.green  { background: var(--green);  color: white; }
-  .save-btn:disabled { opacity: 0.5; }
-
-  /* VISSERIE */
-  .vis-row { display: flex; gap: 12px; margin-bottom: 16px; }
-  .vis-btn { flex: 1; padding: 16px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; text-align: center; }
-  .vis-btn.sel-yes { background: rgba(34,197,94,0.15); border-color: var(--green); color: #4ade80; }
-  .vis-btn.sel-no  { background: rgba(239,68,68,0.15);  border-color: var(--red);   color: #f87171; }
-
-  /* STOCK */
-  .stock-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-  .stock-btn { width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
-  .stock-btn:hover { border-color: var(--orange); color: var(--orange); }
-  .stock-input { flex: 1; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 700; text-align: center; padding: 10px; outline: none; }
-  .stock-input:focus { border-color: var(--orange); }
-  .stock-label { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; }
-
-  .state { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .state-icon { font-size: 48px; margin-bottom: 16px; }
-  .state-title { font-size: 18px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
-  .loader { display: flex; justify-content: center; padding: 60px; }
-  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:16px 20px 0;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--orange);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}
+  .logo span{color:var(--muted);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:300;margin-top:4px;}
+  .search-wrap{position:relative;}
+  .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+  #search{width:100%;padding:14px 14px 14px 42px;background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;}
+  #search:focus{border-color:var(--orange);}
+  #search::placeholder{color:var(--muted);}
+  .search-meta{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 12px;font-size:12px;color:var(--muted);}
+  .count-badge{background:var(--orange);color:white;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  #results{padding:8px 16px 60px;}
+  .notice-card{margin-bottom:8px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;animation:fadeIn 0.2s ease both;}
+  .notice-main{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;transition:background 0.15s;}
+  .notice-main:hover{background:var(--surface2);}
+  .notice-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--orange),#FF7A35);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .notice-info{flex:1;min-width:0;}
+  .notice-ref{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .notice-ref mark{background:none;color:var(--orange);}
+  .notice-name{font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-badges{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:110px;}
+  .mini-badge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:5px;white-space:nowrap;}
+  .mb-loc{background:rgba(59,130,246,0.2);color:#60a5fa;}
+  .mb-vis{background:rgba(34,197,94,0.2);color:#4ade80;}
+  .mb-novis{background:rgba(239,68,68,0.2);color:#f87171;}
+  .btn-notice{background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;white-space:nowrap;}
+  .detail-panel{display:none;border-top:1px solid var(--border);}
+  .tabs{display:flex;border-bottom:1px solid var(--border);background:#0d0d0d;}
+  .tab-btn{flex:1;padding:10px 4px;font-size:11px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;transition:all 0.15s;}
+  .tab-btn.active{color:var(--orange);border-bottom-color:var(--orange);}
+  .tab-content{display:none;padding:14px;background:#111;}
+  .tab-content.active{display:block;}
+  .loc-step{margin-bottom:12px;opacity:0.3;pointer-events:none;transition:opacity 0.2s;}
+  .loc-step.on{opacity:1;pointer-events:all;}
+  .loc-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:7px;text-align:center;color:var(--muted);}
+  .loc-step.on .loc-label{color:var(--orange);}
+  .loc-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+  .loc-btn{padding:9px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;min-width:46px;text-align:center;}
+  .loc-btn.sel{background:rgba(59,130,246,0.2);border-color:#3b82f6;color:#60a5fa;box-shadow:0 0 8px rgba(59,130,246,0.2);}
+  .loc-summary{font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px;min-height:18px;}
+  .loc-summary b{color:#60a5fa;}
+  .sec-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--muted);margin-bottom:8px;}
+  .vis-row{display:flex;gap:10px;margin-bottom:14px;}
+  .vis-btn{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;text-align:center;}
+  .vis-btn.yes{background:rgba(34,197,94,0.15);border-color:var(--green);color:#4ade80;}
+  .vis-btn.no{background:rgba(239,68,68,0.15);border-color:var(--red);color:#f87171;}
+  .divider{height:1px;background:var(--border);margin:14px 0;}
+  .piece-block{background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;}
+  .piece-hdr{display:flex;align-items:center;padding:9px 12px;gap:8px;background:#1e1e1e;}
+  .piece-hdr-label{font-size:12px;font-weight:700;flex:1;}
+  .piece-hdr-total{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;}
+  .tot-ok{background:rgba(34,197,94,0.2);color:#4ade80;}
+  .tot-low{background:rgba(245,158,11,0.2);color:#fbbf24;}
+  .tot-zero{background:rgba(239,68,68,0.2);color:#f87171;}
+  .carton-block{border-top:1px solid var(--border);padding:10px 12px;}
+  .carton-hdr{display:flex;align-items:center;margin-bottom:8px;}
+  .carton-label{font-size:11px;font-weight:700;}
+  .carton-label.cur{color:var(--orange);}
+  .carton-del{margin-left:auto;background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .piece-row{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .piece-row:last-child{border-bottom:none;}
+  .piece-row-name{font-size:11px;flex:1;color:var(--text);}
+  .bar-wrap{width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;flex-shrink:0;}
+  .bar{height:100%;border-radius:3px;}
+  .bar.full{background:var(--green);}
+  .bar.mid{background:var(--yellow);}
+  .bar.emp{background:var(--red);}
+  .piece-count{font-size:11px;font-weight:700;min-width:32px;text-align:center;}
+  .btn-pm{width:28px;height:28px;border-radius:6px;border:1px solid;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;}
+  .btn-m{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#f87171;}
+  .btn-p{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ade80;}
+  .btn-m:disabled,.btn-p:disabled{opacity:0.3;cursor:not-allowed;}
+  .btn-oc{width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;transition:all 0.15s;}
+  .btn-oc:hover{border-color:var(--orange);color:var(--orange);}
+  .form-row{margin-bottom:8px;}
+  .form-label{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:4px;}
+  .form-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;}
+  .form-input:focus{border-color:var(--orange);}
+  .form-2{display:flex;gap:8px;}
+  .save-btn{width:100%;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.15s;margin-top:6px;}
+  .btn-o{background:var(--orange);color:white;}
+  .btn-g{background:var(--green);color:white;}
+  .btn-sm{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-sm:hover{border-color:var(--orange);color:var(--orange);}
+  .note-ta{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical;}
+  .note-ta:focus{border-color:var(--orange);}
+  .state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .state-icon{font-size:48px;margin-bottom:16px;}
+  .state-title{font-size:18px;color:var(--text);margin-bottom:8px;font-weight:500;}
+  .loader{display:flex;justify-content:center;padding:60px;}
+  .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">FLAUDIS <span>NOTICES PRODUITS</span></div>
+  <div style="text-align:right;padding:0 0 4px">
+    <button onclick="toggleAdmin()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">⚙️ Gérer les notices</button>
+  </div>
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input type="search" id="search" placeholder="Référence ou nom produit..." autocomplete="off" autocorrect="off" spellcheck="false"/>
@@ -110,95 +121,81 @@
     <span id="search-hint">Chargement…</span>
     <span id="count-badge" class="count-badge" style="display:none"></span>
   </div>
-  <div style="text-align:right;padding:0 0 6px">
-    <button onclick="document.getElementById('admin-panel').style.display=document.getElementById('admin-panel').style.display==='none'?'block':'none'" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">⚙️ Gérer les notices</button>
-  </div>
 </header>
+
 <div id="admin-panel" style="display:none;margin:0 16px 8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px">
   <div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:10px">GESTION DES NOTICES</div>
-  <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Ajouter un PDF</div>
+  <div class="form-label">Ajouter un PDF</div>
   <input type="file" id="upload-pdf" accept=".pdf" style="display:none" onchange="uploadNotice(this)"/>
   <button onclick="document.getElementById('upload-pdf').click()" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px">📎 Choisir un PDF</button>
-  <div id="upload-status" style="font-size:11px;text-align:center;margin-bottom:10px"></div>
-  <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Supprimer une notice</div>
+  <div id="upload-status" style="font-size:11px;text-align:center;margin-bottom:10px;min-height:16px"></div>
+  <div class="form-label">Supprimer une notice</div>
   <select id="delete-select" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:8px;outline:none;margin-bottom:8px">
     <option value="">— Sélectionner —</option>
   </select>
   <button onclick="deleteNotice()" style="width:100%;padding:9px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Supprimer</button>
-  <div id="delete-status" style="font-size:11px;text-align:center;margin-top:6px"></div>
+  <div id="delete-status" style="font-size:11px;text-align:center;margin-top:6px;min-height:16px"></div>
 </div>
+
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+// ── CONFIG ────────────────────────────────────────────────
 firebase.initializeApp({
-  apiKey: "AIzaSyCrOySPI0DB-K0BBmc8lG3Z9Jno6j5fcuY",
-  authDomain: "flaudis-notices.firebaseapp.com",
-  databaseURL: "https://flaudis-notices-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "flaudis-notices",
-  storageBucket: "flaudis-notices.firebasestorage.app",
-  messagingSenderId: "1077210292192",
-  appId: "1:1077210292192:web:d949dafeb5641b31d35585"
+  apiKey:"AIzaSyCrOySPI0DB-K0BBmc8lG3Z9Jno6j5fcuY",
+  authDomain:"flaudis-notices.firebaseapp.com",
+  databaseURL:"https://flaudis-notices-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"flaudis-notices",
+  storageBucket:"flaudis-notices.firebasestorage.app",
+  messagingSenderId:"1077210292192",
+  appId:"1:1077210292192:web:d949dafeb5641b31d35585"
 });
 const db = firebase.database();
+const GH_TOKEN = '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';
+const GH_REPO  = 'Drsly78/sav-notices';
+const GITHUB_API = 'https://api.github.com/repos/' + GH_REPO + '/contents/notices';
+const RAW_BASE   = 'https://raw.githubusercontent.com/' + GH_REPO + '/main/notices/';
+const PDF_VIEWER = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=';
+const CACHE_KEY  = 'flaudis_v5';
+const CACHE_TTL  = 3600000;
 
-const GITHUB_API = 'https://api.github.com/repos/Drsly78/sav-notices/contents/notices';
-const CACHE_KEY = 'flaudis_notices_v3';
-const GH_TOKEN  = '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';
-const GH_REPO   = 'Drsly78/sav-notices';
-const CACHE_TTL = 3600000;
+let allNotices = [], fbData = {}, searchQuery = '';
+let openPanels = new Set(), activeTabs = {};
+let localLoc = {}; // sélections emplacement en cours
 
-let allNotices = [];
-let fbData = {}; // { [key]: { loc, visserie, stock } }
-let searchQuery = '';
-let noticesReady = false;
-let fbReady = false;
-// État local des sélections en cours (avant save)
-let localState = {};
-
-// Stocker l'état des panels ouverts et onglets actifs
-let openPanels = new Set();
-let activeTabs = {};
-
-// Firebase — écoute temps réel
-// Firebase — ne pas bloquer l'affichage
-fbReady = true; // Afficher immédiatement sans attendre Firebase
+// ── FIREBASE ─────────────────────────────────────────────
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
-  if (noticesReady) renderAll();
+  if (allNotices.length) renderAll();
 });
 
-function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
-
-async function loadNotices() {
-  try {
-    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      allNotices = cached.data;
-      noticesReady = true;
-      renderAll();
-      return;
-    }
-  } catch(e) {}
+// ── GITHUB ───────────────────────────────────────────────
+async function loadNotices(force) {
+  if (!force) {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (c && Date.now() - c.ts < CACHE_TTL) { allNotices = c.data; renderAll(); return; }
+    } catch(e) {}
+  }
   try {
     const res = await fetch(GITHUB_API);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const files = await res.json();
-    allNotices = files
+    allNotices = (await res.json())
       .filter(f => f.name.toLowerCase().endsWith('.pdf'))
       .map(f => {
-        const name = f.name.replace(/\.pdf$/i, '');
+        const name = f.name.replace(/\.pdf$/i,'');
         const parts = name.split(' ');
         const ref = parts[0] || name;
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
-        const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
-        return { ref, label: label||ref, year,
-          githubUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
+        const label = (year ? parts.slice(1,-1) : parts.slice(1)).join(' ');
+        return { ref, label:label||ref, year, filename:f.name,
+          pdfUrl: PDF_VIEWER + encodeURIComponent(RAW_BASE + encodeURIComponent(f.name)),
+          rawUrl: RAW_BASE + encodeURIComponent(f.name) };
       })
       .sort((a,b) => a.ref.localeCompare(b.ref));
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
-    noticesReady = true;
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(), data:allNotices}));
     renderAll();
   } catch(e) {
     document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">⚠️</div><div class="state-title">Erreur de chargement</div><div class="state-sub">${e.message}</div></div>`;
@@ -206,316 +203,415 @@ async function loadNotices() {
   }
 }
 
-function locLabel(loc) {
-  if (!loc || !loc.allee) return null;
-  if (loc.allee === 'SOL') return 'SOL';
-  let s = 'A' + loc.allee;
-  if (loc.cote) s += ' ' + loc.cote;
-  if (loc.rack) s += ' R' + loc.rack;
-  if (loc.hauteur !== undefined && loc.hauteur !== null) s += ' H' + loc.hauteur;
+// ── UTILS ────────────────────────────────────────────────
+function K(ref) { return ref.replace(/[.#$\/\[\]]/g,'_'); }
+function hl(t,q) {
+  if (!q) return t;
+  return t.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
+}
+function locStr(loc) {
+  if (!loc?.allee) return null;
+  if (loc.allee==='SOL') return 'SOL';
+  let s='A'+loc.allee;
+  if (loc.cote) s+=' '+loc.cote;
+  if (loc.rack) s+=' R'+loc.rack;
+  if (loc.hauteur!=null) s+=' H'+loc.hauteur;
   return s;
 }
-
-function highlight(text, q) {
-  if (!q) return text;
-  return text.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark>$1</mark>');
+function feedback(btn, msg, ok) {
+  if (!btn) return;
+  btn.textContent = msg;
+  if (ok) { btn.className = btn.className.replace('btn-o','btn-g'); }
+  setTimeout(() => { btn.textContent='💾 Enregistrer'; btn.className=btn.className.replace('btn-g','btn-o'); btn.disabled=false; }, 2000);
 }
 
+// ── RENDER ───────────────────────────────────────────────
 function renderAll() {
   const q = searchQuery.trim().toLowerCase();
-  const filtered = q ? allNotices.filter(n => n.ref.toLowerCase().includes(q) || n.label.toLowerCase().includes(q)) : allNotices;
-  document.getElementById('search-hint').textContent = q ? filtered.length + ' résultat(s)' : allNotices.length + ' notices';
+  const filtered = q ? allNotices.filter(n=>n.ref.toLowerCase().includes(q)||n.label.toLowerCase().includes(q)) : allNotices;
+
+  document.getElementById('search-hint').textContent = q ? filtered.length+' résultat(s)' : allNotices.length+' notices';
   const badge = document.getElementById('count-badge');
   badge.textContent = filtered.length;
   badge.style.display = q ? 'inline' : 'none';
+
+  // Màj select admin
+  const sel = document.getElementById('delete-select');
+  if (sel) sel.innerHTML = '<option value="">— Sélectionner —</option>' +
+    allNotices.map(n=>`<option value="${n.filename}">${n.ref}${n.label&&n.label!==n.ref?' — '+n.label:''}</option>`).join('');
 
   if (!filtered.length) {
     document.getElementById('results').innerHTML = `<div class="state"><div class="state-icon">🔎</div><div class="state-title">Aucun résultat</div></div>`;
     return;
   }
 
-  // Sauvegarder panels ouverts
+  // Sauvegarder état panels
   document.querySelectorAll('.detail-panel').forEach(p => {
-    if (p.style.display === 'block') openPanels.add(p.id.replace('panel-',''));
-  });
-  document.querySelectorAll('.tab-btn.active').forEach(btn => {
-    const key = btn.closest('.detail-panel')?.id.replace('panel-','');
-    if (key) activeTabs[key] = btn.textContent.includes('Emplacement') ? 'loc' : 'inf';
+    if (p.style.display==='block') openPanels.add(p.id.replace('panel-',''));
   });
 
-  document.getElementById('results').innerHTML = filtered.map((n, i) => {
-    const key = getKey(n.ref);
+  document.getElementById('results').innerHTML = filtered.map((n,i) => {
+    const key = K(n.ref);
     const d = fbData[key] || {};
-    const loc = d.loc || {};
+    const ls = locStr(d.loc);
     const vis = d.visserie;
-    const stk = d.stock;
-    const locStr = locLabel(loc);
-    return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms" id="card-${key}">
+    return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms">
       <div class="notice-main" onclick="togglePanel('${key}')">
         <div class="notice-icon">📄</div>
         <div class="notice-info">
-          <div class="notice-ref">${highlight(n.ref, q)}</div>
-          ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
+          <div class="notice-ref">${hl(n.ref,q)}</div>
+          ${n.label&&n.label!==n.ref?`<div class="notice-name">${hl(n.label,q)}${n.year?' · '+n.year:''}</div>`:''}
         </div>
         <div class="card-badges">
-          ${locStr ? `<span class="mini-badge mb-loc">📍 ${locStr}</span>` : ''}
-          ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
-          ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
+          ${ls?`<span class="mini-badge mb-loc">📍${ls}</span>`:''}
+          ${vis===true?`<span class="mini-badge mb-vis">🔩</span>`:vis===false?`<span class="mini-badge mb-novis">🔩✗</span>`:''}
         </div>
-        <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;letter-spacing:0.3px">Notice</a>
+        <a href="${n.pdfUrl}" target="_blank" onclick="event.stopPropagation()" class="btn-notice">Notice</a>
       </div>
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
           <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
-          <button class="tab-btn" onclick="showTab('${key}','inf',this)">📦 Stock & Visserie</button>
+          <button class="tab-btn" onclick="showTab('${key}','pieces',this)">📦 Pièces</button>
+          <button class="tab-btn" onclick="showTab('${key}','inf',this)">ℹ️ Info</button>
         </div>
-        ${renderLocTab(key, loc)}
-        ${renderInfTab(key, vis, stk)}
+        <div class="tab-content active" id="tab-loc-${key}">${buildLoc(key,d.loc)}</div>
+        <div class="tab-content" id="tab-pieces-${key}">${buildPieces(key,d.pieces)}</div>
+        <div class="tab-content" id="tab-inf-${key}">${buildInf(key,d)}</div>
       </div>
     </div>`;
   }).join('');
 
-  // Restaurer panels ouverts
+  // Restaurer panels
   openPanels.forEach(key => {
-    const p = document.getElementById('panel-' + key);
+    const p = document.getElementById('panel-'+key);
     if (p) p.style.display = 'block';
-    // Restaurer onglet actif
     const tab = activeTabs[key] || 'loc';
-    const tabEl = document.getElementById('tab-' + tab + '-' + key);
-    if (tabEl) {
-      document.getElementById('tab-loc-' + key)?.classList.toggle('active', tab === 'loc');
-      document.getElementById('tab-inf-' + key)?.classList.toggle('active', tab === 'inf');
-      const tabs = p?.querySelectorAll('.tab-btn');
-      if (tabs) tabs.forEach(btn => btn.classList.toggle('active', 
-        (tab === 'loc' && btn.textContent.includes('Emplacement')) ||
-        (tab === 'inf' && btn.textContent.includes('Stock'))
-      ));
-    }
+    ['loc','pieces','inf'].forEach(t => document.getElementById('tab-'+t+'-'+key)?.classList.toggle('active', t===tab));
+    p?.querySelectorAll('.tab-btn').forEach((btn,i) => btn.classList.toggle('active', ['loc','pieces','inf'][i]===tab));
   });
 }
 
-function renderLocTab(key, loc) {
-  const ls = localState[key] || {};
-  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-  const isSol = allee === 'SOL';
-  const locStr = locLabel({ allee, cote, rack, hauteur: haut });
-
-  return `<div class="tab-content active" id="tab-loc-${key}">
-    <div class="loc-summary">${locStr ? `Emplacement : <span>${locStr}</span>` : 'Sélectionnez un emplacement'}</div>
-    <div class="loc-step">
-      <div class="loc-step-title active-step">Allée</div>
-      <div class="loc-btns">
-        ${['1','2','3','SOL'].map(v=>`<button class="loc-btn${allee===v?' sel':''}" onclick="pickLoc('${key}','allee','${v}')">${v}</button>`).join('')}
-      </div>
+// ── EMPLACEMENT ───────────────────────────────────────────
+function buildLoc(key, loc) {
+  const ls = localLoc[key] || {};
+  const al = ls.allee ?? loc?.allee ?? null;
+  const co = ls.cote  ?? loc?.cote  ?? null;
+  const ra = ls.rack  ?? loc?.rack  ?? null;
+  const ha = ls.haut  ?? (loc?.hauteur ?? null);
+  const sol = al==='SOL';
+  const sum = al ? (sol?'SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
+  return `
+    <div class="loc-summary">${sum?`<b>${sum}</b>`:'Sélectionnez un emplacement'}</div>
+    <div class="loc-step on">
+      <div class="loc-label">Allée</div>
+      <div class="loc-btns">${['1','2','3','SOL'].map(v=>`<button class="loc-btn${al===v?' sel':''}" onclick="pL('${key}','allee','${v}')">${v}</button>`).join('')}</div>
     </div>
-    <div class="loc-step" id="step-cote-${key}" style="${isSol||!allee?'opacity:0.3;pointer-events:none':''}">
-      <div class="loc-step-title${allee&&!isSol?' active-step':''}">Côté</div>
-      <div class="loc-btns">
-        ${['G','D'].map(v=>`<button class="loc-btn${cote===v?' sel':''}" onclick="pickLoc('${key}','cote','${v}')">${v}</button>`).join('')}
-      </div>
+    <div class="loc-step${!sol&&al?' on':''}">
+      <div class="loc-label">Côté</div>
+      <div class="loc-btns">${['G','D'].map(v=>`<button class="loc-btn${co===v?' sel':''}" onclick="pL('${key}','cote','${v}')">${v}</button>`).join('')}</div>
     </div>
-    <div class="loc-step" id="step-rack-${key}" style="${isSol||!cote?'opacity:0.3;pointer-events:none':''}">
-      <div class="loc-step-title${cote?' active-step':''}">Rack</div>
-      <div class="loc-btns">
-        ${[1,2,3,4,5,6,7].map(v=>`<button class="loc-btn${rack===v?' sel':''}" onclick="pickLoc('${key}','rack',${v})">${v}</button>`).join('')}
-      </div>
+    <div class="loc-step${!sol&&co?' on':''}">
+      <div class="loc-label">Rack</div>
+      <div class="loc-btns">${[1,2,3,4,5,6,7].map(v=>`<button class="loc-btn${ra===v?' sel':''}" onclick="pL('${key}','rack',${v})">${v}</button>`).join('')}</div>
     </div>
-    <div class="loc-step" id="step-haut-${key}" style="${isSol||!rack?'opacity:0.3;pointer-events:none':''}">
-      <div class="loc-step-title${rack!==null&&rack!==undefined?' active-step':''}">Hauteur</div>
-      <div class="loc-btns">
-        ${[0,1,2,3].map(v=>`<button class="loc-btn${haut===v?' sel':''}" onclick="pickLoc('${key}','haut',${v})">${v}</button>`).join('')}
-      </div>
+    <div class="loc-step${!sol&&ra!=null?' on':''}">
+      <div class="loc-label">Hauteur</div>
+      <div class="loc-btns">${[0,1,2,3].map(v=>`<button class="loc-btn${ha===v?' sel':''}" onclick="pL('${key}','haut',${v})">${v}</button>`).join('')}</div>
     </div>
-    <button class="save-btn orange" onclick="saveLoc('${key}')">💾 Enregistrer l'emplacement</button>
-  </div>`;
+    <button class="save-btn btn-o" id="sloc-${key}" onclick="saveLoc('${key}')">💾 Enregistrer</button>`;
 }
 
-function renderInfTab(key, vis, stk) {
-  const val = stk !== undefined && stk !== null ? stk : 0;
-  return `<div class="tab-content" id="tab-inf-${key}">
-    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
-    <div class="vis-row">
-      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
-      <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
-    </div>
-    <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Stock actuel</div>
-    <div class="stock-row">
-      <button class="stock-btn" onclick="adjustStock('${key}',-1)">−</button>
-      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0"/>
-      <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
-    </div>
-    <button class="save-btn orange" id="stk-save-${key}" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
-    <div style="margin-top:12px">
-      <button style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="toggleNote('${key}')">📝 Note</button>
-      <div id="note-block-${key}" style="display:none;margin-top:8px">
-        <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${fbData[key]?.note || ''}</textarea>
-        <button class="save-btn orange" style="margin-top:6px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ── INTERACTIONS ──────────────────────────────────────────
-window.togglePanel = function(key) {
-  const p = document.getElementById('panel-' + key);
-  if (!p) return;
-  const isOpen = p.style.display === 'block';
-  p.style.display = isOpen ? 'none' : 'block';
-  if (isOpen) openPanels.delete(key); else openPanels.add(key);
-};
-
-window.showTab = function(key, tab, btn) {
-  ['loc','inf'].forEach(t => {
-    const el = document.getElementById('tab-' + t + '-' + key);
-    if (el) el.classList.toggle('active', t === tab);
-  });
-  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-};
-
-window.pickLoc = function(key, field, val) {
-  if (!localState[key]) localState[key] = {};
-  // Toggle
-  if (localState[key][field] === val) { delete localState[key][field]; }
-  else { localState[key][field] = val; }
-  // Reset les étapes suivantes si on change en amont
-  if (field === 'allee') { delete localState[key].cote; delete localState[key].rack; delete localState[key].haut; }
-  if (field === 'cote')  { delete localState[key].rack; delete localState[key].haut; }
-  if (field === 'rack')  { delete localState[key].haut; }
-
-  // Re-rendre le tab emplacement
-  const d = fbData[key] || {};
-  const tabEl = document.getElementById('tab-loc-' + key);
-  if (tabEl) tabEl.outerHTML = renderLocTab(key, d.loc || {});
+window.pL = function(key, field, val) {
+  if (!localLoc[key]) localLoc[key] = {};
+  localLoc[key][field] = localLoc[key][field]===val ? null : val;
+  if (field==='allee') { delete localLoc[key].cote; delete localLoc[key].rack; delete localLoc[key].haut; }
+  if (field==='cote')  { delete localLoc[key].rack; delete localLoc[key].haut; }
+  if (field==='rack')  { delete localLoc[key].haut; }
+  const el = document.getElementById('tab-loc-'+key);
+  if (el) el.innerHTML = buildLoc(key, (fbData[key]||{}).loc);
 };
 
 window.saveLoc = async function(key) {
-  const ls = localState[key] || {};
-  const d = fbData[key] || {};
-  const loc = d.loc || {};
-  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-
-  const btn = document.querySelector(`#tab-loc-${key} .save-btn`);
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
+  const ls = localLoc[key]||{}, loc=(fbData[key]||{}).loc||{};
+  const al=ls.allee??loc.allee??null, co=ls.cote??loc.cote??null;
+  const ra=ls.rack??loc.rack??null, ha=ls.haut??(loc.hauteur??null);
+  const btn=document.getElementById('sloc-'+key);
+  if (btn){btn.textContent='⏳…';btn.disabled=true;}
   try {
-    const newLoc = {};
-    if (allee) newLoc.allee = allee;
-    if (allee !== 'SOL' && cote) newLoc.cote = cote;
-    if (allee !== 'SOL' && rack !== null) newLoc.rack = rack;
-    if (allee !== 'SOL' && haut !== null) newLoc.hauteur = haut;
-    await db.ref('produits/' + key + '/loc').set(Object.keys(newLoc).length ? newLoc : null);
-    delete localState[key];
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer l\'emplacement';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
+    const nl={};
+    if (al) nl.allee=al;
+    if (al!=='SOL'&&co) nl.cote=co;
+    if (al!=='SOL'&&ra!=null) nl.rack=ra;
+    if (al!=='SOL'&&ha!=null) nl.hauteur=ha;
+    await db.ref('produits/'+key+'/loc').set(Object.keys(nl).length?nl:null);
+    delete localLoc[key];
+    feedback(btn,'✓ Enregistré !',true);
+  } catch(e){if(btn){btn.textContent='❌';btn.disabled=false;}}
 };
 
-window.saveVis = async function(key, val) {
-  // Update visuel immédiat sans fermer le panel
-  const ouiBtn = document.getElementById('vis-oui-' + key);
-  const nonBtn = document.getElementById('vis-non-' + key);
-  if (ouiBtn) { ouiBtn.className = 'vis-btn' + (val === true ? ' sel-yes' : ''); }
-  if (nonBtn) { nonBtn.className = 'vis-btn' + (val === false ? ' sel-no' : ''); }
+// ── PIÈCES PAR CARTON ─────────────────────────────────────
+function buildPieces(key, pieces) {
+  pieces = pieces || {};
+  const pids = Object.keys(pieces);
+
+  // Trouver tous les cartons
+  const cids = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
+  const cartonIds = Array.from(cids).sort();
+
+  // Trouver le carton actif (premier avec au moins une pièce > 0)
+  const curIdx = cartonIds.findIndex(cid => pids.some(pid=>(pieces[pid].cartons?.[cid]?.qte||0)>0));
+
+  const cartonsHtml = cartonIds.map((cid, cidx) => {
+    const isCur = cidx === curIdx;
+    const piecesHtml = pids.map(pid => {
+      const p = pieces[pid];
+      const cart = p.cartons?.[cid];
+      if (!cart) return '';
+      const qte = cart.qte||0, init = cart.initial||qte;
+      const pct = init>0 ? qte/init : 0;
+      const barCls = pct>0.5?'full':pct>0?'mid':'emp';
+      const cntCls = qte===0?'tot-zero':pct<0.3?'tot-low':'tot-ok';
+      return `<div class="piece-row">
+        <span class="piece-row-name">${p.nom||pid}</span>
+        <div class="bar-wrap"><div class="bar ${barCls}" style="width:${Math.round(pct*100)}%"></div></div>
+        <span class="piece-count ${cntCls}">${qte}/${init}</span>
+        <button class="btn-pm btn-m" onclick="take('${key}','${pid}','${cid}')" ${qte===0?'disabled':''}>−</button>
+        <button class="btn-pm btn-p" onclick="add('${key}','${pid}','${cid}')">+</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="piece-block">
+      <div class="piece-hdr">
+        <span class="carton-label${isCur?' cur':''}">Carton ${cidx+1}${isCur?' ▶ En cours':''}</span>
+        <button class="carton-del" onclick="delCarton('${key}','${cid}',event)">✕ Supprimer</button>
+      </div>
+      <div class="carton-block">${piecesHtml}</div>
+    </div>`;
+  }).join('');
+
+  // Récap total par pièce
+  const recapHtml = pids.length ? `<div style="margin-top:10px;background:var(--surface2);border-radius:8px;padding:10px;font-size:12px">
+    <div style="display:flex;justify-content:space-between;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">
+      <span style="color:var(--muted)">Pièce</span>
+      <span style="color:#60a5fa;font-weight:700">× ${cartonIds.length} carton${cartonIds.length>1?'s':''} = Total</span>
+    </div>
+    ${pids.map(pid=>{
+      const p=pieces[pid];
+      const total=Object.values(p.cartons||{}).reduce((s,c)=>s+(c.qte||0),0);
+      const init=p.initial||0;
+      const col=total===0?'color:#f87171':total<init?'color:#fbbf24':'color:#4ade80';
+      return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span>${p.nom||pid}</span>
+        <span style="${col};font-weight:700">${init} × ${cartonIds.length} = ${total}</span>
+      </div>`;
+    }).join('')}
+  </div>` : '';
+
+  return `
+    ${cartonIds.length ? cartonsHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — ajoutez manuellement ou scannez</div>'}
+    <button class="btn-oc" onclick="openCarton('${key}',event)">+ Ouvrir un nouveau carton</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-sm" style="flex:1" onclick="showAdd('${key}')">+ Ajouter une pièce</button>
+      <button class="btn-sm" style="flex:1;border-color:var(--blue);color:#60a5fa" onclick="scanIA('${key}')">🤖 Scanner IA</button>
+    </div>
+    <div id="add-${key}" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div class="form-row"><div class="form-label">Nom / N° pièce</div><input class="form-input" id="ap-n-${key}" placeholder="ex: Mât principal"/></div>
+      <div class="form-2">
+        <div class="form-row" style="flex:1"><div class="form-label">Qté/carton</div><input class="form-input" type="number" id="ap-q-${key}" placeholder="8" min="1"/></div>
+        <div class="form-row" style="flex:1"><div class="form-label">Nb cartons</div><input class="form-input" type="number" id="ap-c-${key}" placeholder="3" min="1"/></div>
+      </div>
+      <button class="save-btn btn-o" onclick="addPiece('${key}')">Ajouter</button>
+    </div>
+    ${recapHtml}`;
+}
+
+window.take = async function(key,pid,cid) {
+  const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte||0;
+  if (qte<=0) return;
+  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte-1);
+};
+window.add = async function(key,pid,cid) {
+  const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte||0;
+  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte+1);
+};
+window.delCarton = async function(key,cid,e) {
+  e.stopPropagation();
+  if (!confirm('Supprimer ce carton ?')) return;
+  const pids = Object.keys((fbData[key]||{}).pieces||{});
+  const upd={};
+  pids.forEach(pid => upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cid]=null);
+  await db.ref().update(upd);
+};
+window.openCarton = async function(key,e) {
+  e.stopPropagation();
+  const pieces = (fbData[key]||{}).pieces||{};
+  const pids = Object.keys(pieces);
+  if (!pids.length){alert('Ajoutez d\'abord des pièces');return;}
+  const cids = new Set();
+  pids.forEach(pid=>Object.keys(pieces[pid].cartons||{}).forEach(cid=>cids.add(cid)));
+  const newId = 'c'+(cids.size+1);
+  const upd={};
+  pids.forEach(pid=>{const init=pieces[pid].initial||0; upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init};});
+  await db.ref().update(upd);
+};
+window.showAdd = function(key) {
+  const el=document.getElementById('add-'+key);
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+};
+window.addPiece = async function(key) {
+  const nom=document.getElementById('ap-n-'+key)?.value.trim();
+  const qte=parseInt(document.getElementById('ap-q-'+key)?.value)||0;
+  const nb=parseInt(document.getElementById('ap-c-'+key)?.value)||1;
+  if(!nom||qte<=0){alert('Remplissez le nom et la quantité');return;}
+  const pid='p'+Date.now();
+  const cartons={};
+  for(let i=1;i<=nb;i++) cartons['c'+i]={qte,initial:qte};
+  await db.ref('produits/'+key+'/pieces/'+pid).set({nom,initial:qte,cartons});
+  document.getElementById('ap-n-'+key).value='';
+  document.getElementById('ap-q-'+key).value='';
+  document.getElementById('ap-c-'+key).value='';
+};
+window.scanIA = async function(key) {
+  const n=allNotices.find(n=>K(n.ref)===key);
+  if(!n) return;
+  const btn=document.querySelector('#tab-pieces-'+key+' .btn-sm:last-child');
+  if(btn){btn.textContent='⏳ Scan…';btn.disabled=true;}
   try {
-    await db.ref('produits/' + key + '/visserie').set(val);
-  } catch(e) {}
+    const res=await fetch('https://sav-server-production.up.railway.app/scan-notice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
+      body:JSON.stringify({pdfUrl:n.rawUrl,ref:n.ref})
+    });
+    const data=await res.json();
+    if(!data.pieces?.length) throw new Error('Aucune pièce trouvée');
+    const nb=parseInt(prompt('Combien de cartons ?','1'))||1;
+    const upd={};
+    data.pieces.forEach((p,i)=>{
+      const pid='p'+Date.now()+i;
+      const cartons={};
+      for(let j=1;j<=nb;j++) cartons['c'+j]={qte:p.qte,initial:p.qte};
+      upd['produits/'+key+'/pieces/'+pid]={nom:p.nom,initial:p.qte,cartons};
+    });
+    await db.ref().update(upd);
+    if(btn){btn.textContent='✓ '+data.pieces.length+' pièces';}
+    setTimeout(()=>{if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;}},3000);
+  } catch(e){alert('Erreur: '+e.message);if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;}}
 };
 
-window.adjustStock = function(key, delta) {
-  const input = document.getElementById('stk-' + key);
-  if (!input) return;
-  input.value = Math.max(0, (parseInt(input.value) || 0) + delta);
+// ── INFO ─────────────────────────────────────────────────
+function buildInf(key, d) {
+  const vis=d.visserie, note=d.note||'', pieces=d.pieces||{};
+  const pids=Object.keys(pieces);
+  const cids=new Set();
+  pids.forEach(pid=>Object.keys(pieces[pid].cartons||{}).forEach(cid=>cids.add(cid)));
+  const nb=cids.size;
+  const recapHtml = pids.length?`
+    <div class="sec-title" style="margin-bottom:8px">Récapitulatif stock</div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">
+        <span style="color:var(--muted)">Pièce</span>
+        <span style="color:#60a5fa;font-weight:700">× ${nb} carton${nb>1?'s':''} = Total</span>
+      </div>
+      ${pids.map(pid=>{
+        const p=pieces[pid];
+        const total=Object.values(p.cartons||{}).reduce((s,c)=>s+(c.qte||0),0);
+        const init=p.initial||0;
+        const col=total===0?'#f87171':total<init?'#fbbf24':'#4ade80';
+        return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+          <span>${p.nom||pid}</span>
+          <span style="color:${col};font-weight:700">${init} × ${nb} = ${total}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+  return `
+    <div class="sec-title">Visserie disponible</div>
+    <div class="vis-row">
+      <button class="vis-btn${vis===true?' yes':''}" id="vo-${key}" onclick="sVis('${key}',true)">✅ Oui</button>
+      <button class="vis-btn${vis===false?' no':''}"  id="vn-${key}" onclick="sVis('${key}',false)">❌ Non</button>
+    </div>
+    <div class="divider"></div>
+    ${recapHtml}
+    <div class="sec-title">Note</div>
+    <textarea class="note-ta" id="note-${key}" rows="3" placeholder="Notes libres…">${note}</textarea>
+    <button class="save-btn btn-o" onclick="sNote('${key}')">💾 Enregistrer la note</button>`;
+}
+
+window.sVis = async function(key,val) {
+  const ob=document.getElementById('vo-'+key), nb=document.getElementById('vn-'+key);
+  if(ob) ob.className='vis-btn'+(val===true?' yes':'');
+  if(nb) nb.className='vis-btn'+(val===false?' no':'');
+  await db.ref('produits/'+key+'/visserie').set(val);
+};
+window.sNote = async function(key) {
+  const val=document.getElementById('note-'+key)?.value||'';
+  const btn=document.querySelector('#tab-inf-'+key+' .save-btn');
+  if(btn){btn.textContent='⏳…';btn.disabled=true;}
+  try { await db.ref('produits/'+key+'/note').set(val||null); feedback(btn,'✓ Enregistré !',true); }
+  catch(e){if(btn){btn.textContent='❌';btn.disabled=false;}}
 };
 
-window.saveStock = async function(key) {
-  const input = document.getElementById('stk-' + key);
-  const val = parseInt(input?.value) || 0;
-  const btn = document.querySelector(`#tab-stk-${key} .save-btn`);
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
-  try {
-    await db.ref('produits/' + key + '/stock').set(val);
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer le stock';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
+// ── PANEL & TABS ──────────────────────────────────────────
+window.togglePanel = function(key) {
+  const p=document.getElementById('panel-'+key);
+  if(!p) return;
+  const open=p.style.display==='block';
+  p.style.display=open?'none':'block';
+  if(open) openPanels.delete(key); else openPanels.add(key);
+};
+window.showTab = function(key,tab,btn) {
+  ['loc','pieces','inf'].forEach(t=>document.getElementById('tab-'+t+'-'+key)?.classList.toggle('active',t===tab));
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeTabs[key]=tab;
 };
 
-window.toggleNote = function(key) {
-  const block = document.getElementById('note-block-' + key);
-  if (block) block.style.display = block.style.display === 'none' ? 'block' : 'none';
+// ── ADMIN NOTICES ─────────────────────────────────────────
+window.toggleAdmin = function() {
+  const p=document.getElementById('admin-panel');
+  if(p) p.style.display=p.style.display==='none'?'block':'none';
 };
-
-window.saveNote = async function(key) {
-  const val = document.getElementById('note-' + key)?.value || '';
-  const btn = document.querySelector('#note-block-' + key + ' .save-btn');
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
-  try {
-    await db.ref('produits/' + key + '/note').set(val || null);
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer la note';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
-};
-
 window.uploadNotice = async function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const st = document.getElementById('upload-status');
-  st.textContent = '⏳ Upload…'; st.style.color = 'var(--muted)';
+  const file=input.files[0]; if(!file) return;
+  const st=document.getElementById('upload-status');
+  st.textContent='⏳ Upload…'; st.style.color='var(--muted)';
   try {
-    const b64 = await new Promise(res => {
-      const r = new FileReader();
-      r.onload = e => res(e.target.result.split(',')[1]);
-      r.readAsDataURL(file);
+    const b64=await new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.readAsDataURL(file);});
+    const resp=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/notices/'+encodeURIComponent(file.name),{
+      method:'PUT', headers:{'Authorization':'token '+GH_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({message:'Ajout '+file.name,content:b64,branch:'main'})
     });
-    const resp = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/notices/' + encodeURIComponent(file.name), {
-      method: 'PUT',
-      headers: { 'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Ajout ' + file.name, content: b64, branch: 'main' })
-    });
-    if (!resp.ok) throw new Error((await resp.json()).message);
-    st.textContent = '✓ Uploadé !'; st.style.color = '#4ade80';
+    if(!resp.ok) throw new Error((await resp.json()).message);
+    st.textContent='✓ Uploadé !'; st.style.color='#4ade80';
     localStorage.removeItem(CACHE_KEY);
-    setTimeout(() => loadNotices(true), 1500);
-  } catch(e) { st.textContent = '❌ ' + e.message; st.style.color = '#f87171'; }
-  input.value = '';
+    setTimeout(()=>loadNotices(true),1500);
+  } catch(e){st.textContent='❌ '+e.message;st.style.color='#f87171';}
+  input.value='';
 };
-
 window.deleteNotice = async function() {
-  const sel = document.getElementById('delete-select');
-  const filename = sel.value;
-  if (!filename || !confirm('Supprimer "' + filename + '" ?')) return;
-  const st = document.getElementById('delete-status');
-  st.textContent = '⏳ Suppression…'; st.style.color = 'var(--muted)';
+  const sel=document.getElementById('delete-select');
+  const fn=sel.value; if(!fn||!confirm('Supprimer "'+fn+'" ?')) return;
+  const st=document.getElementById('delete-status');
+  st.textContent='⏳…'; st.style.color='var(--muted)';
   try {
-    const r1 = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/notices/' + encodeURIComponent(filename), {
-      headers: { 'Authorization': 'token ' + GH_TOKEN }
+    const r1=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/notices/'+encodeURIComponent(fn),{headers:{'Authorization':'token '+GH_TOKEN}});
+    const d1=await r1.json();
+    const r2=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/notices/'+encodeURIComponent(fn),{
+      method:'DELETE', headers:{'Authorization':'token '+GH_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({message:'Suppression '+fn,sha:d1.sha,branch:'main'})
     });
-    const d1 = await r1.json();
-    const r2 = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/notices/' + encodeURIComponent(filename), {
-      method: 'DELETE',
-      headers: { 'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Suppression ' + filename, sha: d1.sha, branch: 'main' })
-    });
-    if (!r2.ok) throw new Error((await r2.json()).message);
-    st.textContent = '✓ Supprimé'; st.style.color = '#4ade80';
+    if(!r2.ok) throw new Error((await r2.json()).message);
+    st.textContent='✓ Supprimé'; st.style.color='#4ade80';
     localStorage.removeItem(CACHE_KEY);
-    setTimeout(() => loadNotices(true), 1500);
-  } catch(e) { st.textContent = '❌ ' + e.message; st.style.color = '#f87171'; }
+    setTimeout(()=>loadNotices(true),1500);
+  } catch(e){st.textContent='❌ '+e.message;st.style.color='#f87171';}
 };
 
+// ── SEARCH & INIT ─────────────────────────────────────────
 let t;
 document.getElementById('search').addEventListener('input', e => {
-  clearTimeout(t);
-  searchQuery = e.target.value;
-  t = setTimeout(renderAll, 100);
+  clearTimeout(t); searchQuery=e.target.value; t=setTimeout(renderAll,100);
 });
-
 loadNotices();
 </script>
 </body>
