@@ -473,9 +473,9 @@ function buildLocContent(key) {
     return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
       '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="toggleLocBloc(this.dataset.id)">'+
         '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
-        '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">▼</span>'+
+        '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">'+(slotId==='loc'?'▼':'▶')+'</span>'+
       '</div>'+
-      '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border)">'+body+'</div>'+
+      '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:'+(slotId==='loc'?'block':'none')+'">'+body+'</div>'+
     '</div>';
   }
 
