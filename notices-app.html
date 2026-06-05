@@ -294,13 +294,6 @@ function renderLocTab(key, loc) {
 
   return `<div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>
         <div class="tab-content" id="tab-inf-${key}">
-    ${recapHtml}
-    <div class="stock-label" style="margin-bottom:8px">Gestion cartons</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button onclick="removeLastCarton('${key}')" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
-      <span id="nb-cartons-${key}" style="flex:1;text-align:center;font-size:14px;font-weight:700;color:var(--text)">${(()=>{const fp=Object.values((fbData[key]||{}).pieces||{})[0];if(!fp)return'0 carton';const tc=fp.totalCartons||Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x)).length;return tc+' carton'+(tc>1?'s':'');})()}</span>
-      <button onclick="addNewCarton('${key}')" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
-    </div>
     <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
     <div class="vis-row">
       <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
@@ -533,6 +526,92 @@ window.saveLoc = async function(key, locId) {
     setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer';btn.className=btn.className.replace('btn-green','btn-orange');btn.disabled=false;} }, 2000);
   } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
 };
+
+function renderInfTab(key, vis, stk) {
+  const d = fbData[key] || {};
+  const pieces = d.pieces || {};
+  const pids = Object.keys(pieces);
+  const cids = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
+  const normalCids = Array.from(cids).filter(cid => /^c[0-9]+$/.test(cid));
+  const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
+  const recapId = 'recap-'+key;
+
+  let recapHtml = '';
+  if (pids.length) {
+    let html = '';
+    pids.forEach(pid => {
+      const p = pieces[pid];
+      if (!normalCids.length && !p.totalCartons) return;
+      const normalQte = normalCids.reduce((s,cid) => s+((p.cartons?.[cid]?.qte)||0), 0);
+      const totalC = p.totalCartons || normalCids.length;
+      const fullQte = totalC * (p.initial||0);
+      const col = normalQte===0?'#f87171':normalQte<fullQte?'#fbbf24':'#4ade80';
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
+        '<span>'+(p.nom||pid)+'</span>'+
+        '<span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+' ('+totalC+' carton'+(totalC>1?'s':'')+')</span>'+
+        '</div>';
+    });
+    if (customCids.length) {
+      const customGroups = {};
+      pids.forEach(pid => {
+        const p = pieces[pid];
+        customCids.forEach(cid => {
+          if (!p.cartons?.[cid]) return;
+          const base = cid.replace(/_[0-9]+$/,'');
+          const nomC = base.replace(/^custom_/,'').replace(/_/g,' ');
+          if (!customGroups[base]) customGroups[base] = {nom:nomC, pids:[], cids:[]};
+          if (!customGroups[base].pids.includes(pid)) customGroups[base].pids.push(pid);
+          if (!customGroups[base].cids.includes(cid)) customGroups[base].cids.push(cid);
+        });
+      });
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)">'+
+        '<div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
+      Object.values(customGroups).forEach(grp => {
+        const pid = grp.pids[0];
+        const p = pieces[pid];
+        const totalQte = grp.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
+        const totalInit = grp.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.initial)||0),0);
+        const nb = grp.cids.length;
+        const col = totalQte===0?'#f87171':totalQte<totalInit?'#fbbf24':'#4ade80';
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
+          '<span style="color:#60a5fa">'+grp.nom+'</span>'+
+          '<span style="color:'+col+';font-weight:700">'+totalQte+' / '+totalInit+' ('+nb+' carton'+(nb>1?'s':'')+')</span>'+
+          '</div>';
+      });
+      html += '</div>';
+    }
+    recapHtml = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;padding:10px 12px;cursor:pointer;background:#1e1e1e" data-id="'+recapId+'" onclick="toggleRecap(this.dataset.id)">'+
+        '<span style="font-size:12px;font-weight:700;color:var(--orange);flex:1">📊 Récapitulatif stock</span>'+
+        '<span id="arr-'+recapId+'" style="color:var(--muted);font-size:12px">▼</span>'+
+      '</div>'+
+      '<div id="'+recapId+'" style="padding:10px;font-size:12px">'+html+'</div>'+
+    '</div>';
+  }
+
+  const fp = pids.length ? pieces[pids[0]] : null;
+  const tc = fp?.totalCartons || normalCids.length;
+
+  return `<div class="tab-content" id="tab-inf-${key}">
+    ${recapHtml}
+    <div class="stock-label" style="margin-bottom:8px">Gestion cartons</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button data-key="${key}" onclick="removeLastCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
+      <span style="flex:1;text-align:center;font-size:14px;font-weight:700;color:var(--text)">${tc} carton${tc>1?'s':''}</span>
+      <button data-key="${key}" onclick="addNewCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
+    </div>
+    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
+    <div class="vis-row">
+      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
+      <button class="vis-btn${vis===false?' sel-no':''}"  id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
+    </div>
+    <div style="height:1px;background:var(--border);margin:14px 0"></div>
+    <div class="stock-label">Note</div>
+    <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${(fbData[key]||{}).note||''}</textarea>
+    <button class="save-btn btn-orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
+  </div>`;
+}
 
 window.saveVis = async function(key, val) {
   const ob = document.getElementById('vis-oui-' + key);
