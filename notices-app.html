@@ -85,15 +85,14 @@
   </div>
 </header>
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
-<div id="reassort-panel" style="display:none;padding:16px">
-  <div style="font-size:14px;font-weight:700;color:var(--orange);margin-bottom:12px">🛒 Liste de réassort</div>
-  <input id="reassort-search" placeholder="Rechercher une référence..." style="width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:12px"/>
-  <div id="reassort-list" style="margin-bottom:16px"></div>
-  <div id="reassort-selected" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;display:none">
-    <div style="font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Sélection</div>
-    <div id="reassort-items"></div>
+<div id="reassort-panel" style="display:none;padding:16px 16px 40px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:14px;font-weight:700;color:var(--orange)">🛒 Liste de réassort</div>
+    <button onclick="exportReassort()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📥 Exporter</button>
   </div>
-  <button onclick="exportReassort()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📥 Exporter Excel</button>
+  <div id="reassort-items" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun article — ajoutez depuis l'onglet Info des notices</div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -558,11 +557,10 @@ function renderInfTab(key, vis) {
       html+='</div>';
     }
     const fp=pieces[pids[0]],tc2=fp?.totalCartons||Object.keys(fp?.cartons||{}).filter(c=>/^c[0-9]+$/.test(c)).length;
-    // Compter les cartons complets (sealed OU toutes pièces à 100%)
+    // Cartons complets = sealed (jamais ouvert) seulement
     const fullCartons = Object.keys(fp?.cartons||{}).filter(cid=>{
       if(!/^c[0-9]+$/.test(cid)) return false;
-      const cart = fp.cartons[cid];
-      return cart.sealed || (cart.qte >= cart.initial && cart.initial > 0);
+      return fp.cartons[cid]?.sealed === true;
     }).length;
     const rid='recap-'+key;
     recapHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
@@ -601,6 +599,14 @@ function renderInfTab(key, vis) {
     <div class="stock-label">Note</div>
     <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${d.note||''}</textarea>
     <button class="save-btn orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
+    <div style="height:1px;background:var(--border);margin:14px 0"></div>
+    <div class="stock-label" style="margin-bottom:10px">Réassort</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,-1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
+      <input id="rq-${key}" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;padding:8px;outline:none"/>
+      <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
+    </div>
+    <button data-key="${key}" onclick="addToReassort(this.dataset.key)" style="width:100%;padding:11px;border-radius:10px;background:none;border:1.5px solid var(--orange);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter au réassort</button>
   </div>`;
 }
 
@@ -845,26 +851,6 @@ window.switchView = function(view) {
   if(view==='reassort') renderReassortList();
 };
 
-function renderReassortList() {
-  const q = (document.getElementById('reassort-search')?.value||'').toLowerCase();
-  const filtered = allNotices.filter(n=>!q||n.ref.toLowerCase().includes(q)||n.label.toLowerCase().includes(q));
-  const el = document.getElementById('reassort-list');
-  if(!el) return;
-  el.innerHTML = filtered.map(n=>{
-    const key = getKey(n.ref);
-    const qty = reassortItems[key]?.qty || 0;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div style="flex:1">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px">${n.ref}</div>
-        ${n.label&&n.label!==n.ref?`<div style="font-size:11px;color:var(--muted)">${n.label}</div>`:''}
-      </div>
-      <button onclick="adjReassort('${key}','${n.ref}',-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>
-      <input id="rqty-${key}" type="number" value="${qty}" min="0" onchange="setReassort('${key}','${n.ref}',this.value)" style="width:50px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:4px;outline:none"/>
-      <button onclick="adjReassort('${key}','${n.ref}',1)" style="width:30px;height:30px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>
-    </div>`;
-  }).join('');
-  renderReassortSelected();
-}
 
 window.adjReassort = function(key, ref, delta) {
   const inp = document.getElementById('rqty-'+key);
@@ -880,20 +866,6 @@ window.setReassort = function(key, ref, val) {
   renderReassortSelected();
 };
 
-function renderReassortSelected() {
-  const keys = Object.keys(reassortItems);
-  const panel = document.getElementById('reassort-selected');
-  const items = document.getElementById('reassort-items');
-  if(!panel||!items) return;
-  panel.style.display = keys.length ? '' : 'none';
-  items.innerHTML = keys.map(k=>{
-    const it=reassortItems[k];
-    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
-      <span style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px">${it.ref}</span>
-      <span style="font-weight:700;color:var(--orange)">${it.qty}</span>
-    </div>`;
-  }).join('');
-}
 
 window.exportReassort = function() {
   const keys = Object.keys(reassortItems);
@@ -908,6 +880,76 @@ window.exportReassort = function() {
 };
 
 document.getElementById('reassort-search')?.addEventListener('input', ()=>renderReassortList());
+
+// ── Réassort ──────────────────────────────────────────────
+
+window.switchView = function(view) {
+  currentView = view;
+  document.getElementById('results').style.display = view==='notices' ? '' : 'none';
+  document.getElementById('reassort-panel').style.display = view==='reassort' ? '' : 'none';
+  document.getElementById('nav-notices').style.background = view==='notices' ? 'var(--orange)' : 'var(--surface)';
+  document.getElementById('nav-notices').style.color = view==='notices' ? 'white' : 'var(--muted)';
+  document.getElementById('nav-reassort').style.background = view==='reassort' ? 'var(--orange)' : 'var(--surface)';
+  document.getElementById('nav-reassort').style.color = view==='reassort' ? 'white' : 'var(--muted)';
+  if(view==='reassort') renderReassortPanel();
+};
+
+function renderReassortPanel() {
+  const keys = Object.keys(reassortItems);
+  const el = document.getElementById('reassort-items');
+  if(!el) return;
+  if(!keys.length) {
+    el.innerHTML = "<div style='padding:20px;text-align:center;color:var(--muted);font-size:13px'>Aucun article — ajoutez depuis l'onglet Info</div>";
+    return;
+  }
+  el.innerHTML = keys.map(k=>{
+    const it = reassortItems[k];
+    return "<div style='display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)'>"+
+      "<div style='flex:1;font-family:Bebas Neue,sans-serif;font-size:15px;letter-spacing:1px'>"+it.ref+"</div>"+
+      "<button data-k='"+k+"' data-d='-1' onclick='adjReassortInList(this.dataset.k,Number(this.dataset.d))' style='width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:15px;font-weight:700;cursor:pointer'>−</button>"+
+      "<span style='min-width:36px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)'>"+it.qty+"</span>"+
+      "<button data-k='"+k+"' data-d='1' onclick='adjReassortInList(this.dataset.k,Number(this.dataset.d))' style='width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:15px;font-weight:700;cursor:pointer'>+</button>"+
+      "<button data-k='"+k+"' onclick='removeReassort(this.dataset.k)' style='width:28px;height:28px;border-radius:6px;border:none;background:none;color:#f87171;font-size:12px;cursor:pointer'>✕</button>"+
+    "</div>";
+  }).join('');
+}
+
+window.adjReassortQty = function(key, delta) {
+  const inp = document.getElementById('rq-'+key);
+  if(inp) inp.value = Math.max(1, (parseInt(inp.value)||1)+delta);
+};
+window.addToReassort = function(key) {
+  const inp = document.getElementById('rq-'+key);
+  const qty = Math.max(1, parseInt(inp?.value)||1);
+  const notice = allNotices.find(n=>getKey(n.ref)===key);
+  if(!notice) return;
+  if(reassortItems[key]) reassortItems[key].qty += qty;
+  else reassortItems[key] = {ref:notice.ref, qty};
+  if(inp) inp.value = 1;
+  const btn = document.querySelector('[data-key="'+key+'"][onclick*="addToReassort"]');
+  if(btn){const o=btn.textContent;btn.textContent='✓ ('+reassortItems[key].qty+' total)';setTimeout(()=>{btn.textContent=o;},2000);}
+  if(currentView==='reassort') renderReassortPanel();
+};
+window.adjReassortInList = function(key, delta) {
+  if(!reassortItems[key]) return;
+  reassortItems[key].qty = Math.max(1, reassortItems[key].qty+delta);
+  renderReassortPanel();
+};
+window.removeReassort = function(key) {
+  delete reassortItems[key];
+  renderReassortPanel();
+};
+window.exportReassort = function() {
+  const keys = Object.keys(reassortItems);
+  if(!keys.length){alert('Aucun article dans le réassort');return;}
+  let csv = 'R\u00e9f\u00e9rence;Quantit\u00e9\n';
+  csv += keys.map(k=>reassortItems[k].ref+';'+reassortItems[k].qty).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='reassort_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+};
 
 loadNotices();
 </script>
