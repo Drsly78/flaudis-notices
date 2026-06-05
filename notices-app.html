@@ -257,13 +257,18 @@ function renderAll() {
 }
 
 function renderAllSoft() {
-  const openKeys={}, openTabs={};
+  const openKeys={}, openTabs={}, openCartons={};
   document.querySelectorAll('.detail-panel').forEach(p=>{
     if(p.style.display==='block'){
       const key=p.id.replace('panel-','');
       openKeys[key]=true;
       const ab=p.querySelector('.tab-btn.active');
       if(ab) openTabs[key]=ab.textContent.includes('Emplacement')?'loc':ab.textContent.includes('Pièces')?'pieces':'inf';
+      // Sauvegarder état ouvert/fermé des cartons
+      openCartons[key]={};
+      p.querySelectorAll('[id^="cb-"]').forEach(el=>{
+        openCartons[key][el.id] = el.style.display !== 'none';
+      });
     }
   });
   renderAll();
@@ -281,6 +286,15 @@ function renderAllSoft() {
         (tab==='pieces'&&btn.textContent.includes('Pièces'))||
         (tab==='inf'&&btn.textContent.includes('Info'))
       );
+    });
+    // Restaurer état des cartons
+    const saved = openCartons[key]||{};
+    p.querySelectorAll('[id^="cb-"]').forEach(el=>{
+      const wasOpen = saved[el.id];
+      if(wasOpen === undefined) return; // nouveau carton — garder défaut
+      el.style.display = wasOpen ? '' : 'none';
+      const arr = document.getElementById('arr-'+el.id);
+      if(arr) arr.textContent = wasOpen ? '▼' : '▶';
     });
   });
 }
