@@ -246,7 +246,7 @@ function renderAll() {
   return parts.length?`<span class="mini-badge mb-loc">📍 ${parts.join(' / ')}</span>`:'';
 })()}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
-          ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
+          ${(()=>{const pieces=fbData[key]?.pieces||{};const pids=Object.keys(pieces);if(!pids.length)return'';const fp=pieces[pids[0]];const tc=fp.totalCartons||0;const oc=Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x)).length;if(!tc&&!oc)return'';const col=oc<(tc||oc)?'#fbbf24':'#4ade80';return`<span class="mini-badge" style="background:rgba(59,130,246,0.15);color:${col}">📦${oc}${tc?'/'+tc:''}</span>`;})()}
         </div>
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;letter-spacing:0.3px">Notice</a>
       </div>
@@ -438,11 +438,10 @@ document.getElementById('search').addEventListener('input', e => {
 function buildLocContent(key) {
   const d = fbData[key] || {};
   // Collecter tous les emplacements : loc, loc2, loc3...
-  const locSlots = [];
-  if (d.loc || !Object.keys(d).some(k => k.startsWith('loc'))) locSlots.push('loc');
+  // Toujours afficher au moins 'loc', puis loc2, loc3...
+  const locSlots = ['loc'];
   let i = 2;
   while (d['loc'+i] !== undefined) { locSlots.push('loc'+i); i++; }
-  if (!locSlots.length) locSlots.push('loc');
 
   function buildOneSlot(slotId, idx) {
     const loc = d[slotId] || {};
@@ -488,10 +487,16 @@ function buildLocContent(key) {
 
 window.addLocSlot = async function(key) {
   const d = fbData[key] || {};
-  // Trouver le prochain slot disponible
   let i = 2;
   while (d['loc'+i] !== undefined) i++;
-  await db.ref('produits/'+key+'/loc'+i).set({});
+  const newSlot = 'loc'+i;
+  try {
+    await db.ref('produits/'+key+'/'+newSlot).set({ allee: null });
+    console.log('Emplacement créé:', newSlot);
+  } catch(e) {
+    console.error('Erreur addLocSlot:', e);
+    alert('Erreur: ' + e.message);
+  }
 };
 
 window.saveLocSlot = function(btn) {
