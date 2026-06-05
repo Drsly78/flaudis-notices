@@ -67,7 +67,7 @@
   .loc-btn { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 52px; text-align: center; }
   .loc-btn.sel { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 8px rgba(59,130,246,0.25); }
   .loc-btn.disabled { opacity: 0.25; pointer-events: none; }
-  .loc-summary { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; min-height: 18px; }
+  .loc-summary { font-size: 14px; color: #60a5fa; text-align: center; margin-bottom: 12px; min-height: 20px; font-weight: 600; }
   .loc-summary span { color: #60a5fa; font-weight: 600; }
 
   /* SAVE BTN */
@@ -284,30 +284,76 @@ function renderAll() {
 function renderLocTab(key, loc) { return ''; }
 
 function renderInfTab(key, vis, stk) {
-  const val = stk !== undefined && stk !== null ? stk : 0;
+  const d = fbData[key] || {};
+  const pieces = d.pieces || {};
+  const pids = Object.keys(pieces);
+  const cids = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
+  const normalCids = Array.from(cids).filter(cid => /^c[0-9]+$/.test(cid));
+  const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
+  const recapId = 'recap-'+key;
+  let recapHtml = '';
+  if (pids.length) {
+    let html = '';
+    pids.forEach(pid => {
+      const p = pieces[pid];
+      const normalQte = normalCids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
+      const totalC = p.totalCartons || normalCids.length;
+      const fullQte = totalC * (p.initial||0);
+      const col = normalQte===0?'#f87171':normalQte<fullQte?'#fbbf24':'#4ade80';
+      if (!totalC && !normalCids.length) return;
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
+        '<span>'+(p.nom||pid)+'</span>'+
+        '<span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+' ('+totalC+' carton'+(totalC>1?'s':'')+')</span></div>';
+    });
+    if (customCids.length) {
+      const groups = {};
+      pids.forEach(pid => { const p=pieces[pid]; customCids.forEach(cid => {
+        if(!p.cartons?.[cid]) return;
+        const base=cid.replace(/_[0-9]+$/,''), nom=base.replace(/^custom_/,'').replace(/_/g,' ');
+        if(!groups[base]) groups[base]={nom,pids:[],cids:[]};
+        if(!groups[base].pids.includes(pid)) groups[base].pids.push(pid);
+        if(!groups[base].cids.includes(cid)) groups[base].cids.push(cid);
+      });});
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
+      Object.values(groups).forEach(g => {
+        const p=pieces[g.pids[0]];
+        const tq=g.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
+        const ti=g.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.initial)||0),0);
+        const nb=g.cids.length, col=tq===0?'#f87171':tq<ti?'#fbbf24':'#4ade80';
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
+          '<span style="color:#60a5fa">'+g.nom+'</span>'+
+          '<span style="color:'+col+';font-weight:700">'+tq+' / '+ti+' ('+nb+' carton'+(nb>1?'s':'')+')</span></div>';
+      });
+      html += '</div>';
+    }
+    const fp=pids.length?pieces[pids[0]]:null, tc=fp?.totalCartons||normalCids.length;
+    recapHtml = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
+      '<div style="display:flex;align-items:center;padding:10px 12px;cursor:pointer;background:#1e1e1e" data-id="'+recapId+'" onclick="toggleRecap(this.dataset.id)">'+
+        '<span style="font-size:12px;font-weight:700;color:var(--orange);flex:1">📊 Récapitulatif stock</span>'+
+        '<span id="arr-'+recapId+'" style="color:var(--muted);font-size:12px">▼</span>'+
+      '</div>'+
+      '<div id="'+recapId+'" style="padding:10px;font-size:12px">'+html+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
+        '<button data-key="'+key+'" onclick="removeLastCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>'+
+        '<span style="flex:1;text-align:center;font-size:14px;font-weight:700">'+tc+' carton'+(tc>1?'s':'')+'</span>'+
+        '<button data-key="'+key+'" onclick="addNewCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>'+
+      '</div>';
+  }
   return `<div class="tab-content" id="tab-inf-${key}">
+    ${recapHtml}
     <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
     <div class="vis-row">
       <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
       <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
     </div>
     <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Stock actuel</div>
-    <div class="stock-row">
-      <button class="stock-btn" onclick="adjustStock('${key}',-1)">−</button>
-      <input class="stock-input" type="number" id="stk-${key}" value="${val}" min="0"/>
-      <button class="stock-btn" onclick="adjustStock('${key}',1)">+</button>
-    </div>
-    <button class="save-btn orange" id="stk-save-${key}" onclick="saveStock('${key}')">💾 Enregistrer le stock</button>
-    <div style="margin-top:12px">
-      <button style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="toggleNote('${key}')">📝 Note</button>
-      <div id="note-block-${key}" style="display:none;margin-top:8px">
-        <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${fbData[key]?.note || ''}</textarea>
-        <button class="save-btn orange" style="margin-top:6px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-      </div>
-    </div>
+    <div class="stock-label">Note</div>
+    <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${(fbData[key]||{}).note||''}</textarea>
+    <button class="save-btn orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
   </div>`;
 }
+
 
 // ── INTERACTIONS ──────────────────────────────────────────
 window.togglePanel = function(key) {
@@ -327,45 +373,9 @@ window.showTab = function(key, tab, btn) {
   btn.classList.add('active');
 };
 
-window.pickLoc = function(key, field, val) {
-  if (!localState[key]) localState[key] = {};
-  // Toggle
-  if (localState[key][field] === val) { delete localState[key][field]; }
-  else { localState[key][field] = val; }
-  // Reset les étapes suivantes si on change en amont
-  if (field === 'allee') { delete localState[key].cote; delete localState[key].rack; delete localState[key].haut; }
-  if (field === 'cote')  { delete localState[key].rack; delete localState[key].haut; }
-  if (field === 'rack')  { delete localState[key].haut; }
+// pickLoc géré par pickLocBtn
 
-  // Re-rendre le tab emplacement
-  const d = fbData[key] || {};
-  const tabEl = document.getElementById('tab-loc-' + key);
-  if (tabEl) tabEl.outerHTML = renderLocTab(key, d.loc || {});
-};
-
-window.saveLoc = async function(key) {
-  const ls = localState[key] || {};
-  const d = fbData[key] || {};
-  const loc = d.loc || {};
-  const allee = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const cote  = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const rack  = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const haut  = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-
-  const btn = document.querySelector(`#tab-loc-${key} .save-btn`);
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
-  try {
-    const newLoc = {};
-    if (allee) newLoc.allee = allee;
-    if (allee !== 'SOL' && cote) newLoc.cote = cote;
-    if (allee !== 'SOL' && rack !== null) newLoc.rack = rack;
-    if (allee !== 'SOL' && haut !== null) newLoc.hauteur = haut;
-    await db.ref('produits/' + key + '/loc').set(Object.keys(newLoc).length ? newLoc : null);
-    delete localState[key];
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer l\'emplacement';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
-};
+// saveLoc géré par saveLocBtn
 
 window.saveVis = async function(key, val) {
   // Update visuel immédiat sans fermer le panel
