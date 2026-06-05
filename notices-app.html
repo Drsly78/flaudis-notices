@@ -239,7 +239,20 @@ function renderAll() {
           ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
         </div>
         <div class="card-badges">
-          ${(()=>{const loc=(fbData[key]||{}).loc||{};let main='';if(loc.allee){main=loc.allee==='SOL'?'SOL':'A'+loc.allee+(loc.cote?' '+loc.cote:'')+(loc.rack?' R'+loc.rack:'')+(loc.hauteur!=null?' H'+loc.hauteur:'');}const add=(fbData[key]||{}).additionalLocs||'';const all=[main,add].filter(Boolean).join(' / ');return all?`<span class="mini-badge mb-loc">📍 ${all}</span>`:'';})()}
+          ${(()=>{
+  const d2=fbData[key]||{};
+  const locs=d2.locs||(d2.loc?{loc0:d2.loc}:{});
+  const parts=Object.values(locs).map(loc=>{
+    if(!loc||!loc.allee) return null;
+    if(loc.allee==='SOL') return 'SOL';
+    let s='A'+loc.allee;
+    if(loc.cote) s+=' '+loc.cote;
+    if(loc.rack) s+=' R'+loc.rack;
+    if(loc.hauteur!=null) s+=' H'+loc.hauteur;
+    return s;
+  }).filter(Boolean);
+  return parts.length?`<span class="mini-badge mb-loc">📍 ${parts.join(' / ')}</span>`:'';
+})()}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
           ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
         </div>
@@ -468,15 +481,24 @@ function buildLocContent(key) {
   }
 
   let html = locIds.length ? locIds.map(locId => buildOneLoc(locId, locs[locId]||{})).join('') : buildOneLoc('loc0', {});
-  // Emplacements additionnels — champ texte libre
-  const addLocs = (fbData[key]||{}).additionalLocs || '';
-  html += '<div style="margin-top:10px">'+
-    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px">Emplacements supplémentaires</div>'+
-    '<input id="addloc-'+key+'" value="'+addLocs+'" placeholder="ex: A2 G R3 H1 / SOL / A1 D R5 H0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:6px"/>'+
-    '<button data-key="'+key+'" onclick="saveAddLocs(this.dataset.key)" style="width:100%;padding:9px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
-  '</div>';
+  html += '<button data-key="'+key+'" onclick="addLocBtn(this)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
   return html;
 }
+
+window.addLoc = async function(key) {
+  const d = fbData[key] || {};
+  const newId = 'loc' + Date.now();
+  if (!d.locs) {
+    // Première fois — migrer loc vers locs
+    const existing = d.loc ? { loc0: d.loc } : {};
+    existing[newId] = {};
+    await db.ref('produits/'+key+'/locs').set(existing);
+    if (d.loc) await db.ref('produits/'+key+'/loc').remove();
+  } else {
+    await db.ref('produits/'+key+'/locs/'+newId).set({});
+  }
+};
+window.addLocBtn = function(btn) { addLoc(btn.dataset.key); };
 
 window.toggleLocBloc = function(id) {
   const el = document.getElementById(id);
