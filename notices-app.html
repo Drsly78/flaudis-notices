@@ -241,16 +241,8 @@ function renderAll() {
         <div class="card-badges">
           ${(()=>{
   const d2=fbData[key]||{};
-  const locs=d2.locs||(d2.loc?{loc0:d2.loc}:{});
-  const parts=Object.values(locs).map(loc=>{
-    if(!loc||!loc.allee) return null;
-    if(loc.allee==='SOL') return 'SOL';
-    let s='A'+loc.allee;
-    if(loc.cote) s+=' '+loc.cote;
-    if(loc.rack) s+=' R'+loc.rack;
-    if(loc.hauteur!=null) s+=' H'+loc.hauteur;
-    return s;
-  }).filter(Boolean);
+  const slots=['loc',...Array.from({length:10},(_,i)=>'loc'+(i+2))].filter(s=>d2[s]);
+  const parts=slots.map(s=>{const loc=d2[s]||{};if(!loc.allee)return null;if(loc.allee==='SOL')return'SOL';let r='A'+loc.allee;if(loc.cote)r+=' '+loc.cote;if(loc.rack)r+=' R'+loc.rack;if(loc.hauteur!=null)r+=' H'+loc.hauteur;return r;}).filter(Boolean);
   return parts.length?`<span class="mini-badge mb-loc">📍 ${parts.join(' / ')}</span>`:'';
 })()}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
@@ -445,60 +437,89 @@ document.getElementById('search').addEventListener('input', e => {
 // ── EMPLACEMENT ───────────────────────────────────────────
 function buildLocContent(key) {
   const d = fbData[key] || {};
-  const locs = d.locs || (d.loc ? { loc0: d.loc } : {});
-  const locIds = Object.keys(locs).sort();
+  // Collecter tous les emplacements : loc, loc2, loc3...
+  const locSlots = [];
+  if (d.loc || !Object.keys(d).some(k => k.startsWith('loc'))) locSlots.push('loc');
+  let i = 2;
+  while (d['loc'+i] !== undefined) { locSlots.push('loc'+i); i++; }
+  if (!locSlots.length) locSlots.push('loc');
 
-  function buildOneLoc(locId, loc) {
-    const ls = ((window._locState||{})[key]||{})[locId] || {};
-    const al = ls.allee !== undefined ? ls.allee : (loc?.allee || null);
-    const co = ls.cote  !== undefined ? ls.cote  : (loc?.cote  || null);
-    const ra = ls.rack  !== undefined ? ls.rack  : (loc?.rack  || null);
-    const ha = ls.haut  !== undefined ? ls.haut  : (loc?.hauteur ?? null);
+  function buildOneSlot(slotId, idx) {
+    const loc = d[slotId] || {};
+    const ls = ((window._locState||{})[key]||{})[slotId] || {};
+    const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+    const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+    const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+    const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur ?? null);
     const sol = al === 'SOL';
-    let sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
-    function locBtn(field, val, current) {
-      const sel = current === val || (typeof current === 'number' && current === Number(val));
-      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-locid="'+locId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
+    const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
+    const label = sum || ('Emplacement '+(idx+1));
+
+    function btn(field, val, cur) {
+      const sel = cur === val || (typeof cur === 'number' && cur === Number(val));
+      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
     }
+
     const body =
-      '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
-      '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>locBtn('allee',v,al)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title'+(al&&!sol?' active-step':'')+'">Côté</div><div class="loc-btns">'+['G','D'].map(v=>locBtn('cote',v,co)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title'+(co?' active-step':'')+'">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>locBtn('rack',v,ra)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title'+(ra!=null?' active-step':'')+'">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>locBtn('haut',v,ha)).join('')+'</div></div>'+
+      '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez')+'</div>'+
+      '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>btn('allee',v,al)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>btn('cote',v,co)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>btn('rack',v,ra)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>btn('haut',v,ha)).join('')+'</div></div>'+
       '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<button class="save-btn orange" style="flex:1" data-key="'+key+'" data-locid="'+locId+'" onclick="saveLocBtn(this)">💾 Enregistrer</button>'+
-        (locIds.length > 1 ? '<button data-key="'+key+'" data-locid="'+locId+'" onclick="deleteLocBtn(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:12px">🗑</button>' : '')+
+        '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
+        (idx > 0 ? '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="deleteLocSlot(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px">🗑</button>' : '')+
       '</div>';
-    const label = sum || ('Emplacement '+(locIds.indexOf(locId)+1));
+
     return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
-      '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="loc-body-'+key+'-'+locId+'" onclick="toggleLocBloc(this.dataset.id)">'+
+      '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="toggleLocBloc(this.dataset.id)">'+
         '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
-        '<span style="color:var(--muted);font-size:12px" id="arr-loc-'+key+'-'+locId+'">▼</span>'+
+        '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">▼</span>'+
       '</div>'+
-      '<div id="loc-body-'+key+'-'+locId+'" style="padding:12px;border-top:1px solid var(--border)">'+ body +'</div>'+
+      '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border)">'+body+'</div>'+
     '</div>';
   }
 
-  let html = locIds.length ? locIds.map(locId => buildOneLoc(locId, locs[locId]||{})).join('') : buildOneLoc('loc0', {});
-  html += '<button data-key="'+key+'" onclick="addLocBtn(this)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
+  let html = locSlots.map((slotId, idx) => buildOneSlot(slotId, idx)).join('');
+  html += '<button data-key="'+key+'" onclick="addLocSlot(this.dataset.key)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
   return html;
 }
 
-window.addLoc = async function(key) {
+
+window.addLocSlot = async function(key) {
   const d = fbData[key] || {};
-  const newId = 'loc' + Date.now();
-  if (!d.locs) {
-    // Première fois — migrer loc vers locs
-    const existing = d.loc ? { loc0: d.loc } : {};
-    existing[newId] = {};
-    await db.ref('produits/'+key+'/locs').set(existing);
-    if (d.loc) await db.ref('produits/'+key+'/loc').remove();
-  } else {
-    await db.ref('produits/'+key+'/locs/'+newId).set({});
-  }
+  // Trouver le prochain slot disponible
+  let i = 2;
+  while (d['loc'+i] !== undefined) i++;
+  await db.ref('produits/'+key+'/loc'+i).set({});
 };
-window.addLocBtn = function(btn) { addLoc(btn.dataset.key); };
+
+window.saveLocSlot = function(btn) {
+  const key = btn.dataset.key, slotId = btn.dataset.slot;
+  const d = fbData[key]||{};
+  const ls = ((window._locState||{})[key]||{})[slotId]||{};
+  const loc = d[slotId]||{};
+  const al = ls.allee!==undefined?ls.allee:(loc.allee||null);
+  const co = ls.cote !==undefined?ls.cote :(loc.cote ||null);
+  const ra = ls.rack !==undefined?ls.rack :(loc.rack ||null);
+  const ha = ls.haut !==undefined?ls.haut :(loc.hauteur??null);
+  btn.textContent='⏳…'; btn.disabled=true;
+  const nl={};
+  if(al) nl.allee=al;
+  if(al!=='SOL'&&co) nl.cote=co;
+  if(al!=='SOL'&&ra!=null) nl.rack=ra;
+  if(al!=='SOL'&&ha!=null) nl.hauteur=ha;
+  db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
+    if(window._locState?.[key]) delete window._locState[key][slotId];
+    btn.textContent='✓';
+    setTimeout(()=>{btn.textContent='💾 Enregistrer';btn.disabled=false;},2000);
+  }).catch(()=>{btn.textContent='❌';btn.disabled=false;});
+};
+
+window.deleteLocSlot = function(btn) {
+  if(!confirm('Supprimer cet emplacement ?')) return;
+  db.ref('produits/'+btn.dataset.key+'/'+btn.dataset.slot).remove();
+};
 
 window.toggleLocBloc = function(id) {
   const el = document.getElementById(id);
@@ -509,12 +530,14 @@ window.toggleLocBloc = function(id) {
   if (arr) arr.textContent = open ? '▶' : '▼';
 };
 window.pickLocBtn = function(btn) {
-  const key = btn.dataset.key, locId = btn.dataset.locid||'loc0', field = btn.dataset.field;
+  const key = btn.dataset.key;
+  const slotId = btn.dataset.slot || 'loc';
+  const field = btn.dataset.field;
   const val = ['rack','haut'].includes(field) ? Number(btn.dataset.val) : btn.dataset.val;
   if (!window._locState) window._locState = {};
   if (!window._locState[key]) window._locState[key] = {};
-  if (!window._locState[key][locId]) window._locState[key][locId] = {};
-  const ls = window._locState[key][locId];
+  if (!window._locState[key][slotId]) window._locState[key][slotId] = {};
+  const ls = window._locState[key][slotId];
   ls[field] = ls[field] === val ? null : val;
   if (field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;}
   if (field==='cote'){delete ls.rack;delete ls.haut;}
@@ -522,44 +545,7 @@ window.pickLocBtn = function(btn) {
   const tabEl = document.getElementById('tab-loc-'+key);
   if (tabEl) tabEl.innerHTML = buildLocContent(key);
 };
-window.saveLocBtn = function(btn) {
-  const key = btn.dataset.key, locId = btn.dataset.locid||'loc0';
-  const d = fbData[key]||{};
-  const existingLoc = (d.locs&&d.locs[locId])||d.loc||{};
-  const ls = ((window._locState||{})[key]||{})[locId]||{};
-  const al = ls.allee!==undefined?ls.allee:(existingLoc.allee||null);
-  const co = ls.cote !==undefined?ls.cote :(existingLoc.cote ||null);
-  const ra = ls.rack !==undefined?ls.rack :(existingLoc.rack ||null);
-  const ha = ls.haut !==undefined?ls.haut :(existingLoc.hauteur??null);
-  btn.textContent='⏳…'; btn.disabled=true;
-  const nl={};
-  if(al) nl.allee=al;
-  if(al!=='SOL'&&co) nl.cote=co;
-  if(al!=='SOL'&&ra!=null) nl.rack=ra;
-  if(al!=='SOL'&&ha!=null) nl.hauteur=ha;
-  const save = d.locs ? db.ref('produits/'+key+'/locs/'+locId).set(Object.keys(nl).length?nl:null)
-    : db.ref('produits/'+key+'/locs').set({[locId]:Object.keys(nl).length?nl:null}).then(()=>d.loc?db.ref('produits/'+key+'/loc').remove():null);
-  save.then(()=>{
-    if(window._locState?.[key]) delete window._locState[key][locId];
-    btn.textContent='✓'; btn.classList.add('green'); btn.classList.remove('orange');
-    setTimeout(()=>{btn.textContent='💾 Enregistrer';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;},2000);
-  }).catch(()=>{btn.textContent='❌';btn.disabled=false;});
-};
-window.deleteLocBtn = function(btn) {
-  if(!confirm('Supprimer cet emplacement ?')) return;
-  db.ref('produits/'+btn.dataset.key+'/locs/'+btn.dataset.locid).remove();
-};
-window.addLocBtn = function(btn) {
-  const key = btn.dataset.key;
-  const d = fbData[key]||{};
-  const newId = 'loc'+Date.now();
-  if(d.loc&&!d.locs) {
-    db.ref('produits/'+key+'/locs').set({loc0:d.loc,[newId]:{}}).then(()=>db.ref('produits/'+key+'/loc').remove());
-  } else {
-    db.ref('produits/'+key+'/locs/'+newId).set({allee:null});
-  }
-};
-
+// saveLocBtn/deleteLocBtn remplacés par saveLocSlot/deleteLocSlot
 // ── PIÈCES PAR CARTON ─────────────────────────────────────
 function renderPiecesTab(key, pieces) {
   pieces = pieces || {};
