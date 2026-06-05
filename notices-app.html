@@ -479,7 +479,10 @@ function buildLocContent(key) {
     '</div>';
   }
 
-  let html = locSlots.map((slotId, idx) => buildOneSlot(slotId, idx)).join('');
+  let html = locSlots.map((slotId, idx) => {
+    const bloc = '<div id="locbloc-'+key+'-'+slotId+'">'+buildOneLocBloc(key, slotId, idx, d[slotId]||{}, locSlots.length)+'</div>';
+    return bloc;
+  }).join('');
   html += '<button data-key="'+key+'" onclick="addLocSlot(this.dataset.key)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
   return html;
 }
@@ -490,12 +493,23 @@ window.addLocSlot = async function(key) {
   let i = 2;
   while (d['loc'+i] !== undefined) i++;
   const newSlot = 'loc'+i;
-  await db.ref('produits/'+key+'/'+newSlot).set({ allee: null });
-  // Forcer rechargement immédiat du tab loc sans attendre Firebase
-  fbData[key] = fbData[key] || {};
+  // Mettre à jour fbData localement
+  if (!fbData[key]) fbData[key] = {};
   fbData[key][newSlot] = { allee: null };
+  // Ajouter le bloc dans le DOM directement
   const tabEl = document.getElementById('tab-loc-'+key);
-  if (tabEl) tabEl.innerHTML = buildLocContent(key);
+  if (tabEl) {
+    const slots = ['loc'];
+    let j = 2; while (fbData[key]['loc'+j] !== undefined) { slots.push('loc'+j); j++; }
+    const div = document.createElement('div');
+    div.id = 'locbloc-'+key+'-'+newSlot;
+    div.innerHTML = buildOneLocBloc(key, newSlot, slots.length-1, {}, slots.length);
+    const addBtn = tabEl.querySelector('button[onclick*="addLocSlot"]');
+    if (addBtn) tabEl.insertBefore(div, addBtn);
+    else tabEl.appendChild(div);
+  }
+  // Sauvegarder Firebase
+  await db.ref('produits/'+key+'/'+newSlot).set({ allee: null });
 };
 
 window.saveLocSlot = function(btn) {
@@ -830,30 +844,69 @@ window.toggleRecap = function(id) {
 function fillLocTabs() {
   document.querySelectorAll('[data-lockey]').forEach(el => {
     const key = el.dataset.lockey;
-    // Sauvegarder l'état ouvert/fermé de chaque tiroir
-    const states = {};
-    el.querySelectorAll('[id^="locbody-"]').forEach(bloc => {
-      states[bloc.id] = bloc.style.display !== 'none';
+    const d = fbData[key] || {};
+    // Trouver les slots Firebase
+    const slots = ['loc'];
+    let i = 2;
+    while (d['loc'+i] !== undefined) { slots.push('loc'+i); i++; }
+
+    // Supprimer les blocs orphelins (slot supprimé)
+    el.querySelectorAll('[id^="locbloc-"]').forEach(bloc => {
+      const slotId = bloc.id.replace('locbloc-'+key+'-','');
+      if (!slots.includes(slotId)) bloc.remove();
     });
-    const hadAny = Object.keys(states).length > 0;
-    el.innerHTML = buildLocContent(key);
-    // Restaurer l'état — si pas de state sauvegardé, garder les défauts de buildLocContent
-    if (hadAny) {
-      el.querySelectorAll('[id^="locbody-"]').forEach(bloc => {
-        const wasOpen = states[bloc.id]; // undefined = nouveau bloc
-        if (wasOpen === true) {
-          bloc.style.display = '';
-          const arr = document.getElementById(bloc.id.replace('locbody-','arrloc-'));
-          if (arr) arr.textContent = '▼';
-        } else if (wasOpen === false) {
-          bloc.style.display = 'none';
-          const arr = document.getElementById(bloc.id.replace('locbody-','arrloc-'));
-          if (arr) arr.textContent = '▶';
-        }
-        // wasOpen === undefined : nouveau bloc, garder l'état par défaut (fermé)
-      });
+
+    // Ajouter uniquement les nouveaux slots (ne pas toucher aux existants)
+    slots.forEach((slotId, idx) => {
+      if (!document.getElementById('locbloc-'+key+'-'+slotId)) {
+        // Créer le bloc pour ce slot
+        const div = document.createElement('div');
+        div.id = 'locbloc-'+key+'-'+slotId;
+        div.innerHTML = buildOneLocBloc(key, slotId, idx, d[slotId]||{}, slots.length);
+        // Insérer avant le bouton "Ajouter"
+        const addBtn = el.querySelector('button[onclick*="addLocSlot"]');
+        if (addBtn) el.insertBefore(div, addBtn);
+        else el.appendChild(div);
+      }
+    });
+
+    // Si tab-loc vide (premier chargement), tout construire
+    if (!el.querySelector('[id^="locbloc-"]')) {
+      el.innerHTML = buildLocContent(key);
     }
   });
+}
+
+function buildOneLocBloc(key, slotId, idx, loc, totalSlots) {
+  const ls = ((window._locState||{})[key]||{})[slotId] || {};
+  const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+  const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+  const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+  const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur ?? null);
+  const sol = al === 'SOL';
+  const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
+  const label = sum || ('Emplacement '+(idx+1));
+  function btn(f, v, cur) {
+    const sel = cur === v || (typeof cur === 'number' && cur === Number(v));
+    return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+f+'" data-val="'+v+'" onclick="pickLocBtn(this)">'+v+'</button>';
+  }
+  const body =
+    '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
+    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>btn('allee',v,al)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>btn('cote',v,co)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>btn('rack',v,ra)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>btn('haut',v,ha)).join('')+'</div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
+      (idx > 0 ? '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="deleteLocSlot(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px">🗑</button>' : '')+
+    '</div>';
+  return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
+    '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="toggleLocBloc(this.dataset.id)">'+
+      '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
+      '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">▶</span>'+
+    '</div>'+
+    '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:none">'+body+'</div>'+
+  '</div>';
 }
 
 loadNotices();
