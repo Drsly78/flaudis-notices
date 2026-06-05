@@ -454,25 +454,30 @@ function buildLocContent(key) {
   const sol = al === 'SOL';
   let sum = '';
   if (al) sum = sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'');
-  return `<div class="loc-summary">${sum ? '<b>'+sum+'</b>' : 'Sélectionnez un emplacement'}</div>
-    <div class="loc-step on">
-      <div class="loc-step-title">Allée</div>
-      <div class="loc-btns">${['1','2','3','SOL'].map(v=>'<button class="loc-btn'+(al===v?' sel':'')+'" onclick="pickLoc(''+key+'','allee',''+v+'')">'+v+'</button>').join('')}</div>
-    </div>
-    <div class="loc-step${!sol&&al?' on':''}">
-      <div class="loc-step-title">Côté</div>
-      <div class="loc-btns">${['G','D'].map(v=>'<button class="loc-btn'+(co===v?' sel':'')+'" onclick="pickLoc(''+key+'','cote',''+v+'')">'+v+'</button>').join('')}</div>
-    </div>
-    <div class="loc-step${!sol&&co?' on':''}">
-      <div class="loc-step-title">Rack</div>
-      <div class="loc-btns">${[1,2,3,4,5,6,7].map(v=>'<button class="loc-btn'+(ra===v?' sel':'')+'" onclick="pickLoc(''+key+'','rack','+v+')">'+v+'</button>').join('')}</div>
-    </div>
-    <div class="loc-step${!sol&&ra!=null?' on':''}">
-      <div class="loc-step-title">Hauteur</div>
-      <div class="loc-btns">${[0,1,2,3].map(v=>'<button class="loc-btn'+(ha===v?' sel':'')+'" onclick="pickLoc(''+key+'','haut','+v+')">'+v+'</button>').join('')}</div>
-    </div>
-    <button class="save-btn btn-orange" id="sloc-${key}" onclick="saveLoc('${key}')">💾 Enregistrer</button>`;
+
+  function locBtn(field, val, current) {
+    const sel = current === val || (typeof current === 'number' && current === Number(val));
+    return '<button class="loc-btn' + (sel?' sel':'') + '" data-key="'+key+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
+  }
+
+  return '<div class="loc-summary">' + (sum ? '<b>'+sum+'</b>' : 'Sélectionnez un emplacement') + '</div>' +
+    '<div class="loc-step on"><div class="loc-step-title">Allée</div><div class="loc-btns">' +
+    ['1','2','3','SOL'].map(v => locBtn('allee', v, al)).join('') + '</div></div>' +
+    '<div class="loc-step' + (!sol&&al?' on':'') + '"><div class="loc-step-title">Côté</div><div class="loc-btns">' +
+    ['G','D'].map(v => locBtn('cote', v, co)).join('') + '</div></div>' +
+    '<div class="loc-step' + (!sol&&co?' on':'') + '"><div class="loc-step-title">Rack</div><div class="loc-btns">' +
+    [1,2,3,4,5,6,7].map(v => locBtn('rack', v, ra)).join('') + '</div></div>' +
+    '<div class="loc-step' + (!sol&&ra!=null?' on':'') + '"><div class="loc-step-title">Hauteur</div><div class="loc-btns">' +
+    [0,1,2,3].map(v => locBtn('haut', v, ha)).join('') + '</div></div>' +
+    '<button class="save-btn btn-orange" id="sloc-'+key+'" onclick="saveLoc(\''+key+'\')">💾 Enregistrer</button>';
 }
+
+window.pickLocBtn = function(btn) {
+  const key = btn.dataset.key;
+  const field = btn.dataset.field;
+  const val = ['rack','haut'].includes(field) ? Number(btn.dataset.val) : btn.dataset.val;
+  pickLoc(key, field, val);
+};
 
 window.saveLoc = async function(key) {
   const d = fbData[key] || {};
