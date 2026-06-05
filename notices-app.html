@@ -273,10 +273,9 @@ function renderAll() {
         <div class="card-badges">
           ${locStr ? `<span class="mini-badge mb-loc">📍${locStr}</span>` : ''}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩✗</span>` : ''}
-          ${totalPieces > 0 ? `<span class="mini-badge mb-stock">📦${totalPieces}</span>` : ''}
           ${hasWarning ? `<span class="mini-badge mb-warn">⚠️</span>` : ''}
         </div>
-        <a href="${n.pdfUrl}" target="_blank" onclick="event.stopPropagation()" class="btn-notice">Notice</a>
+        <a href="https://github.com/Drsly78/sav-notices/blob/main/notices/${encodeURIComponent(n.filename)}" target="_blank" onclick="event.stopPropagation()" class="btn-notice">Notice</a>
       </div>
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
@@ -410,7 +409,10 @@ function buildPiecesTab(key, pieces) {
     return `<div class="piece-item" id="carton-${key}-${cid}" style="margin-bottom:8px;border:1px solid ${isCurrent?'var(--orange)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--surface2)">
       <div style="display:flex;align-items:center;padding:10px 12px;background:${isCurrent?'rgba(232,97,26,0.1)':'transparent'}">
         <span style="font-size:12px;font-weight:700;color:${isCurrent?'var(--orange)':'var(--muted)'}">Carton ${cidx+1}${isCurrent?' ▶ En cours':''}</span>
-        <span style="margin-left:auto;font-size:11px;color:var(--muted)">${pids.filter(pid => (pieces[pid].cartons?.[cid]?.qte||0) > 0).length} pièces dispo</span>
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <button onclick="closeCarton('${key}','${cid}',event)" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Fermer ce carton">✓ Fermer</button>
+          <button onclick="deleteCarton('${key}','${cid}',event)" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Supprimer ce carton">🗑</button>
+        </span>
       </div>
       <div style="padding:0 12px 10px">${cartonPieces}</div>
     </div>`;
@@ -517,6 +519,30 @@ window.saveNote = async function(key) {
 };
 
 // ── CARTONS ──────────────────────────────────────────────
+window.closeCarton = async function(key, cid, e) {
+  e.stopPropagation();
+  if (!confirm('Marquer ce carton comme fermé/vide ?')) return;
+  const d = fbData[key] || {};
+  const pieces = Object.keys(d.pieces || {});
+  const updates = {};
+  pieces.forEach(pid => {
+    updates['produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte'] = 0;
+  });
+  await db.ref().update(updates);
+};
+
+window.deleteCarton = async function(key, cid, e) {
+  e.stopPropagation();
+  if (!confirm('Supprimer définitivement ce carton ?')) return;
+  const d = fbData[key] || {};
+  const pieces = Object.keys(d.pieces || {});
+  const updates = {};
+  pieces.forEach(pid => {
+    updates['produits/' + key + '/pieces/' + pid + '/cartons/' + cid] = null;
+  });
+  await db.ref().update(updates);
+};
+
 window.openCarton = async function(key, e) {
   e.stopPropagation();
   const d = fbData[key] || {};
@@ -573,6 +599,38 @@ window.togglePanel = function(key) {
   const open = p.style.display === 'block';
   p.style.display = open ? 'none' : 'block';
   if (open) openPanels.delete(key); else openPanels.add(key);
+};
+
+window.togglePiece = function(key, pid) {
+  // Non utilisé dans la nouvelle version par carton
+};
+
+window.showAddPiece = function(key) {
+  const el = document.getElementById('add-piece-' + key);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+window.addPiece = async function(key) {
+  const nom = document.getElementById('ap-nom-' + key)?.value.trim();
+  const qte = parseInt(document.getElementById('ap-qte-' + key)?.value) || 0;
+  const nb  = parseInt(document.getElementById('ap-nb-'  + key)?.value) || 1;
+  if (!nom || qte <= 0) { alert('Remplissez le nom et la quantité par carton'); return; }
+  const pid = 'p' + Date.now();
+  const cartons = {};
+  for (let i = 1; i <= nb; i++) cartons['c' + i] = { qte, initial: qte };
+  try {
+    await db.ref('produits/' + key + '/pieces/' + pid).set({ nom, initial: qte, cartons });
+    document.getElementById('ap-nom-' + key).value = '';
+    document.getElementById('ap-qte-' + key).value = '';
+    document.getElementById('ap-nb-'  + key).value = '';
+  } catch(e) { alert('Erreur : ' + e.message); }
+};
+
+window.takePiece = async function(key, pid, cid) {
+  const d = fbData[key] || {};
+  const current = d.pieces?.[pid]?.cartons?.[cid]?.qte || 0;
+  if (current <= 0) return;
+  await db.ref('produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte').set(current - 1);
 };
 
 window.showTab = function(key, tab, btn) {
