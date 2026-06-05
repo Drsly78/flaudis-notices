@@ -548,8 +548,31 @@ window.pickLocBtn = function(btn) {
   if (field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;}
   if (field==='cote'){delete ls.rack;delete ls.haut;}
   if (field==='rack'){delete ls.haut;}
-  const tabEl = document.getElementById('tab-loc-'+key);
-  if (tabEl) tabEl.innerHTML = buildLocContent(key);
+  // Mettre à jour uniquement le CONTENU du tiroir, pas le tiroir lui-même
+  const bodyEl = document.getElementById('locbody-'+key+'-'+slotId);
+  if (!bodyEl) return;
+  const d = fbData[key] || {};
+  const locCur = d[slotId] || {};
+  const lsCur = ls;
+  const al = lsCur.allee !== undefined ? lsCur.allee : (locCur.allee || null);
+  const co = lsCur.cote  !== undefined ? lsCur.cote  : (locCur.cote  || null);
+  const ra = lsCur.rack  !== undefined ? lsCur.rack  : (locCur.rack  || null);
+  const ha = lsCur.haut  !== undefined ? lsCur.haut  : (locCur.hauteur ?? null);
+  const sol = al === 'SOL';
+  const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
+  function locBtn(f, v, cur) {
+    const sel = cur === v || (typeof cur === 'number' && cur === Number(v));
+    return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+f+'" data-val="'+v+'" onclick="pickLocBtn(this)">'+v+'</button>';
+  }
+  bodyEl.innerHTML =
+    '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
+    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>locBtn('allee',v,al)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>locBtn('cote',v,co)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>locBtn('rack',v,ra)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>locBtn('haut',v,ha)).join('')+'</div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
+    '</div>';
 };
 // saveLocBtn/deleteLocBtn remplacés par saveLocSlot/deleteLocSlot
 // ── PIÈCES PAR CARTON ─────────────────────────────────────
@@ -807,19 +830,29 @@ window.toggleRecap = function(id) {
 function fillLocTabs() {
   document.querySelectorAll('[data-lockey]').forEach(el => {
     const key = el.dataset.lockey;
-    // Sauvegarder l'état ouvert/fermé des tiroirs
-    const openBlocs = new Set();
+    // Sauvegarder l'état ouvert/fermé de chaque tiroir
+    const states = {};
     el.querySelectorAll('[id^="locbody-"]').forEach(bloc => {
-      if (bloc.style.display !== 'none') openBlocs.add(bloc.id);
+      states[bloc.id] = bloc.style.display !== 'none';
     });
+    const hadAny = Object.keys(states).length > 0;
     el.innerHTML = buildLocContent(key);
-    // Restaurer l'état
-    openBlocs.forEach(id => {
-      const bloc = document.getElementById(id);
-      const arr = document.getElementById(id.replace('locbody-','arrloc-'));
-      if (bloc) bloc.style.display = '';
-      if (arr) arr.textContent = '▼';
-    });
+    // Restaurer l'état — si pas de state sauvegardé, garder les défauts de buildLocContent
+    if (hadAny) {
+      el.querySelectorAll('[id^="locbody-"]').forEach(bloc => {
+        const wasOpen = states[bloc.id]; // undefined = nouveau bloc
+        if (wasOpen === true) {
+          bloc.style.display = '';
+          const arr = document.getElementById(bloc.id.replace('locbody-','arrloc-'));
+          if (arr) arr.textContent = '▼';
+        } else if (wasOpen === false) {
+          bloc.style.display = 'none';
+          const arr = document.getElementById(bloc.id.replace('locbody-','arrloc-'));
+          if (arr) arr.textContent = '▶';
+        }
+        // wasOpen === undefined : nouveau bloc, garder l'état par défaut (fermé)
+      });
+    }
   });
 }
 
