@@ -147,7 +147,7 @@ let activeTabs = {};
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
   fbReady = true;
-  if (noticesReady) renderAll();
+  if (noticesReady) renderAllSoft();
 });
 
 function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
@@ -241,10 +241,10 @@ function renderAll() {
         <div class="card-badges">
           ${(()=>{
   const d2=fbData[key]||{};
-  const slots=['loc',...Array.from({length:10},(_,i)=>'loc'+(i+2))].filter(s=>d2[s]);
-  const parts=slots.map(s=>{const loc=d2[s]||{};if(!loc.allee)return null;if(loc.allee==='SOL')return'SOL';let r='A'+loc.allee;if(loc.cote)r+=' '+loc.cote;if(loc.rack)r+=' R'+loc.rack;if(loc.hauteur!=null)r+=' H'+loc.hauteur;return r;}).filter(Boolean);
+  const slots=['loc']; let i=2; while(d2['loc'+i]!==undefined){slots.push('loc'+i);i++;}
+  const parts=slots.map(s=>{const l=d2[s]||{};if(!l.allee)return null;if(l.allee==='SOL')return'SOL';let r='A'+l.allee;if(l.cote)r+=' '+l.cote;if(l.rack!=null)r+=' R'+l.rack;if(l.hauteur!=null)r+=' H'+l.hauteur;return r;}).filter(Boolean);
   return parts.length?`<span class="mini-badge mb-loc">📍 ${parts.join(' / ')}</span>`:'';
-})()}
+})()}})()}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
           ${(()=>{const pieces=fbData[key]?.pieces||{};const pids=Object.keys(pieces);if(!pids.length)return'';const fp=pieces[pids[0]];const tc=fp.totalCartons||0;const oc=Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x)).length;if(!tc&&!oc)return'';const col=oc<(tc||oc)?'#fbbf24':'#4ade80';return`<span class="mini-badge" style="background:rgba(59,130,246,0.15);color:${col}">📦${oc}${tc?'/'+tc:''}</span>`;})()}
         </div>
@@ -286,309 +286,11 @@ function renderAll() {
   });
 }
 
-function renderLocTab(key, loc) { return ''; }
-
-function renderInfTab(key, vis, stk) {
-  const d = fbData[key] || {};
-  const pieces = d.pieces || {};
-  const pids = Object.keys(pieces);
-  const cids = new Set();
-  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
-  const normalCids = Array.from(cids).filter(cid => /^c[0-9]+$/.test(cid));
-  const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
-  const recapId = 'recap-'+key;
-  let recapHtml = '';
-  if (pids.length) {
-    let html = '';
-    pids.forEach(pid => {
-      const p = pieces[pid];
-      const normalQte = normalCids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
-      const totalC = p.totalCartons || normalCids.length;
-      const fullQte = totalC * (p.initial||0);
-      const col = normalQte===0?'#f87171':normalQte<fullQte?'#fbbf24':'#4ade80';
-      if (!totalC && !normalCids.length) return;
-      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
-        '<span>'+(p.nom||pid)+'</span>'+
-        '<span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+' ('+totalC+' carton'+(totalC>1?'s':'')+')</span></div>';
-    });
-    if (customCids.length) {
-      const groups = {};
-      pids.forEach(pid => { const p=pieces[pid]; customCids.forEach(cid => {
-        if(!p.cartons?.[cid]) return;
-        const base=cid.replace(/_[0-9]+$/,''), nom=base.replace(/^custom_/,'').replace(/_/g,' ');
-        if(!groups[base]) groups[base]={nom,pids:[],cids:[]};
-        if(!groups[base].pids.includes(pid)) groups[base].pids.push(pid);
-        if(!groups[base].cids.includes(cid)) groups[base].cids.push(cid);
-      });});
-      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
-      Object.values(groups).forEach(g => {
-        const p=pieces[g.pids[0]];
-        const tq=g.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
-        const ti=g.cids.reduce((s,cid)=>s+((p.cartons?.[cid]?.initial)||0),0);
-        const nb=g.cids.length, col=tq===0?'#f87171':tq<ti?'#fbbf24':'#4ade80';
-        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
-          '<span style="color:#60a5fa">'+g.nom+'</span>'+
-          '<span style="color:'+col+';font-weight:700">'+tq+' / '+ti+' ('+nb+' carton'+(nb>1?'s':'')+')</span></div>';
-      });
-      html += '</div>';
-    }
-    const fp=pids.length?pieces[pids[0]]:null, tc=fp?.totalCartons||normalCids.length;
-    recapHtml = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
-      '<div style="display:flex;align-items:center;padding:10px 12px;cursor:pointer;background:#1e1e1e" data-id="'+recapId+'" onclick="toggleRecap(this.dataset.id)">'+
-        '<span style="font-size:12px;font-weight:700;color:var(--orange);flex:1">📊 Récapitulatif stock</span>'+
-        '<span id="arr-'+recapId+'" style="color:var(--muted);font-size:12px">▼</span>'+
-      '</div>'+
-      '<div id="'+recapId+'" style="padding:10px;font-size:12px">'+html+'</div></div>'+
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
-        '<button data-key="'+key+'" onclick="removeLastCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>'+
-        '<span style="flex:1;text-align:center;font-size:14px;font-weight:700">'+tc+' carton'+(tc>1?'s':'')+'</span>'+
-        '<button data-key="'+key+'" onclick="addNewCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>'+
-      '</div>';
-  }
-  return `<div class="tab-content" id="tab-inf-${key}">
-    ${recapHtml}
-    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
-    <div class="vis-row">
-      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
-      <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
-    </div>
-    <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Note</div>
-    <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${(fbData[key]||{}).note||''}</textarea>
-    <button class="save-btn orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-  </div>`;
+function renderLocTab(key, loc) {
+  return `<div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>`;
 }
 
 
-// ── INTERACTIONS ──────────────────────────────────────────
-window.togglePanel = function(key) {
-  const p = document.getElementById('panel-' + key);
-  if (!p) return;
-  const isOpen = p.style.display === 'block';
-  p.style.display = isOpen ? 'none' : 'block';
-  if (isOpen) openPanels.delete(key); else openPanels.add(key);
-};
-
-window.showTab = function(key, tab, btn) {
-  ['loc','pieces','inf'].forEach(t => {
-    const el = document.getElementById('tab-' + t + '-' + key);
-    if (el) el.classList.toggle('active', t === tab);
-  });
-  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-};
-
-// pickLoc géré par pickLocBtn
-
-// saveLoc géré par saveLocBtn
-
-window.saveVis = async function(key, val) {
-  // Update visuel immédiat sans fermer le panel
-  const ouiBtn = document.getElementById('vis-oui-' + key);
-  const nonBtn = document.getElementById('vis-non-' + key);
-  if (ouiBtn) { ouiBtn.className = 'vis-btn' + (val === true ? ' sel-yes' : ''); }
-  if (nonBtn) { nonBtn.className = 'vis-btn' + (val === false ? ' sel-no' : ''); }
-  try {
-    await db.ref('produits/' + key + '/visserie').set(val);
-  } catch(e) {}
-};
-
-window.adjustStock = function(key, delta) {
-  const input = document.getElementById('stk-' + key);
-  if (!input) return;
-  input.value = Math.max(0, (parseInt(input.value) || 0) + delta);
-};
-
-window.saveStock = async function(key) {
-  const input = document.getElementById('stk-' + key);
-  const val = parseInt(input?.value) || 0;
-  const btn = document.querySelector(`#tab-stk-${key} .save-btn`);
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
-  try {
-    await db.ref('produits/' + key + '/stock').set(val);
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer le stock';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
-};
-
-window.toggleNote = function(key) {
-  const block = document.getElementById('note-block-' + key);
-  if (block) block.style.display = block.style.display === 'none' ? 'block' : 'none';
-};
-
-window.saveNote = async function(key) {
-  const val = document.getElementById('note-' + key)?.value || '';
-  const btn = document.querySelector('#note-block-' + key + ' .save-btn');
-  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
-  try {
-    await db.ref('produits/' + key + '/note').set(val || null);
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.classList.remove('orange'); btn.classList.add('green'); }
-    setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer la note';btn.classList.add('orange');btn.classList.remove('green');btn.disabled=false;} }, 2000);
-  } catch(e) { if(btn){btn.textContent='❌ Erreur';btn.disabled=false;} }
-};
-
-let t;
-document.getElementById('search').addEventListener('input', e => {
-  clearTimeout(t);
-  searchQuery = e.target.value;
-  t = setTimeout(renderAll, 100);
-});
-
-// ── EMPLACEMENT ───────────────────────────────────────────
-function buildLocContent(key) {
-  const d = fbData[key] || {};
-  // Collecter tous les emplacements : loc, loc2, loc3...
-  // Toujours afficher au moins 'loc', puis loc2, loc3...
-  const locSlots = ['loc'];
-  let i = 2;
-  while (d['loc'+i] !== undefined) { locSlots.push('loc'+i); i++; }
-
-  function buildOneSlot(slotId, idx) {
-    const loc = d[slotId] || {};
-    const ls = ((window._locState||{})[key]||{})[slotId] || {};
-    const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-    const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-    const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-    const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur ?? null);
-    const sol = al === 'SOL';
-    const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
-    const label = sum || ('Emplacement '+(idx+1));
-
-    function btn(field, val, cur) {
-      const sel = cur === val || (typeof cur === 'number' && cur === Number(val));
-      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
-    }
-
-    const body =
-      '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez')+'</div>'+
-      '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>btn('allee',v,al)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>btn('cote',v,co)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>btn('rack',v,ra)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>btn('haut',v,ha)).join('')+'</div></div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
-        (idx > 0 ? '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="deleteLocSlot(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px">🗑</button>' : '')+
-      '</div>';
-
-    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
-      '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="toggleLocBloc(this.dataset.id)">'+
-        '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
-        '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">'+(slotId==='loc'?'▼':'▶')+'</span>'+
-      '</div>'+
-      '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:'+(slotId==='loc'?'block':'none')+'">'+body+'</div>'+
-    '</div>';
-  }
-
-  let html = locSlots.map((slotId, idx) => {
-    return '<div id="locbloc-'+key+'-'+slotId+'">'+buildOneSlot(slotId, idx)+'</div>';
-  }).join('');
-  html += '<button id="addbtn-'+key+'" data-key="'+key+'" onclick="addLocSlot(this.dataset.key)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
-  return html;
-}
-
-
-window.addLocSlot = async function(key) {
-  const d = fbData[key] || {};
-  let i = 2;
-  while (d['loc'+i] !== undefined) i++;
-  const newSlot = 'loc'+i;
-  // Mettre à jour fbData localement
-  if (!fbData[key]) fbData[key] = {};
-  fbData[key][newSlot] = { allee: null };
-  // Ajouter le bloc dans le DOM directement
-  const tabEl = document.getElementById('tab-loc-'+key);
-  if (tabEl) {
-    const slots = ['loc'];
-    let j = 2; while (fbData[key]['loc'+j] !== undefined) { slots.push('loc'+j); j++; }
-    const div = document.createElement('div');
-    div.id = 'locbloc-'+key+'-'+newSlot;
-    div.innerHTML = buildOneLocBloc(key, newSlot, slots.length-1, {}, slots.length);
-    const addBtn = tabEl.querySelector('#addbtn-'+key);
-    if (addBtn) tabEl.insertBefore(div, addBtn);
-    else tabEl.appendChild(div);
-  }
-  // Sauvegarder Firebase
-  await db.ref('produits/'+key+'/'+newSlot).set({ allee: null });
-};
-
-window.saveLocSlot = function(btn) {
-  const key = btn.dataset.key, slotId = btn.dataset.slot;
-  const d = fbData[key]||{};
-  const ls = ((window._locState||{})[key]||{})[slotId]||{};
-  const loc = d[slotId]||{};
-  const al = ls.allee!==undefined?ls.allee:(loc.allee||null);
-  const co = ls.cote !==undefined?ls.cote :(loc.cote ||null);
-  const ra = ls.rack !==undefined?ls.rack :(loc.rack ||null);
-  const ha = ls.haut !==undefined?ls.haut :(loc.hauteur??null);
-  btn.textContent='⏳…'; btn.disabled=true;
-  const nl={};
-  if(al) nl.allee=al;
-  if(al!=='SOL'&&co) nl.cote=co;
-  if(al!=='SOL'&&ra!=null) nl.rack=ra;
-  if(al!=='SOL'&&ha!=null) nl.hauteur=ha;
-  db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
-    if(window._locState?.[key]) delete window._locState[key][slotId];
-    btn.textContent='✓';
-    setTimeout(()=>{btn.textContent='💾 Enregistrer';btn.disabled=false;},2000);
-  }).catch(()=>{btn.textContent='❌';btn.disabled=false;});
-};
-
-window.deleteLocSlot = function(btn) {
-  if(!confirm('Supprimer cet emplacement ?')) return;
-  db.ref('produits/'+btn.dataset.key+'/'+btn.dataset.slot).remove();
-};
-
-window.toggleLocBloc = function(id) {
-  const el = document.getElementById(id);
-  // Chercher l'arrow avec les deux préfixes possibles
-  const arr = document.getElementById(id.replace('locbody-','arrloc-')) ||
-              document.getElementById(id.replace('loc-body-','arr-loc-'));
-  if (!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : '';
-  if (arr) arr.textContent = open ? '▶' : '▼';
-};
-window.pickLocBtn = function(btn) {
-  const key = btn.dataset.key;
-  const slotId = btn.dataset.slot || 'loc';
-  const field = btn.dataset.field;
-  const val = ['rack','haut'].includes(field) ? Number(btn.dataset.val) : btn.dataset.val;
-  if (!window._locState) window._locState = {};
-  if (!window._locState[key]) window._locState[key] = {};
-  if (!window._locState[key][slotId]) window._locState[key][slotId] = {};
-  const ls = window._locState[key][slotId];
-  ls[field] = ls[field] === val ? null : val;
-  if (field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;}
-  if (field==='cote'){delete ls.rack;delete ls.haut;}
-  if (field==='rack'){delete ls.haut;}
-  // Mettre à jour uniquement le CONTENU du tiroir, pas le tiroir lui-même
-  const bodyEl = document.getElementById('locbody-'+key+'-'+slotId);
-  if (!bodyEl) return;
-  const d = fbData[key] || {};
-  const locCur = d[slotId] || {};
-  const lsCur = ls;
-  const al = lsCur.allee !== undefined ? lsCur.allee : (locCur.allee || null);
-  const co = lsCur.cote  !== undefined ? lsCur.cote  : (locCur.cote  || null);
-  const ra = lsCur.rack  !== undefined ? lsCur.rack  : (locCur.rack  || null);
-  const ha = lsCur.haut  !== undefined ? lsCur.haut  : (locCur.hauteur ?? null);
-  const sol = al === 'SOL';
-  const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
-  function locBtn(f, v, cur) {
-    const sel = cur === v || (typeof cur === 'number' && cur === Number(v));
-    return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+f+'" data-val="'+v+'" onclick="pickLocBtn(this)">'+v+'</button>';
-  }
-  bodyEl.innerHTML =
-    '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
-    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>locBtn('allee',v,al)).join('')+'</div></div>'+
-    '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>locBtn('cote',v,co)).join('')+'</div></div>'+
-    '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>locBtn('rack',v,ra)).join('')+'</div></div>'+
-    '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>locBtn('haut',v,ha)).join('')+'</div></div>'+
-    '<div style="display:flex;gap:8px;margin-top:8px">'+
-      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
-    '</div>';
-};
-// saveLocBtn/deleteLocBtn remplacés par saveLocSlot/deleteLocSlot
-// ── PIÈCES PAR CARTON ─────────────────────────────────────
 function renderPiecesTab(key, pieces) {
   pieces = pieces || {};
   const pids = Object.keys(pieces).sort((a,b) => {
@@ -630,7 +332,7 @@ function renderPiecesTab(key, pieces) {
       <div style="display:flex;align-items:center;padding:9px 12px;background:${isCur?'rgba(232,97,26,0.1)':''};cursor:pointer" onclick="toggleCartonBody('${cartonId}')">
         <span style="font-size:12px;font-weight:700;color:${isCur?'var(--orange)':isCustom?'#4ade80':'var(--muted)'}">
           ${isCustom?'📦 ':''}{cartonLabel}${isCur?' ▶ En cours':''}
-          ${!isCustom&&totalCartonsInfo>1?' <span style="font-size:10px;color:var(--muted);font-weight:400">('+cidx+'/'+totalCartonsInfo+')</span>':''}
+          ${!isCustom&&totalCartonsInfo>1?' <span style="font-size:10px;color:var(--muted);font-weight:400">('+(cidx+1)+'/'+totalCartonsInfo+')</span>':''}
         </span>
         <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
           <span id="arr-${cartonId}" style="color:var(--muted);font-size:12px">${isOpen?'▼':'▶'}</span>
@@ -840,69 +542,224 @@ window.toggleRecap = function(id) {
 };
 
 // Remplir les tabs loc après render
-function buildOneLocBloc(key, d, slotId, idx, totalSlots) {
-    const loc = d[slotId] || {};
-    const ls = ((window._locState||{})[key]||{})[slotId] || {};
-    const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-    const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-    const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-    const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur ?? null);
-    const sol = al === 'SOL';
-    const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
-    const label = sum || ('Emplacement '+(idx+1));
 
-    function btn(field, val, cur) {
-      const sel = cur === val || (typeof cur === 'number' && cur === Number(val));
-      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
-    }
+// ── EMPLACEMENT ───────────────────────────────────────────
+// Chaque slot = loc, loc2, loc3...
+// Chaque tiroir est indépendant — s'ouvre/ferme/sauvegarde sans toucher aux autres
 
-    const body =
-      '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez')+'</div>'+
-      '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>btn('allee',v,al)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>btn('cote',v,co)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>btn('rack',v,ra)).join('')+'</div></div>'+
-      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>btn('haut',v,ha)).join('')+'</div></div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
-        (idx > 0 ? '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="deleteLocSlot(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px">🗑</button>' : '')+
-      '</div>';
+function locSummary(loc) {
+  if (!loc || !loc.allee) return '';
+  if (loc.allee === 'SOL') return 'SOL';
+  let s = 'A' + loc.allee;
+  if (loc.cote) s += ' ' + loc.cote;
+  if (loc.rack != null) s += ' R' + loc.rack;
+  if (loc.hauteur != null) s += ' H' + loc.hauteur;
+  return s;
+}
 
-    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
-      '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="toggleLocBloc(this.dataset.id)">'+
-        '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
-        '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">'+(slotId==='loc'?'▼':'▶')+'</span>'+
-      '</div>'+
-      '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:'+(slotId==='loc'?'block':'none')+'">'+body+'</div>'+
-    '</div>';
+function buildLocTab(key) {
+  const d = fbData[key] || {};
+  const slots = ['loc'];
+  let i = 2; while (d['loc'+i] !== undefined) { slots.push('loc'+i); i++; }
+
+  let html = slots.map((slotId, idx) => buildLocBloc(key, slotId, idx, d[slotId]||{})).join('');
+  html += '<button id="addbtn-'+key+'" data-key="'+key+'" onclick="locAddSlot(this.dataset.key)" '
+        + 'style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);'
+        + 'border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;'
+        + 'font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
+  return html;
+}
+
+function buildLocBloc(key, slotId, idx, loc) {
+  const ls = ((window._locState||{})[key]||{})[slotId] || {};
+  const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+  const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+  const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+  const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur ?? null);
+  const sol = al === 'SOL';
+  const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
+  const label = sum || ('Emplacement '+(idx+1));
+
+  function btn(f, v, cur) {
+    const sel = cur === v || (typeof cur === 'number' && cur === Number(v));
+    return '<button class="loc-btn'+(sel?' sel':'')+'" '
+      + 'data-key="'+key+'" data-slot="'+slotId+'" data-field="'+f+'" data-val="'+v+'" '
+      + 'onclick="locPickBtn(this)">'+v+'</button>';
   }
+
+  const body =
+    '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
+    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div>'+
+    '<div class="loc-btns">'+['1','2','3','SOL'].map(v=>btn('allee',v,al)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div>'+
+    '<div class="loc-btns">'+['G','D'].map(v=>btn('cote',v,co)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div>'+
+    '<div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>btn('rack',v,ra)).join('')+'</div></div>'+
+    '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div>'+
+    '<div class="loc-btns">'+[0,1,2,3].map(v=>btn('haut',v,ha)).join('')+'</div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" '+
+      'style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);'+
+      'color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">'+
+      '💾 Enregistrer</button>'+
+      (idx>0?'<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDelete(this)" '+
+      'style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);'+
+      'background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">🗑</button>':'')+
+    '</div>';
+
+  // Emplacement 1 ouvert par défaut, les autres fermés
+  const open = slotId === 'loc';
+  return '<div id="locbloc-'+key+'-'+slotId+'" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
+    '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" '+
+    'data-id="locbody-'+key+'-'+slotId+'" onclick="locToggle(this.dataset.id)">'+
+      '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
+      '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">'+(open?'▼':'▶')+'</span>'+
+    '</div>'+
+    '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:'+(open?'block':'none')+'">'+body+'</div>'+
+  '</div>';
+}
+
+window.locToggle = function(id) {
+  const el = document.getElementById(id);
+  const arr = document.getElementById(id.replace('locbody-','arrloc-'));
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : '';
+  if (arr) arr.textContent = open ? '▶' : '▼';
+};
+
+window.locPickBtn = function(btn) {
+  const key = btn.dataset.key, slotId = btn.dataset.slot, field = btn.dataset.field;
+  const val = ['rack','haut'].includes(field) ? Number(btn.dataset.val) : btn.dataset.val;
+  if (!window._locState) window._locState = {};
+  if (!window._locState[key]) window._locState[key] = {};
+  if (!window._locState[key][slotId]) window._locState[key][slotId] = {};
+  const ls = window._locState[key][slotId];
+  ls[field] = ls[field] === val ? null : val;
+  if (field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;}
+  if (field==='cote'){delete ls.rack;delete ls.haut;}
+  if (field==='rack'){delete ls.haut;}
+  // Mettre à jour UNIQUEMENT le contenu du tiroir ouvert
+  const bodyEl = document.getElementById('locbody-'+key+'-'+slotId);
+  if (!bodyEl) return;
+  const d = fbData[key] || {};
+  // Remplacer innerHTML du body avec le nouveau buildLocBloc partiel
+  const tmpDiv = document.createElement('div');
+  tmpDiv.innerHTML = buildLocBloc(key, slotId, Object.keys(d).filter(k=>k==='loc'||k.startsWith('loc')).indexOf(slotId), d[slotId]||{});
+  const newBody = tmpDiv.querySelector('[id="locbody-'+key+'-'+slotId+'"]');
+  if (newBody) bodyEl.innerHTML = newBody.innerHTML;
+};
+
+window.locSave = function(btn) {
+  const key = btn.dataset.key, slotId = btn.dataset.slot;
+  const d = fbData[key]||{}, loc = d[slotId]||{};
+  const ls = ((window._locState||{})[key]||{})[slotId]||{};
+  const al = ls.allee!==undefined?ls.allee:(loc.allee||null);
+  const co = ls.cote !==undefined?ls.cote :(loc.cote ||null);
+  const ra = ls.rack !==undefined?ls.rack :(loc.rack ||null);
+  const ha = ls.haut !==undefined?ls.haut :(loc.hauteur??null);
+  btn.textContent='⏳…'; btn.disabled=true;
+  const nl={};
+  if(al) nl.allee=al;
+  if(al!=='SOL'&&co) nl.cote=co;
+  if(al!=='SOL'&&ra!=null) nl.rack=ra;
+  if(al!=='SOL'&&ha!=null) nl.hauteur=ha;
+  db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
+    if(window._locState?.[key]) delete window._locState[key][slotId];
+    btn.textContent='✓';
+    setTimeout(()=>{btn.textContent='💾 Enregistrer';btn.disabled=false;},2000);
+  }).catch(()=>{btn.textContent='❌';btn.disabled=false;});
+};
+
+window.locDelete = function(btn) {
+  if(!confirm('Supprimer cet emplacement ?')) return;
+  const key = btn.dataset.key, slotId = btn.dataset.slot;
+  db.ref('produits/'+key+'/'+slotId).remove().then(()=>{
+    const bloc = document.getElementById('locbloc-'+key+'-'+slotId);
+    if (bloc) bloc.remove();
+  });
+};
+
+window.locAddSlot = function(key) {
+  const d = fbData[key] || {};
+  let i = 2; while (d['loc'+i] !== undefined) i++;
+  const newSlot = 'loc'+i;
+  if (!fbData[key]) fbData[key] = {};
+  fbData[key][newSlot] = {};
+  // Insérer le nouveau bloc avant le bouton ajouter
+  const tabEl = document.getElementById('tab-loc-'+key);
+  const addBtn = document.getElementById('addbtn-'+key);
+  if (!tabEl || !addBtn) return;
+  const div = document.createElement('div');
+  div.innerHTML = buildLocBloc(key, newSlot, i-1, {});
+  tabEl.insertBefore(div.firstElementChild, addBtn);
+  // Sauvegarder Firebase
+  db.ref('produits/'+key+'/'+newSlot).set({});
+};
 
 function fillLocTabs() {
   document.querySelectorAll('[data-lockey]').forEach(el => {
     const key = el.dataset.lockey;
-    const d = fbData[key] || {};
-    const slots = ['loc'];
-    let i = 2; while (d['loc'+i] !== undefined) { slots.push('loc'+i); i++; }
-
-    // Premier chargement — construire tout
+    // Ne remplir que si vide
     if (!el.querySelector('[id^="locbloc-"]')) {
-      el.innerHTML = buildLocContent(key);
-      return;
+      el.innerHTML = buildLocTab(key);
     }
-
-    // Supprimer slots supprimés
-    el.querySelectorAll('[id^="locbloc-"]').forEach(b => {
-      if (!slots.includes(b.id.replace('locbloc-'+key+'-',''))) b.remove();
+    // Ajouter les slots Firebase manquants dans le DOM
+    const d = fbData[key] || {};
+    const slots = ['loc']; let i=2;
+    while (d['loc'+i]!==undefined){slots.push('loc'+i);i++;}
+    slots.forEach((slotId,idx) => {
+      if (!document.getElementById('locbloc-'+key+'-'+slotId)) {
+        const addBtn = document.getElementById('addbtn-'+key);
+        const div = document.createElement('div');
+        div.innerHTML = buildLocBloc(key, slotId, idx, d[slotId]||{});
+        if (addBtn) el.insertBefore(div.firstElementChild, addBtn);
+        else el.appendChild(div.firstElementChild);
+      }
     });
+    // Supprimer blocs orphelins
+    el.querySelectorAll('[id^="locbloc-"]').forEach(b => {
+      const sid = b.id.replace('locbloc-'+key+'-','');
+      if (!slots.includes(sid)) b.remove();
+    });
+  });
+}
 
-    // Ajouter nouveaux slots sans toucher aux existants
-    slots.forEach((slotId, idx) => {
-      if (document.getElementById('locbloc-'+key+'-'+slotId)) return;
-      const div = document.createElement('div');
-      div.id = 'locbloc-'+key+'-'+slotId;
-      div.innerHTML = buildOneLocBloc(key, d, slotId, idx, slots.length);
-      const addBtn = el.querySelector('#addbtn-'+key);
-      if (addBtn) el.insertBefore(div, addBtn);
-      else el.appendChild(div);
+function renderAllSoft() {
+  // Sauvegarder état
+  const openPanels = new Set();
+  const openTabs = {};
+  document.querySelectorAll('.detail-panel').forEach(p => {
+    if (p.style.display === 'block') {
+      const key = p.id.replace('panel-','');
+      openPanels.add(key);
+      const activeBtn = p.querySelector('.tab-btn.active');
+      if (activeBtn) {
+        if (activeBtn.textContent.includes('Emplacement')) openTabs[key] = 'loc';
+        else if (activeBtn.textContent.includes('Pièces')) openTabs[key] = 'pieces';
+        else openTabs[key] = 'inf';
+      }
+    }
+  });
+
+  renderAll();
+
+  // Restaurer
+  openPanels.forEach(key => {
+    const p = document.getElementById('panel-'+key);
+    if (!p) return;
+    p.style.display = 'block';
+    const tab = openTabs[key] || 'loc';
+    ['loc','pieces','inf'].forEach(t => {
+      const el = document.getElementById('tab-'+t+'-'+key);
+      if (el) el.classList.toggle('active', t===tab);
+    });
+    p.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active',
+        (tab==='loc' && btn.textContent.includes('Emplacement')) ||
+        (tab==='pieces' && btn.textContent.includes('Pièces')) ||
+        (tab==='inf' && btn.textContent.includes('Info'))
+      );
     });
   });
 }
