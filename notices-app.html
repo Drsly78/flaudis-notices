@@ -329,25 +329,36 @@ function renderInfTab(key, vis, stk) {
   const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
   const nbNormal = normalCids.length;
 
-  const recapHtml = pids.length ? `
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--muted);margin-bottom:8px">Récapitulatif stock</div>
-    <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px">
-      ${pids.filter(pid => !pieces[pid].nom?.startsWith('custom_') && Object.keys(pieces[pid].cartons||{}).some(cid => !cid.startsWith('custom_'))).map(pid => {
+  const recapHtml = pids.length ? (function() {
+    const normalCids = Array.from(cids).filter(cid => !cid.startsWith('custom_'));
+    const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
+    let html = '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--muted);margin-bottom:8px">Récapitulatif stock</div>';
+    html += '<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px">';
+    pids.forEach(pid => {
+      const p = pieces[pid];
+      if (normalCids.length === 0) return;
+      const normalQte = normalCids.reduce((s,cid) => s + ((p.cartons?.[cid]?.qte)||0), 0);
+      const fullQte = normalCids.reduce((s,cid) => s + ((p.cartons?.[cid]?.initial)||0), 0);
+      const col = normalQte===0?'#f87171':normalQte<fullQte?'#fbbf24':'#4ade80';
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>' + (p.nom||pid) + '</span><span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+'</span></div>';
+    });
+    if (customCids.length) {
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#4ade80;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
+      pids.forEach(pid => {
         const p = pieces[pid];
-        const normalQte = normalCids.reduce((s,cid) => s + ((p.cartons?.[cid]?.qte)||0), 0);
-        const col = normalQte===0?'#f87171':normalQte<p.initial?'#fbbf24':'#4ade80';
-        return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">' +
-          '<span>' + (p.nom||pid) + '</span>' +
-          '<span style="color:'+col+';font-weight:700">Total cartons : ' + normalQte + '</span>' +
-          '</div>';
-      }).join('')}
-      ${customCids.length ? '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);color:#4ade80;font-size:11px">+ Suppléments : ' +
-        customCids.map(cid => {
-          const nom = cid.replace('custom_','').replace(/_\d+$/,'').replace(/_/g,' ');
-          const total = pids.reduce((s,pid) => s + ((pieces[pid].cartons?.[cid]?.qte)||0), 0);
-          return nom + ' (' + total + ')';
-        }).join(', ') + '</div>' : ''}
-    </div>` : '';
+        customCids.forEach(cid => {
+          const cart = p.cartons?.[cid];
+          if (!cart) return;
+          const nomC = cid.replace('custom_','').replace(/_[0-9]+_[0-9]+$/,'').replace(/_[0-9]+$/,'').replace(/_/g,' ');
+          const col = cart.qte===0?'#f87171':cart.qte<cart.initial?'#fbbf24':'#4ade80';
+          html += '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px"><span style="color:var(--muted)">'+nomC+' ('+p.nom+')</span><span style="color:'+col+';font-weight:700">'+cart.qte+' / '+cart.initial+'</span></div>';
+        });
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  })() : '';
   return `<div class="tab-content" id="tab-inf-${key}">
     ${recapHtml}
     <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
@@ -414,18 +425,10 @@ function renderPiecesTab(key, pieces) {
       <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Nouveau carton</button>
       <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton perso</button>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button onclick="showAddPiece('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid #a855f7;background:rgba(168,85,247,0.1);color:#c084fc;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter une pièce</button>
-      <button onclick="scanNotice('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🤖 Scanner IA</button>
+    <div style="margin-top:8px">
+      <button onclick="scanNotice('${key}')" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform 0.1s">🤖 Scanner IA</button>
     </div>
-    <div id="add-piece-${key}" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px">
-      <div style="margin-bottom:8px"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Nom / N° pièce</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" id="ap-nom-${key}" placeholder="ex: Mât principal"/></div>
-      <div style="margin-bottom:8px">
-        <div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Qté initiale par carton</div>
-        <input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" type="number" id="ap-qte-${key}" placeholder="8" min="1"/>
-      </div>
-      <button style="width:100%;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;background:var(--orange);color:white" onclick="addPiece('${key}')">Ajouter</button>
-    </div>
+
   </div>`;
 }
 
@@ -618,15 +621,52 @@ window.toggleCartonBody = function(id) {
 
 window.openCartonCustom = async function(key, e) {
   e.stopPropagation();
-  const nom = prompt('Nom du carton personnalisé (ex: Pièce A seule, Visserie, etc.)');
-  if (!nom) return;
-  const newId = 'custom_' + nom.trim().replace(/[^a-zA-Z0-9]/g,'_').toLowerCase() + '_' + Date.now();
-  // Carton personnalisé = une nouvelle pièce dédiée avec ce nom
-  const qteStr = prompt('Quantité dans ce carton ?', '8');
-  const qte = parseInt(qteStr) || 0;
-  if (qte <= 0) return;
-  const pid = 'p'+Date.now();
-  await db.ref('produits/'+key+'/pieces/'+pid).set({nom, initial:qte, cartons:{[newId]:{qte, initial:qte}}});
+  const pieces = (fbData[key]||{}).pieces || {};
+  const pids = Object.keys(pieces);
+
+  // 1. Nom du carton
+  const nomCarton = prompt('Nom du carton personnalisé (ex: Pièce A seule, Visserie) :');
+  if (!nomCarton) return;
+
+  // 2. Nb cartons identiques
+  const nbStr = prompt('Combien de cartons identiques de ce type ?', '1');
+  const nb = parseInt(nbStr)||1;
+
+  // 3. Quelle pièce ? Liste des pièces existantes
+  let pieceNom, pieceQte, pid;
+  if (pids.length > 0) {
+    const liste = pids.map((pid,i) => (i+1)+'. '+pieces[pid].nom).join(' | ');
+    const choixStr = prompt('Quelle pièce est dans ce carton ? ' + liste + ' (entrez le numéro) :');
+    const choix = parseInt(choixStr)-1;
+    if (choix >= 0 && choix < pids.length) {
+      pid = pids[choix];
+      pieceNom = pieces[pid].nom;
+      const qteStr = prompt('Quantité de cette pièce par carton ?', pieces[pid].initial||'8');
+      pieceQte = parseInt(qteStr)||0;
+      if (pieceQte <= 0) return;
+      // Ajouter les cartons custom à la pièce existante
+      const upd = {};
+      for (let i=1; i<=nb; i++) {
+        const cid = 'custom_'+nomCarton.trim().replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()+'_'+Date.now()+'_'+i;
+        upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cid] = { qte: pieceQte, initial: pieceQte };
+      }
+      await db.ref().update(upd);
+    } else {
+      alert('Choix invalide'); return;
+    }
+  } else {
+    // Pas de pièces — créer une pièce dédiée
+    const qteStr = prompt('Quantité dans ce carton ?', '8');
+    pieceQte = parseInt(qteStr)||0;
+    if (pieceQte <= 0) return;
+    const newPid = 'p'+Date.now();
+    const cartons = {};
+    for (let i=1; i<=nb; i++) {
+      const cid = 'custom_'+nomCarton.trim().replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()+'_'+Date.now()+'_'+i;
+      cartons[cid] = { qte: pieceQte, initial: pieceQte };
+    }
+    await db.ref('produits/'+key+'/pieces/'+newPid).set({ nom: nomCarton, initial: pieceQte, cartons });
+  }
 };
 
 window.scanNotice = async function(key) {
@@ -642,28 +682,31 @@ window.scanNotice = async function(key) {
     const data = await res.json();
     if (!data.pieces?.length) throw new Error('Aucune pièce trouvée');
 
-    // Vérifier les pièces existantes pour éviter les doublons
+    // Pièces existantes — on ne supprime rien, on peut rescanner
     const existingPieces = (fbData[key]||{}).pieces || {};
     const existingNoms = Object.values(existingPieces).map(p => (p.nom||'').toLowerCase().trim());
-
     const newPieces = data.pieces.filter(p => !existingNoms.includes((p.nom||'').toLowerCase().trim()));
-    
+
     if (!newPieces.length) {
-      if (btn) { btn.textContent='✓ Déjà scanné'; btn.style.transform=''; }
+      if (btn) { btn.textContent='✓ Déjà à jour'; btn.style.transform=''; }
       setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },2000);
       return;
     }
 
-    const nb = parseInt(prompt('Combien de cartons standard ?','1'))||1;
+    const nb = parseInt(prompt('Combien de cartons au total ?','1'))||1;
     const upd = {};
     newPieces.forEach((p,i) => {
-      const pid='p'+Date.now()+i;
-      const cartons={};
-      for (let j=1;j<=nb;j++) cartons['c'+j]={qte:p.qte,initial:p.qte};
-      upd['produits/'+key+'/pieces/'+pid]={nom:p.nom,initial:p.qte,cartons};
+      const pid = 'p'+Date.now()+i;
+      // Carton 1 = en cours (ouvert), autres = en stock (fermé = qte à jour mais pas encore entamé)
+      const cartons = {};
+      cartons['c1'] = { qte: p.qte, initial: p.qte }; // Carton actif
+      for (let j=2; j<=nb; j++) {
+        cartons['c'+j] = { qte: p.qte, initial: p.qte, stock: true }; // En stock
+      }
+      upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, totalCartons: nb, cartons };
     });
     await db.ref().update(upd);
-    if (btn) { btn.textContent='✓ '+newPieces.length+' pièces'; btn.style.transform=''; }
+    if (btn) { btn.textContent='✓ '+newPieces.length+' pièces / '+nb+' cartons'; btn.style.transform=''; }
     setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },3000);
   } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.style.transform='';btn.disabled=false;} }
 };
