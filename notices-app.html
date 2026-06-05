@@ -433,7 +433,13 @@ function renderPiecesTab(key, pieces) {
   const pids=sortPids(pieces);
   const cids=new Set();
   pids.forEach(pid=>Object.keys(pieces[pid].cartons||{}).forEach(cid=>cids.add(cid)));
-  const cartonIds=Array.from(cids).sort();
+  // Ne pas afficher les cartons sealed (en réserve) dans l'onglet Pièces
+  const cartonIds=Array.from(cids).filter(cid=>{
+    if(!cid.startsWith('custom_') && /^c[0-9]+$/.test(cid)){
+      return !pids.some(pid=>pieces[pid].cartons?.[cid]?.sealed);
+    }
+    return true;
+  }).sort();
   // curIdx = premier carton non sealed avec des pièces
   const curIdx=cartonIds.findIndex(cid=>
     !pids.some(pid=>pieces[pid].cartons?.[cid]?.sealed) &&
@@ -503,10 +509,10 @@ function renderInfTab(key, vis) {
     let html='';
     pids.forEach(pid=>{
       const p=pieces[pid];
-      // Stock réel = somme des qte de TOUS les cartons normaux (ouverts + sealed)
       const allCids = Object.keys(p.cartons||{}).filter(cid=>/^c[0-9]+$/.test(cid));
+      // Total pièces = tous les cartons (ouverts + sealed)
       const realQte = allCids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
-      // Stock max = initial × totalCartons (tous les cartons déclarés)
+      // Stock max = initial × totalCartons
       const tc = p.totalCartons || allCids.length;
       const maxQte = tc * (p.initial||0);
       const col = realQte===0?'#f87171':realQte<maxQte?'#fbbf24':'#4ade80';
