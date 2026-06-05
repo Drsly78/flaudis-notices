@@ -269,6 +269,9 @@ function renderAllSoft() {
       p.querySelectorAll('[id^="cb-"]').forEach(el=>{
         openCartons[key][el.id] = el.style.display !== 'none';
       });
+      // Sauvegarder état récap
+      const recapEl2 = document.getElementById('recap-'+key);
+      if(recapEl2) openCartons[key]['recap-'+key] = recapEl2.style.display !== 'none';
     }
   });
   renderAll();
@@ -288,14 +291,18 @@ function renderAllSoft() {
       );
     });
     // Restaurer état des cartons
-    const saved = openCartons[key]||{};
-    p.querySelectorAll('[id^="cb-"]').forEach(el=>{
-      const wasOpen = saved[el.id];
-      if(wasOpen === undefined) return; // nouveau carton — garder défaut
-      el.style.display = wasOpen ? '' : 'none';
+      const saved = openCartons[key]||{};
+      p.querySelectorAll('[id^="cb-"]').forEach(el=>{
+        const wasOpen = saved[el.id];
+        if(wasOpen === undefined) return;
+        el.style.display = wasOpen ? '' : 'none';
       const arr = document.getElementById('arr-'+el.id);
       if(arr) arr.textContent = wasOpen ? '▼' : '▶';
-    });
+      });
+      // Restaurer récap
+      const recapEl=document.getElementById('recap-'+key);
+      const recapArr=document.getElementById('arr-recap-'+key);
+      if(recapEl&&saved['recap-'+key]!==undefined){recapEl.style.display=saved['recap-'+key]?'':'none';if(recapArr)recapArr.textContent=saved['recap-'+key]?'▼':'▶';}
   });
 }
 
@@ -427,7 +434,11 @@ function renderPiecesTab(key, pieces) {
   const cids=new Set();
   pids.forEach(pid=>Object.keys(pieces[pid].cartons||{}).forEach(cid=>cids.add(cid)));
   const cartonIds=Array.from(cids).sort();
-  const curIdx=cartonIds.findIndex(cid=>pids.some(pid=>(pieces[pid].cartons?.[cid]?.qte||0)>0));
+  // curIdx = premier carton non sealed avec des pièces
+  const curIdx=cartonIds.findIndex(cid=>
+    !pids.some(pid=>pieces[pid].cartons?.[cid]?.sealed) &&
+    pids.some(pid=>(pieces[pid].cartons?.[cid]?.qte||0)>0)
+  );
   const firstNPid=pids.find(pid=>pieces[pid]?.totalCartons);
   const totalC=firstNPid?pieces[firstNPid].totalCartons:0;
 
@@ -492,14 +503,16 @@ function renderInfTab(key, vis) {
     let html='';
     pids.forEach(pid=>{
       const p=pieces[pid];
-      const nq=nCids.reduce((s,c)=>s+((p.cartons?.[c]?.qte)||0),0);
-      const tc=p.totalCartons||nCids.length;
-      const fq=tc*(p.initial||0);
-      const col=nq===0?'#f87171':nq<fq?'#fbbf24':'#4ade80';
+      // Stock réel = somme des qte de TOUS les cartons normaux (ouverts)
+      const realQte = nCids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
+      // Stock max = initial × totalCartons (tous les cartons, ouverts ou non)
+      const tc = p.totalCartons || nCids.length;
+      const maxQte = tc * (p.initial||0);
+      const col = realQte===0?'#f87171':realQte<maxQte?'#fbbf24':'#4ade80';
       if(!tc&&!nCids.length)return;
       html+='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">'+
         '<span>'+(p.nom||pid)+'</span>'+
-        '<span style="color:'+col+';font-weight:700">'+nq+' / '+fq+' ('+tc+' carton'+(tc>1?'s':'')+')</span></div>';
+        '<span style="color:'+col+';font-weight:700">'+realQte+' / '+maxQte+'</span></div>';
     });
     if(xCids.length){
       const groups={};
@@ -613,9 +626,19 @@ window.openCarton=async function(key,e){
   const cids=new Set();
   pids.forEach(pid=>Object.keys(pieces[pid].cartons||{}).forEach(cid=>cids.add(cid)));
   const nums=Array.from(cids).filter(c=>/^c\d+$/.test(c)).map(c=>parseInt(c.replace('c',''))).sort((a,b)=>a-b);
-  const newId='c'+((nums[nums.length-1]||0)+1);
+  // Trouver le premier carton sealed à ouvrir, sinon en créer un nouveau
+  const sealedCid = nums.map(n=>'c'+n).find(cid=>pids.some(pid=>pieces[pid].cartons?.[cid]?.sealed));
   const upd={};
-  pids.forEach(pid=>{const init=pieces[pid].initial||0;upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init};});
+  if(sealedCid){
+    // Ouvrir ce carton (enlever sealed)
+    pids.forEach(pid=>{
+      const cart=pieces[pid].cartons?.[sealedCid];
+      if(cart) upd['produits/'+key+'/pieces/'+pid+'/cartons/'+sealedCid]={qte:cart.qte,initial:cart.initial};
+    });
+  } else {
+    const newId='c'+((nums[nums.length-1]||0)+1);
+    pids.forEach(pid=>{const init=pieces[pid].initial||0;upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init};});
+  }
   await db.ref().update(upd);
 };
 window.openCartonCustom=async function(key,e){
@@ -711,7 +734,8 @@ window.addNewCarton=async function(key){
   const nums=Array.from(cids).filter(c=>/^c[0-9]+$/.test(c)).map(c=>parseInt(c.replace('c',''))).sort((a,b)=>a-b);
   const next=(nums[nums.length-1]||0)+1;
   const upd={};
-  pids.forEach(pid=>{upd['produits/'+key+'/pieces/'+pid+'/cartons/c'+next]={qte:pieces[pid].initial||0,initial:pieces[pid].initial||0};upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=next;});
+  // sealed:true = carton en stock non encore ouvert (ne devient pas "en cours")
+  pids.forEach(pid=>{upd['produits/'+key+'/pieces/'+pid+'/cartons/c'+next]={qte:pieces[pid].initial||0,initial:pieces[pid].initial||0,sealed:true};upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=next;});
   await db.ref().update(upd);
 };
 window.removeLastCarton=async function(key){
