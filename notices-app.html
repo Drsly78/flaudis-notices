@@ -415,6 +415,9 @@ function renderPiecesTab(key, pieces) {
 
   const cartonsHtml = cartonIds.map((cid, cidx) => {
     const isCur = cidx === curIdx;
+    const firstNormalPid = pids.find(pid => pieces[pid] && pieces[pid].totalCartons);
+    const totalCartonsInfo = firstNormalPid ? pieces[firstNormalPid].totalCartons : 0;
+    const cartonNum = cidx + 1;
     const isCustom = cid.startsWith('custom_');
     // Nom lisible : retirer le suffixe timestamp et nettoyer
     // Nom custom : retirer préfixe custom_, suffixe numérique, restaurer espaces
@@ -441,7 +444,7 @@ function renderPiecesTab(key, pieces) {
       <div style="display:flex;align-items:center;padding:9px 12px;background:${isCur?'rgba(232,97,26,0.1)':isCustom?'rgba(34,197,94,0.05)':''};cursor:pointer" onclick="toggleCartonBody('${cartonId}')">
         <span style="font-size:12px;font-weight:700;color:${isCur?'var(--orange)':isCustom?'#4ade80':'var(--muted)'}">
           ${isCustom?'📦 ':''}{cartonLabel}${isCur?' ▶ En cours':''}
-          ${isCur&&pieces[pids[0]]?.totalCartons>1?' <span style=\"font-size:10px;color:var(--muted);font-weight:400\"> (1/'+pieces[pids[0]].totalCartons+' cartons)</span>':''}
+          ${!isCustom&&totalCartonsInfo>1?' <span style=\"font-size:10px;color:var(--muted);font-weight:400\"> ('+cartonNum+'/'+totalCartonsInfo+')</span>':''}
         </span>
         <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
           <span id="arrow-${cartonId}" style="color:var(--muted);font-size:12px">${(isCur||(isCustom&&cid.endsWith('_1')))?'▼':'▶'}</span>
