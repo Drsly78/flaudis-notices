@@ -480,8 +480,7 @@ function buildLocContent(key) {
   }
 
   let html = locSlots.map((slotId, idx) => {
-    const bloc = '<div id="locbloc-'+key+'-'+slotId+'">'+buildOneLocBloc(key, slotId, idx, d[slotId]||{}, locSlots.length)+'</div>';
-    return bloc;
+    return '<div id="locbloc-'+key+'-'+slotId+'">'+buildOneSlot(slotId, idx)+'</div>';
   }).join('');
   html += '<button id="addbtn-'+key+'" data-key="'+key+'" onclick="addLocSlot(this.dataset.key)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
   return html;
@@ -841,6 +840,42 @@ window.toggleRecap = function(id) {
 };
 
 // Remplir les tabs loc après render
+function buildOneLocBloc(key, d, slotId, idx, totalSlots) {
+    const loc = d[slotId] || {};
+    const ls = ((window._locState||{})[key]||{})[slotId] || {};
+    const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
+    const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
+    const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
+    const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur ?? null);
+    const sol = al === 'SOL';
+    const sum = al ? (sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')) : '';
+    const label = sum || ('Emplacement '+(idx+1));
+
+    function btn(field, val, cur) {
+      const sel = cur === val || (typeof cur === 'number' && cur === Number(val));
+      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-slot="'+slotId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
+    }
+
+    const body =
+      '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez')+'</div>'+
+      '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>btn('allee',v,al)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>btn('cote',v,co)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>btn('rack',v,ra)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>btn('haut',v,ha)).join('')+'</div></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px">'+
+        '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="saveLocSlot(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
+        (idx > 0 ? '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="deleteLocSlot(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px">🗑</button>' : '')+
+      '</div>';
+
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="toggleLocBloc(this.dataset.id)">'+
+        '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
+        '<span id="arrloc-'+key+'-'+slotId+'" style="color:var(--muted);font-size:12px">'+(slotId==='loc'?'▼':'▶')+'</span>'+
+      '</div>'+
+      '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:'+(slotId==='loc'?'block':'none')+'">'+body+'</div>'+
+    '</div>';
+  }
+
 function fillLocTabs() {
   document.querySelectorAll('[data-lockey]').forEach(el => {
     const key = el.dataset.lockey;
@@ -864,7 +899,7 @@ function fillLocTabs() {
       if (document.getElementById('locbloc-'+key+'-'+slotId)) return;
       const div = document.createElement('div');
       div.id = 'locbloc-'+key+'-'+slotId;
-      div.innerHTML = buildOneLocBloc(key, slotId, idx, d[slotId]||{}, slots.length);
+      div.innerHTML = buildOneLocBloc(key, d, slotId, idx, slots.length);
       const addBtn = el.querySelector('#addbtn-'+key);
       if (addBtn) el.insertBefore(div, addBtn);
       else el.appendChild(div);
