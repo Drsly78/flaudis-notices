@@ -79,8 +79,22 @@
     <span id="search-hint">Chargement…</span>
     <span id="count-badge" class="count-badge" style="display:none"></span>
   </div>
+  <div style="display:flex;gap:0;margin-top:4px">
+    <button id="nav-notices" onclick="switchView('notices')" style="flex:1;padding:9px;background:var(--orange);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">📄 Notices</button>
+    <button id="nav-reassort" onclick="switchView('reassort')" style="flex:1;padding:9px;background:var(--surface);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">🛒 Réassort</button>
+  </div>
 </header>
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
+<div id="reassort-panel" style="display:none;padding:16px">
+  <div style="font-size:14px;font-weight:700;color:var(--orange);margin-bottom:12px">🛒 Liste de réassort</div>
+  <input id="reassort-search" placeholder="Rechercher une référence..." style="width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:12px"/>
+  <div id="reassort-list" style="margin-bottom:16px"></div>
+  <div id="reassort-selected" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;display:none">
+    <div style="font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Sélection</div>
+    <div id="reassort-items"></div>
+  </div>
+  <button onclick="exportReassort()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📥 Exporter Excel</button>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -210,6 +224,7 @@ function renderAll() {
         <div class="card-badges">
           ${ls?`<span class="mini-badge mb-loc">📍 ${ls}</span>`:''}
           ${vis===true?'<span class="mini-badge mb-vis">🔩 Oui</span>':vis===false?'<span class="mini-badge mb-novis">🔩 Non</span>':''}
+          ${d.qty!=null&&!d.pieces?`<span class="mini-badge" style="background:rgba(232,97,26,0.2);color:var(--orange);border:1px solid rgba(232,97,26,0.3)">📦 ${d.qty}</span>`:''}
           ${pieceBadge(key)}
         </div>
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0">Notice</a>
@@ -338,7 +353,7 @@ function buildLocBloc(key, slotId, idx, loc) {
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif">💾 Enregistrer</button>'+
       (idx>0?'<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">🗑</button>':'')+
     '</div>';
-  const open=slotId==='loc';
+  const open=false; // Tous les tiroirs fermés par défaut
   return '<div id="locbloc-'+key+'-'+slotId+'" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
     '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="locToggle(this.dataset.id)">'+
       '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
@@ -487,7 +502,7 @@ function renderPiecesTab(key, pieces) {
     ${cartonIds.length?cartonsHtml:'<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — scannez ou ajoutez</div>'}
     <div style="display:flex;gap:8px;margin-top:10px">
       <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Ouvrir un nouveau carton</button>
-      <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton perso</button>
+      <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton personnalisé</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button onclick="scanNotice('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🤖 Scanner IA</button>
@@ -543,6 +558,12 @@ function renderInfTab(key, vis) {
       html+='</div>';
     }
     const fp=pieces[pids[0]],tc2=fp?.totalCartons||Object.keys(fp?.cartons||{}).filter(c=>/^c[0-9]+$/.test(c)).length;
+    // Compter les cartons complets (sealed OU toutes pièces à 100%)
+    const fullCartons = Object.keys(fp?.cartons||{}).filter(cid=>{
+      if(!/^c[0-9]+$/.test(cid)) return false;
+      const cart = fp.cartons[cid];
+      return cart.sealed || (cart.qte >= cart.initial && cart.initial > 0);
+    }).length;
     const rid='recap-'+key;
     recapHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
       '<div style="display:flex;align-items:center;padding:10px 12px;cursor:pointer;background:#1e1e1e" data-id="'+rid+'" onclick="toggleRecap(this.dataset.id)">'+
@@ -552,11 +573,24 @@ function renderInfTab(key, vis) {
       '<div id="'+rid+'" style="padding:10px;font-size:12px">'+html+'</div></div>'+
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
         '<button data-key="'+key+'" onclick="removeLastCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>'+
-        '<span style="flex:1;text-align:center;font-size:14px;font-weight:700">'+tc2+' carton'+(tc2>1?'s':'')+'</span>'+
+        '<span style="flex:1;text-align:center;font-size:14px;font-weight:700">'+tc2+' carton'+(tc2>1?'s':'')+(fullCartons>0?' · '+fullCartons+' complet'+(fullCartons>1?'s':''):'')+'</span>'+
         '<button data-key="'+key+'" onclick="addNewCarton(this.dataset.key)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>'+
       '</div>';
   }
+  // Quantité simple pour produits sans pièces
+  const simpleQty = d.qty !== undefined ? d.qty : '';
+  const simpleBlock = !pids.length ? `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div class="stock-label" style="margin-bottom:10px">Quantité en stock</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="adjQty('${key}',-1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
+        <input id="qty-simple-${key}" type="number" value="${simpleQty}" min="0" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;padding:8px;outline:none"/>
+        <button onclick="adjQty('${key}',1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
+      </div>
+      <button onclick="saveQty('${key}')" style="width:100%;margin-top:10px;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Enregistrer</button>
+    </div>` : '';
   return `<div class="tab-content" id="tab-inf-${key}">
+    ${simpleBlock}
     ${recapHtml}
     <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
     <div class="vis-row">
@@ -586,6 +620,16 @@ window.toggleCarton=function(id){
   const el=document.getElementById(id),arr=document.getElementById('arr-'+id);
   if(!el)return; const open=el.style.display!=='none';
   el.style.display=open?'none':''; if(arr)arr.textContent=open?'▶':'▼';
+};
+window.adjQty=function(key,delta){
+  const inp=document.getElementById('qty-simple-'+key);
+  if(inp) inp.value=Math.max(0,(parseInt(inp.value)||0)+delta);
+};
+window.saveQty=async function(key){
+  const val=parseInt(document.getElementById('qty-simple-'+key)?.value)||0;
+  await db.ref('produits/'+key+'/qty').set(val||null);
+  const btn=document.querySelector('#tab-inf-'+key+' button[onclick*="saveQty"]');
+  if(btn){btn.textContent='✓';setTimeout(()=>{btn.textContent='💾 Enregistrer';},2000);}
 };
 window.toggleRecap=function(id){
   const el=document.getElementById(id),arr=document.getElementById('arr-'+id);
@@ -785,6 +829,85 @@ document.getElementById('search').addEventListener('input',function(e){
   searchQuery=e.target.value;
   searchTimer=setTimeout(renderAll,100);
 });
+
+// ── Réassort ──────────────────────────────────────────────
+let reassortItems = {}; // { key: { ref, qty } }
+let currentView = 'notices';
+
+window.switchView = function(view) {
+  currentView = view;
+  document.getElementById('results').style.display = view==='notices' ? '' : 'none';
+  document.getElementById('reassort-panel').style.display = view==='reassort' ? '' : 'none';
+  document.getElementById('nav-notices').style.background = view==='notices' ? 'var(--orange)' : 'var(--surface)';
+  document.getElementById('nav-notices').style.color = view==='notices' ? 'white' : 'var(--muted)';
+  document.getElementById('nav-reassort').style.background = view==='reassort' ? 'var(--orange)' : 'var(--surface)';
+  document.getElementById('nav-reassort').style.color = view==='reassort' ? 'white' : 'var(--muted)';
+  if(view==='reassort') renderReassortList();
+};
+
+function renderReassortList() {
+  const q = (document.getElementById('reassort-search')?.value||'').toLowerCase();
+  const filtered = allNotices.filter(n=>!q||n.ref.toLowerCase().includes(q)||n.label.toLowerCase().includes(q));
+  const el = document.getElementById('reassort-list');
+  if(!el) return;
+  el.innerHTML = filtered.map(n=>{
+    const key = getKey(n.ref);
+    const qty = reassortItems[key]?.qty || 0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px">${n.ref}</div>
+        ${n.label&&n.label!==n.ref?`<div style="font-size:11px;color:var(--muted)">${n.label}</div>`:''}
+      </div>
+      <button onclick="adjReassort('${key}','${n.ref}',-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>
+      <input id="rqty-${key}" type="number" value="${qty}" min="0" onchange="setReassort('${key}','${n.ref}',this.value)" style="width:50px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:4px;outline:none"/>
+      <button onclick="adjReassort('${key}','${n.ref}',1)" style="width:30px;height:30px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>
+    </div>`;
+  }).join('');
+  renderReassortSelected();
+}
+
+window.adjReassort = function(key, ref, delta) {
+  const inp = document.getElementById('rqty-'+key);
+  const cur = parseInt(inp?.value)||0;
+  const newVal = Math.max(0, cur+delta);
+  if(inp) inp.value = newVal;
+  setReassort(key, ref, newVal);
+};
+window.setReassort = function(key, ref, val) {
+  const q = Math.max(0, parseInt(val)||0);
+  if(q > 0) reassortItems[key] = {ref, qty:q};
+  else delete reassortItems[key];
+  renderReassortSelected();
+};
+
+function renderReassortSelected() {
+  const keys = Object.keys(reassortItems);
+  const panel = document.getElementById('reassort-selected');
+  const items = document.getElementById('reassort-items');
+  if(!panel||!items) return;
+  panel.style.display = keys.length ? '' : 'none';
+  items.innerHTML = keys.map(k=>{
+    const it=reassortItems[k];
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <span style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px">${it.ref}</span>
+      <span style="font-weight:700;color:var(--orange)">${it.qty}</span>
+    </div>`;
+  }).join('');
+}
+
+window.exportReassort = function() {
+  const keys = Object.keys(reassortItems);
+  if(!keys.length){alert('Aucun article sélectionné');return;}
+  let csv = 'R\u00e9f\u00e9rence;Quantit\u00e9\n';
+  csv += keys.map(k=>reassortItems[k].ref+';'+reassortItems[k].qty).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='reassort_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+};
+
+document.getElementById('reassort-search')?.addEventListener('input', ()=>renderReassortList());
 
 loadNotices();
 </script>
