@@ -324,20 +324,29 @@ function renderInfTab(key, vis, stk) {
   const cids = new Set();
   pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
   const nb = cids.size;
+  // Séparer cartons normaux et customs
+  const normalCids = Array.from(cids).filter(cid => !cid.startsWith('custom_'));
+  const customCids = Array.from(cids).filter(cid => cid.startsWith('custom_'));
+  const nbNormal = normalCids.length;
+
   const recapHtml = pids.length ? `
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--muted);margin-bottom:8px">Récapitulatif stock</div>
     <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">
-        <span style="color:var(--muted)">Pièce</span>
-        <span style="color:#60a5fa;font-weight:700">× ${nb} carton${nb>1?'s':''} = Total</span>
-      </div>
-      ${pids.map(pid => {
+      ${pids.filter(pid => !pieces[pid].nom?.startsWith('custom_') && Object.keys(pieces[pid].cartons||{}).some(cid => !cid.startsWith('custom_'))).map(pid => {
         const p = pieces[pid];
-        const total = Object.values(p.cartons||{}).reduce((s,cc)=>s+(cc.qte||0),0);
-        const init = p.initial || 0;
-        const col = total===0?'#f87171':total<init?'#fbbf24':'#4ade80';
-        return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>' + (p.nom||pid) + '</span><span style="color:'+col+';font-weight:700">' + init + ' × ' + nb + ' = ' + total + '</span></div>';
+        const normalQte = normalCids.reduce((s,cid) => s + ((p.cartons?.[cid]?.qte)||0), 0);
+        const col = normalQte===0?'#f87171':normalQte<p.initial?'#fbbf24':'#4ade80';
+        return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">' +
+          '<span>' + (p.nom||pid) + '</span>' +
+          '<span style="color:'+col+';font-weight:700">Total cartons : ' + normalQte + '</span>' +
+          '</div>';
       }).join('')}
+      ${customCids.length ? '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);color:#4ade80;font-size:11px">+ Suppléments : ' +
+        customCids.map(cid => {
+          const nom = cid.replace('custom_','').replace(/_\d+$/,'').replace(/_/g,' ');
+          const total = pids.reduce((s,pid) => s + ((pieces[pid].cartons?.[cid]?.qte)||0), 0);
+          return nom + ' (' + total + ')';
+        }).join(', ') + '</div>' : ''}
     </div>` : '';
   return `<div class="tab-content" id="tab-inf-${key}">
     ${recapHtml}
@@ -364,7 +373,10 @@ function renderPiecesTab(key, pieces) {
   const cartonsHtml = cartonIds.map((cid, cidx) => {
     const isCur = cidx === curIdx;
     const isCustom = cid.startsWith('custom_');
-    const cartonLabel = isCustom ? cid.replace('custom_','').replace(/_/g,' ') : 'Carton '+(cidx+1);
+    // Nom lisible : retirer le suffixe timestamp et nettoyer
+    const cartonLabel = isCustom 
+      ? '📦 ' + cid.replace('custom_','').replace(/_\d+$/,'').replace(/_/g,' ')
+      : 'Carton ' + (cidx+1);
     const rows = pids.map(pid => {
       const p = pieces[pid], cart = p.cartons?.[cid];
       if (!cart) return '';
@@ -620,8 +632,8 @@ window.openCartonCustom = async function(key, e) {
 window.scanNotice = async function(key) {
   const notice = allNotices.find(n => getKey(n.ref)===key);
   if (!notice) return;
-  const btn = document.querySelector('#tab-pieces-'+key+' .btn-sm:last-child');
-  if (btn) { btn.textContent='⏳ Scan…'; btn.disabled=true; }
+  const btn = document.querySelector('#tab-pieces-'+key+' button[onclick*="scanNotice"]');
+  if (btn) { btn.textContent='⏳ Analyse…'; btn.disabled=true; btn.style.transform='scale(0.95)'; }
   try {
     const res = await fetch('https://sav-server-production.up.railway.app/scan-notice',{
       method:'POST', headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
@@ -629,18 +641,31 @@ window.scanNotice = async function(key) {
     });
     const data = await res.json();
     if (!data.pieces?.length) throw new Error('Aucune pièce trouvée');
-    const nb = parseInt(prompt('Combien de cartons ?','1'))||1;
+
+    // Vérifier les pièces existantes pour éviter les doublons
+    const existingPieces = (fbData[key]||{}).pieces || {};
+    const existingNoms = Object.values(existingPieces).map(p => (p.nom||'').toLowerCase().trim());
+
+    const newPieces = data.pieces.filter(p => !existingNoms.includes((p.nom||'').toLowerCase().trim()));
+    
+    if (!newPieces.length) {
+      if (btn) { btn.textContent='✓ Déjà scanné'; btn.style.transform=''; }
+      setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },2000);
+      return;
+    }
+
+    const nb = parseInt(prompt('Combien de cartons standard ?','1'))||1;
     const upd = {};
-    data.pieces.forEach((p,i) => {
+    newPieces.forEach((p,i) => {
       const pid='p'+Date.now()+i;
       const cartons={};
       for (let j=1;j<=nb;j++) cartons['c'+j]={qte:p.qte,initial:p.qte};
       upd['produits/'+key+'/pieces/'+pid]={nom:p.nom,initial:p.qte,cartons};
     });
     await db.ref().update(upd);
-    if (btn) btn.textContent='✓ '+data.pieces.length+' pièces';
+    if (btn) { btn.textContent='✓ '+newPieces.length+' pièces'; btn.style.transform=''; }
     setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },3000);
-  } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} }
+  } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.style.transform='';btn.disabled=false;} }
 };
 
 // Re-render doux — ne ferme pas les panels ouverts
