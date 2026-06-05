@@ -239,7 +239,7 @@ function renderAll() {
           ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
         </div>
         <div class="card-badges">
-          ${locStr ? `<span class="mini-badge mb-loc">📍 ${locStr}</span>` : ''}
+          ${(()=>{const loc=(fbData[key]||{}).loc||{};let main='';if(loc.allee){main=loc.allee==='SOL'?'SOL':'A'+loc.allee+(loc.cote?' '+loc.cote:'')+(loc.rack?' R'+loc.rack:'')+(loc.hauteur!=null?' H'+loc.hauteur:'');}const add=(fbData[key]||{}).additionalLocs||'';const all=[main,add].filter(Boolean).join(' / ');return all?`<span class="mini-badge mb-loc">📍 ${all}</span>`:'';})()}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Vis</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
           ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
         </div>
@@ -468,7 +468,13 @@ function buildLocContent(key) {
   }
 
   let html = locIds.length ? locIds.map(locId => buildOneLoc(locId, locs[locId]||{})).join('') : buildOneLoc('loc0', {});
-  html += '<button data-key="'+key+'" onclick="addLocBtn(this)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
+  // Emplacements additionnels — champ texte libre
+  const addLocs = (fbData[key]||{}).additionalLocs || '';
+  html += '<div style="margin-top:10px">'+
+    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px">Emplacements supplémentaires</div>'+
+    '<input id="addloc-'+key+'" value="'+addLocs+'" placeholder="ex: A2 G R3 H1 / SOL / A1 D R5 H0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:DM Sans,sans-serif;font-size:13px;padding:8px 10px;outline:none;margin-bottom:6px"/>'+
+    '<button data-key="'+key+'" onclick="saveAddLocs(this.dataset.key)" style="width:100%;padding:9px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">💾 Enregistrer</button>'+
+  '</div>';
   return html;
 }
 
@@ -553,7 +559,7 @@ function renderPiecesTab(key, pieces) {
   const cartonsHtml = cartonIds.map((cid, cidx) => {
     const isCur = cidx === curIdx;
     const isCustom = cid.startsWith('custom_');
-    const cartonLabel = isCustom ? cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ') : 'Carton '+(cidx+1);
+    const cartonLabel = isCustom ? cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ').toUpperCase() : 'Carton '+(cidx+1);
     const cartonId = 'cb-'+key+'-'+cid;
     const isOpen = isCur || (isCustom && cid.endsWith('_1'));
     const rows = pids.map(pid => {
@@ -678,7 +684,7 @@ window.openCartonCustom = async function(key, e) {
       const selPid=pids.length?document.getElementById('cc-piece')?.value:null;
       modal.remove();
       if(!nom||qte<=0){resolve(null);return;}
-      const nomId=Array.from(nom).map(ch=>{const m={'à':'a','â':'a','é':'e','è':'e','ê':'e','î':'i','ô':'o','ù':'u','û':'u','ç':'c',' ':'_'};return m[ch.toLowerCase()]||(ch.match(/[a-zA-Z0-9_]/)?ch.toLowerCase():'');}).join('').replace(/_+/g,'_').replace(/^_|_$/g,'');
+      const nomId=Array.from(nom).map(ch=>{const m={'à':'a','â':'a','é':'e','è':'e','ê':'e','î':'i','ô':'o','ù':'u','û':'u','ç':'c',' ':'_'};return m[ch.toLowerCase()]||(ch.match(/[a-zA-Z0-9_]/)?ch.toLowerCase():'');}).join('').replace(/_+/g,'_').replace(/^_|_$/g,'').toUpperCase();
       const cidBase='custom_'+nomId;
       const upd={};
       if(selPid&&pids.includes(selPid)){
@@ -764,6 +770,17 @@ window.removeLastCarton = async function(key) {
   pids.forEach(pid=>{upd['produits/'+key+'/pieces/'+pid+'/cartons/'+lastId]=null;upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=nums.length-1;});
   await db.ref().update(upd);
 };
+window.saveAddLocs = async function(key) {
+  const val = document.getElementById('addloc-'+key)?.value.trim() || '';
+  await db.ref('produits/'+key+'/additionalLocs').set(val || null);
+  const btn = document.querySelector('#tab-loc-'+key+' button[data-key="'+key+'"]');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Enregistré !';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }
+};
+
 window.toggleRecap = function(id) {
   const el=document.getElementById(id),arr=document.getElementById('arr-'+id);
   if(!el) return;
