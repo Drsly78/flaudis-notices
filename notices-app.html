@@ -144,6 +144,26 @@
     <span class="search-icon">🔍</span>
     <input type="search" id="search" placeholder="Référence ou nom produit..." autocomplete="off" autocorrect="off" spellcheck="false"/>
   </div>
+  <div style="display:flex;justify-content:flex-end;padding:4px 0 0">
+    <button onclick="toggleAdmin()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">⚙️ Gérer les notices</button>
+  </div>
+  <div id="admin-panel" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+    <div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Gestion des notices</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Ajouter une notice (PDF)</div>
+      <input type="file" id="upload-pdf" accept=".pdf" style="display:none" onchange="uploadNotice(this)"/>
+      <button onclick="document.getElementById('upload-pdf').click()" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">📎 Choisir un PDF à uploader</button>
+      <div id="upload-status" style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center"></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Supprimer une notice</div>
+      <select id="delete-select" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:8px;outline:none;margin-bottom:6px">
+        <option value="">— Choisir une notice —</option>
+      </select>
+      <button onclick="deleteNotice()" style="width:100%;padding:9px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Supprimer la notice sélectionnée</button>
+      <div id="delete-status" style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center"></div>
+    </div>
+  </div>
   <div class="search-meta">
     <span id="search-hint">Chargement…</span>
     <span id="count-badge" class="count-badge" style="display:none"></span>
@@ -168,6 +188,9 @@ const db = firebase.database();
 const GITHUB_API = 'https://api.github.com/repos/Drsly78/sav-notices/contents/notices';
 const RAW_BASE   = 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/';
 const CACHE_KEY  = 'flaudis_v4';
+const GH_TOKEN   = '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';
+const GH_REPO    = 'Drsly78/sav-notices';
+const GH_BRANCH  = 'main';
 const CACHE_TTL  = 3600000;
 
 let allNotices = [], fbData = {}, searchQuery = '';
@@ -181,6 +204,76 @@ db.ref('produits').on('value', snap => {
 });
 
 function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
+
+window.toggleAdmin = function() {
+  const p = document.getElementById('admin-panel');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+};
+
+window.uploadNotice = async function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status = document.getElementById('upload-status');
+  status.textContent = '⏳ Upload en cours…';
+  status.style.color = 'var(--muted)';
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const b64 = e.target.result.split(',')[1];
+      const res = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/notices/' + encodeURIComponent(file.name), {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Ajout notice ' + file.name, content: b64, branch: GH_BRANCH })
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
+      status.textContent = '✓ ' + file.name + ' uploadé !';
+      status.style.color = '#4ade80';
+      localStorage.removeItem(CACHE_KEY);
+      setTimeout(() => loadNotices(true), 1000);
+    };
+    reader.readAsDataURL(file);
+  } catch(e) {
+    status.textContent = '❌ Erreur : ' + e.message;
+    status.style.color = '#f87171';
+  }
+  input.value = '';
+};
+
+window.deleteNotice = async function() {
+  const select = document.getElementById('delete-select');
+  const filename = select.value;
+  if (!filename) return;
+  if (!confirm('Supprimer définitivement "' + filename + '" ?')) return;
+  const status = document.getElementById('delete-status');
+  status.textContent = '⏳ Suppression…';
+  try {
+    // Récupérer le SHA du fichier
+    const res1 = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/notices/' + encodeURIComponent(filename), {
+      headers: { 'Authorization': 'token ' + GH_TOKEN }
+    });
+    const data1 = await res1.json();
+    const res2 = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/notices/' + encodeURIComponent(filename), {
+      method: 'DELETE',
+      headers: { 'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Suppression notice ' + filename, sha: data1.sha, branch: GH_BRANCH })
+    });
+    if (!res2.ok) { const err = await res2.json(); throw new Error(err.message); }
+    status.textContent = '✓ Notice supprimée';
+    status.style.color = '#4ade80';
+    localStorage.removeItem(CACHE_KEY);
+    setTimeout(() => loadNotices(true), 1000);
+  } catch(e) {
+    status.textContent = '❌ Erreur : ' + e.message;
+    status.style.color = '#f87171';
+  }
+};
+
+function populateDeleteSelect() {
+  const select = document.getElementById('delete-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">— Choisir une notice —</option>' +
+    allNotices.map(n => `<option value="${n.filename}">${n.ref}${n.label && n.label !== n.ref ? ' — ' + n.label : ''}</option>`).join('');
+}
 
 async function loadNotices() {
   try {
@@ -253,6 +346,7 @@ function renderAll() {
     return;
   }
 
+  populateDeleteSelect();
   document.getElementById('results').innerHTML = filtered.map((n, i) => {
     const key = getKey(n.ref);
     const d = fbData[key] || {};
