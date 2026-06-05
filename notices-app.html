@@ -715,8 +715,21 @@ window.scanNotice=async function(key){
     data.pieces.forEach((p,i)=>{
       const k2=(p.nom||'').trim().toUpperCase();
       const ep=byNom[k2];
-      if(ep){upd['produits/'+key+'/pieces/'+ep+'/totalCartons']=nb;upd['produits/'+key+'/pieces/'+ep+'/initial']=p.qte;}
-      else{const pid='p'+Date.now()+i;upd['produits/'+key+'/pieces/'+pid]={nom:p.nom,initial:p.qte,totalCartons:nb,cartons:{c1:{qte:p.qte,initial:p.qte}}};}
+      if(ep){
+        upd['produits/'+key+'/pieces/'+ep+'/totalCartons']=nb;
+        upd['produits/'+key+'/pieces/'+ep+'/initial']=p.qte;
+        // Créer les cartons sealed manquants
+        const existCartons=existing[ep]?.cartons||{};
+        const existNums=Object.keys(existCartons).filter(c=>/^c\d+$/.test(c)).map(c=>parseInt(c.replace('c','')));
+        for(let n=2;n<=nb;n++){
+          if(!existNums.includes(n)) upd['produits/'+key+'/pieces/'+ep+'/cartons/c'+n]={qte:p.qte,initial:p.qte,sealed:true};
+        }
+      } else {
+        const pid='p'+Date.now()+i;
+        const cartons={c1:{qte:p.qte,initial:p.qte}};
+        for(let n=2;n<=nb;n++) cartons['c'+n]={qte:p.qte,initial:p.qte,sealed:true};
+        upd['produits/'+key+'/pieces/'+pid]={nom:p.nom,initial:p.qte,totalCartons:nb,cartons};
+      }
     });
     await db.ref().update(upd);
     if(btn){btn.textContent='✓ '+data.pieces.length+' pièces';btn.style.transform='';}
