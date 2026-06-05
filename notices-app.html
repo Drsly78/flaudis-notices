@@ -227,9 +227,32 @@ function renderAll() {
     </div>`;
   }).join('');
 
-  // Remplir les onglets emplacement
+  // Remplir les onglets emplacement — ne recrée jamais les blocs existants
   document.querySelectorAll('[data-lockey]').forEach(el => {
-    if (!el.querySelector('[id^="locbloc-"]')) el.innerHTML = buildLocTab(el.dataset.lockey);
+    const key = el.dataset.lockey;
+    const d = fbData[key]||{};
+    const slots = ['loc']; let si=2; while(d['loc'+si]!==undefined){slots.push('loc'+si);si++;}
+
+    if (!el.querySelector('[id^="locbloc-"]')) {
+      // Premier chargement — tout construire
+      el.innerHTML = buildLocTab(key);
+      return;
+    }
+
+    // Supprimer blocs orphelins
+    el.querySelectorAll('[id^="locbloc-"]').forEach(b => {
+      if (!slots.includes(b.id.replace('locbloc-'+key+'-',''))) b.remove();
+    });
+
+    // Ajouter nouveaux slots sans toucher aux existants
+    slots.forEach((s, idx) => {
+      if (document.getElementById('locbloc-'+key+'-'+s)) return;
+      const addBtn = document.getElementById('addbtn-'+key);
+      const div = document.createElement('div');
+      div.innerHTML = buildLocBloc(key, s, idx, d[s]||{});
+      if (addBtn) el.insertBefore(div.firstElementChild, addBtn);
+      else el.appendChild(div.firstElementChild);
+    });
   });
 }
 
@@ -352,9 +375,10 @@ window.locSave=function(btn){
 window.locDel=function(btn){
   if(!confirm('Supprimer cet emplacement ?'))return;
   const key=btn.dataset.key,slotId=btn.dataset.slot;
-  db.ref('produits/'+key+'/'+slotId).remove().then(()=>{
-    document.getElementById('locbloc-'+key+'-'+slotId)?.remove();
-  });
+  // Supprimer de fbData local pour éviter que renderAllSoft le recréé
+  if(fbData[key]) delete fbData[key][slotId];
+  document.getElementById('locbloc-'+key+'-'+slotId)?.remove();
+  db.ref('produits/'+key+'/'+slotId).remove();
 };
 window.locAdd=function(key){
   const d=fbData[key]||{};
