@@ -96,7 +96,7 @@
   .carton-row.current { border-color: var(--orange); }
   .carton-label { font-size: 11px; font-weight: 600; color: var(--muted); flex-shrink: 0; }
   .carton-label.current { color: var(--orange); }
-  .carton-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .carton-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 0 6px; }
   .carton-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
   .carton-bar.full  { background: var(--green); }
   .carton-bar.mid   { background: var(--yellow); }
@@ -275,7 +275,7 @@ function renderAll() {
           ${vis === true ? `<span class="mini-badge mb-vis">🔩</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩✗</span>` : ''}
           ${hasWarning ? `<span class="mini-badge mb-warn">⚠️</span>` : ''}
         </div>
-        <a href="https://github.com/Drsly78/sav-notices/blob/main/notices/${encodeURIComponent(n.filename)}" target="_blank" onclick="event.stopPropagation()" class="btn-notice">Notice</a>
+        <a href="https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(n.rawUrl)}" target="_blank" onclick="event.stopPropagation()" class="btn-notice">Notice</a>
       </div>
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
@@ -390,6 +390,9 @@ function buildPiecesTab(key, pieces) {
 
   const cartonsHtml = cartonIds.map((cid, cidx) => {
     const isCurrent = cidx === cartonIds.findIndex(id => pids.some(pid => (pieces[pid].cartons?.[id]?.qte || 0) > 0));
+    // Vérifier si le carton est fermé
+    const isClosed = pids.some(pid => pieces[pid].cartons?.[cid]?.closed === true);
+
     const cartonPieces = pids.map(pid => {
       const p = pieces[pid];
       const c2 = p.cartons?.[cid];
@@ -398,20 +401,26 @@ function buildPiecesTab(key, pieces) {
       const init = c2.initial || qte;
       const pct = init > 0 ? qte/init : 0;
       const cls = qte === 0 ? 'pt-zero' : pct < 0.3 ? 'pt-low' : 'pt-ok';
-      return `<div class="carton-row">
-        <span class="piece-name" style="font-size:12px;flex:1">${p.nom || pid}</span>
+      return `<div class="carton-row" style="opacity:${isClosed?0.5:1}">
+        <button class="btn-minus" onclick="addPieceToCarton('${key}','${pid}','${cid}')" ${isClosed?'disabled':''} style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#4ade80">+</button>
+        <span style="font-size:11px;flex:1;text-align:center;color:var(--text)">${p.nom || pid}</span>
         <div class="carton-bar-wrap"><div class="carton-bar ${pct>0.5?'full':pct>0?'mid':'empty'}" style="width:${Math.round(pct*100)}%"></div></div>
         <span class="carton-count ${cls}">${qte}/${init}</span>
-        <button class="btn-minus" onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''}>−</button>
+        <button class="btn-minus" onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0||isClosed?'disabled':''}>−</button>
       </div>`;
-    }).join('');
+    }).join('');;
 
     return `<div class="piece-item" id="carton-${key}-${cid}" style="margin-bottom:8px;border:1px solid ${isCurrent?'var(--orange)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--surface2)">
-      <div style="display:flex;align-items:center;padding:10px 12px;background:${isCurrent?'rgba(232,97,26,0.1)':'transparent'}">
-        <span style="font-size:12px;font-weight:700;color:${isCurrent?'var(--orange)':'var(--muted)'}">Carton ${cidx+1}${isCurrent?' ▶ En cours':''}</span>
+      <div style="display:flex;align-items:center;padding:10px 12px;background:${isClosed?'rgba(0,0,0,0.2)':isCurrent?'rgba(232,97,26,0.1)':'transparent'}">
+        <span style="font-size:12px;font-weight:700;color:${isClosed?'var(--muted)':isCurrent?'var(--orange)':'var(--muted)'}">
+          Carton ${cidx+1}${isClosed?' 🔒 Fermé':isCurrent?' ▶ En cours':''}
+        </span>
         <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <button onclick="closeCarton('${key}','${cid}',event)" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Fermer ce carton">✓ Fermer</button>
-          <button onclick="deleteCarton('${key}','${cid}',event)" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Supprimer ce carton">🗑</button>
+          ${isClosed 
+            ? `<button onclick="openCartonAgain('${key}','${cid}',event)" style="background:none;border:1px solid rgba(34,197,94,0.3);color:#4ade80;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">↩ Rouvrir</button>`
+            : `<button onclick="closeCarton('${key}','${cid}',event)" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">🔒 Fermer</button>`
+          }
+          <button onclick="deleteCarton('${key}','${cid}',event)" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">🗑</button>
         </span>
       </div>
       <div style="padding:0 12px 10px">${cartonPieces}</div>
@@ -521,12 +530,23 @@ window.saveNote = async function(key) {
 // ── CARTONS ──────────────────────────────────────────────
 window.closeCarton = async function(key, cid, e) {
   e.stopPropagation();
-  if (!confirm('Marquer ce carton comme fermé/vide ?')) return;
+  // Fermer = marquer comme fermé, stock conservé
   const d = fbData[key] || {};
   const pieces = Object.keys(d.pieces || {});
   const updates = {};
   pieces.forEach(pid => {
-    updates['produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte'] = 0;
+    updates['produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/closed'] = true;
+  });
+  await db.ref().update(updates);
+};
+
+window.openCartonAgain = async function(key, cid, e) {
+  e.stopPropagation();
+  const d = fbData[key] || {};
+  const pieces = Object.keys(d.pieces || {});
+  const updates = {};
+  pieces.forEach(pid => {
+    updates['produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/closed'] = null;
   });
   await db.ref().update(updates);
 };
@@ -631,6 +651,12 @@ window.takePiece = async function(key, pid, cid) {
   const current = d.pieces?.[pid]?.cartons?.[cid]?.qte || 0;
   if (current <= 0) return;
   await db.ref('produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte').set(current - 1);
+};
+
+window.addPieceToCarton = async function(key, pid, cid) {
+  const d = fbData[key] || {};
+  const current = d.pieces?.[pid]?.cartons?.[cid]?.qte || 0;
+  await db.ref('produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte').set(current + 1);
 };
 
 window.showTab = function(key, tab, btn) {
