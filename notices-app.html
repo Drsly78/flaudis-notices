@@ -259,6 +259,11 @@ function renderAll() {
     </div>`;
   }).join('');
 
+  // Remplir les onglets emplacement
+  document.querySelectorAll('[data-lockey]').forEach(el => {
+    el.innerHTML = buildLocContent(el.dataset.lockey);
+  });
+
   // Restaurer panels ouverts
   openPanels.forEach(key => {
     const p = document.getElementById('panel-' + key);
@@ -287,8 +292,7 @@ function renderLocTab(key, loc) {
   const isSol = allee === 'SOL';
   const locStr = locLabel({ allee, cote, rack, hauteur: haut });
 
-  return `<div class="tab-content active" id="tab-loc-${key}">
-    <div class="loc-summary">${locStr ? `Emplacement : <span>${locStr}</span>` : 'Sélectionnez un emplacement'}</div>
+  return `<div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>
     <div class="loc-step">
       <div class="loc-step-title active-step">Allée</div>
       <div class="loc-btns">
