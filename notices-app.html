@@ -147,7 +147,7 @@ let activeTabs = {};
 fbReady = true; // Afficher sans attendre Firebase
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
-  if (noticesReady) renderAll(); // Mise à jour en arrière-plan
+  if (noticesReady) renderAllSoft(); // Mise à jour douce
 });
 
 function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g, '_'); }
@@ -496,9 +496,9 @@ function renderPiecesTab(key, pieces) {
     </div>
     <div id="add-piece-${key}" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px">
       <div style="margin-bottom:8px"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Nom / N° pièce</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" id="ap-nom-${key}" placeholder="ex: Mât principal"/></div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <div style="flex:1"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Qté/carton</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" type="number" id="ap-qte-${key}" placeholder="8" min="1"/></div>
-        <div style="flex:1"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Nb cartons</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" type="number" id="ap-nb-${key}" placeholder="3" min="1"/></div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Qté initiale par carton</div>
+        <input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" type="number" id="ap-qte-${key}" placeholder="8" min="1"/>
       </div>
       <button style="width:100%;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;background:var(--orange);color:white" onclick="addPiece('${key}')">Ajouter</button>
     </div>
@@ -541,15 +541,16 @@ window.showAddPiece = function(key) {
 window.addPiece = async function(key) {
   const nom = document.getElementById('ap-nom-'+key)?.value.trim();
   const qte = parseInt(document.getElementById('ap-qte-'+key)?.value)||0;
-  const nb  = parseInt(document.getElementById('ap-nb-' +key)?.value)||1;
   if (!nom||qte<=0) { alert('Remplissez le nom et la quantité'); return; }
   const pid = 'p'+Date.now();
-  const cartons = {};
-  for (let i=1;i<=nb;i++) cartons['c'+i]={qte,initial:qte};
-  await db.ref('produits/'+key+'/pieces/'+pid).set({nom,initial:qte,cartons});
+  // Créer uniquement Carton 1 — utiliser "+ Ouvrir un carton" pour les suivants
+  const existingCartons = (fbData[key]||{}).pieces || {};
+  const cids = new Set();
+  Object.values(existingCartons).forEach(p => Object.keys(p.cartons||{}).forEach(cid => cids.add(cid)));
+  const firstCid = cids.size > 0 ? Array.from(cids).sort()[0] : 'c1';
+  await db.ref('produits/'+key+'/pieces/'+pid).set({nom, initial:qte, cartons:{[firstCid]:{qte,initial:qte}}});
   document.getElementById('ap-nom-'+key).value='';
   document.getElementById('ap-qte-'+key).value='';
-  document.getElementById('ap-nb-' +key).value='';
 };
 window.scanNotice = async function(key) {
   const notice = allNotices.find(n => getKey(n.ref)===key);
@@ -576,6 +577,52 @@ window.scanNotice = async function(key) {
     setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },3000);
   } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} }
 };
+
+// Re-render doux — ne ferme pas les panels ouverts
+function renderAllSoft() {
+  // Sauvegarder panels ouverts et onglets actifs
+  const openKeys = new Set();
+  const tabs = {};
+  document.querySelectorAll('.detail-panel').forEach(p => {
+    if (p.style.display === 'block') {
+      const key = p.id.replace('panel-', '');
+      openKeys.add(key);
+      const activeTab = p.querySelector('.tab-btn.active');
+      if (activeTab) {
+        if (activeTab.textContent.includes('Emplacement')) tabs[key] = 'loc';
+        else if (activeTab.textContent.includes('Pièces')) tabs[key] = 'pieces';
+        else tabs[key] = 'inf';
+      }
+    }
+  });
+
+  renderAll();
+
+  // Restaurer panels et onglets
+  openKeys.forEach(key => {
+    const p = document.getElementById('panel-' + key);
+    if (p) {
+      p.style.display = 'block';
+      const tab = tabs[key] || 'loc';
+      showTabSilent(key, tab);
+    }
+  });
+}
+
+function showTabSilent(key, tab) {
+  ['loc','pieces','inf'].forEach(t => {
+    const el = document.getElementById('tab-' + t + '-' + key);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  const panel = document.getElementById('panel-' + key);
+  if (panel) panel.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active',
+      (tab === 'loc' && btn.textContent.includes('Emplacement')) ||
+      (tab === 'pieces' && btn.textContent.includes('Pièces')) ||
+      (tab === 'inf' && btn.textContent.includes('Info'))
+    );
+  });
+}
 
 loadNotices();
 </script>
