@@ -343,15 +343,19 @@ function renderInfTab(key, vis, stk) {
       html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>' + (p.nom||pid) + '</span><span style="color:'+col+';font-weight:700">'+normalQte+' / '+fullQte+'</span></div>';
     });
     if (customCids.length) {
-      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#4ade80;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
+      // Collecter les suppléments uniques par cidBase
+      const seenCids = new Set();
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">+ Suppléments</div>';
       pids.forEach(pid => {
         const p = pieces[pid];
         customCids.forEach(cid => {
+          if (seenCids.has(cid)) return;
+          seenCids.add(cid);
           const cart = p.cartons?.[cid];
           if (!cart) return;
-          const nomC = cid.replace('custom_','').replace(/_[0-9]+_[0-9]+$/,'').replace(/_[0-9]+$/,'').replace(/_/g,' ');
+          const nomC = cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ');
           const col = cart.qte===0?'#f87171':cart.qte<cart.initial?'#fbbf24':'#4ade80';
-          html += '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px"><span style="color:var(--muted)">'+nomC+' ('+p.nom+')</span><span style="color:'+col+';font-weight:700">'+cart.qte+' / '+cart.initial+'</span></div>';
+          html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:#60a5fa">'+nomC+'</span><span style="color:'+col+';font-weight:700">'+cart.qte+' / '+cart.initial+'</span></div>';
         });
       });
       html += '</div>';
@@ -375,7 +379,17 @@ function renderInfTab(key, vis, stk) {
 
 function renderPiecesTab(key, pieces) {
   pieces = pieces || {};
-  const pids = Object.keys(pieces);
+  // Trier pièces : lettres d'abord (A, B...) puis chiffres (1, 2...)
+  const pids = Object.keys(pieces).sort((a,b) => {
+    const na = pieces[a]?.nom||'', nb = pieces[b]?.nom||'';
+    const pa = na.match(/^([A-Za-z]+|\d+)/)?.[1]||na;
+    const pb2 = nb.match(/^([A-Za-z]+|\d+)/)?.[1]||nb;
+    const aIsNum = /^\d+$/.test(pa), bIsNum = /^\d+$/.test(pb2);
+    if (!aIsNum && bIsNum) return -1;
+    if (aIsNum && !bIsNum) return 1;
+    if (aIsNum && bIsNum) return parseInt(pa)-parseInt(pb2);
+    return pa.localeCompare(pb2, 'fr');
+  });
   const cids = new Set();
   pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
   const cartonIds = Array.from(cids).sort();
@@ -385,8 +399,9 @@ function renderPiecesTab(key, pieces) {
     const isCur = cidx === curIdx;
     const isCustom = cid.startsWith('custom_');
     // Nom lisible : retirer le suffixe timestamp et nettoyer
-    const cartonLabel = isCustom 
-      ? '📦 ' + cid.replace('custom_','').replace(/_\d+$/,'').replace(/_/g,' ')
+    // Nom custom : retirer préfixe custom_, suffixe numérique, restaurer espaces
+    const cartonLabel = isCustom
+      ? '📦 ' + cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ')
       : 'Carton ' + (cidx+1);
     const rows = pids.map(pid => {
       const p = pieces[pid], cart = p.cartons?.[cid];
@@ -425,8 +440,9 @@ function renderPiecesTab(key, pieces) {
       <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Nouveau carton</button>
       <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton perso</button>
     </div>
-    <div style="margin-top:8px">
-      <button onclick="scanNotice('${key}')" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform 0.1s">🤖 Scanner IA</button>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="scanNotice('${key}')" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--blue);background:rgba(59,130,246,0.1);color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform 0.1s">🤖 Scanner IA</button>
+      <button onclick="resetScan('${key}')" style="padding:11px 14px;border-radius:12px;border:1.5px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Reset</button>
     </div>
 
   </div>`;
@@ -634,37 +650,32 @@ window.openCartonCustom = async function(key, e) {
 
   // 3. Quelle pièce ? Liste des pièces existantes
   let pieceNom, pieceQte, pid;
+  // Générer un ID propre sans accents ni chiffres parasites
+  const nomId = nomCarton.trim().split('').map(ch => {
+    const map = {'à':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','î':'i','ï':'i','ô':'o','ö':'o','ù':'u','û':'u','ü':'u','ç':'c',' ':'_'};
+    return map[ch.toLowerCase()] || (ch.match(/[a-zA-Z0-9_]/) ? ch.toLowerCase() : '');
+  }).join('').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  const cidBase = 'custom_' + nomId;
+
+  const qteStr = prompt('Quantité de pièces par carton ?', '8');
+  pieceQte = parseInt(qteStr)||0;
+  if (pieceQte <= 0) return;
+
   if (pids.length > 0) {
-    const liste = pids.map((pid,i) => (i+1)+'. '+pieces[pid].nom).join(' | ');
-    const choixStr = prompt('Quelle pièce est dans ce carton ? ' + liste + ' (entrez le numéro) :');
+    // Afficher un select via un dialog HTML — simulé avec prompt numéroté
+    const choixStr = prompt(pids.map((p,i)=>(i+1)+'. '+pieces[p].nom).join('\n')+'\n\nNuméro de la pièce :');
     const choix = parseInt(choixStr)-1;
-    if (choix >= 0 && choix < pids.length) {
-      pid = pids[choix];
-      pieceNom = pieces[pid].nom;
-      const qteStr = prompt('Quantité de cette pièce par carton ?', pieces[pid].initial||'8');
-      pieceQte = parseInt(qteStr)||0;
-      if (pieceQte <= 0) return;
-      // Ajouter les cartons custom à la pièce existante
-      const upd = {};
-      for (let i=1; i<=nb; i++) {
-        const cid = 'custom_'+nomCarton.trim().replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()+'_'+Date.now()+'_'+i;
-        upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cid] = { qte: pieceQte, initial: pieceQte };
-      }
-      await db.ref().update(upd);
-    } else {
-      alert('Choix invalide'); return;
+    if (isNaN(choix) || choix < 0 || choix >= pids.length) { alert('Choix invalide'); return; }
+    pid = pids[choix];
+    const upd = {};
+    for (let i=1; i<=nb; i++) {
+      upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte };
     }
+    await db.ref().update(upd);
   } else {
-    // Pas de pièces — créer une pièce dédiée
-    const qteStr = prompt('Quantité dans ce carton ?', '8');
-    pieceQte = parseInt(qteStr)||0;
-    if (pieceQte <= 0) return;
     const newPid = 'p'+Date.now();
     const cartons = {};
-    for (let i=1; i<=nb; i++) {
-      const cid = 'custom_'+nomCarton.trim().replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()+'_'+Date.now()+'_'+i;
-      cartons[cid] = { qte: pieceQte, initial: pieceQte };
-    }
+    for (let i=1; i<=nb; i++) cartons[cidBase+'_'+i] = { qte: pieceQte, initial: pieceQte };
     await db.ref('produits/'+key+'/pieces/'+newPid).set({ nom: nomCarton, initial: pieceQte, cartons });
   }
 };
@@ -682,31 +693,31 @@ window.scanNotice = async function(key) {
     const data = await res.json();
     if (!data.pieces?.length) throw new Error('Aucune pièce trouvée');
 
-    // Pièces existantes — on ne supprime rien, on peut rescanner
-    const existingPieces = (fbData[key]||{}).pieces || {};
-    const existingNoms = Object.values(existingPieces).map(p => (p.nom||'').toLowerCase().trim());
-    const newPieces = data.pieces.filter(p => !existingNoms.includes((p.nom||'').toLowerCase().trim()));
-
-    if (!newPieces.length) {
-      if (btn) { btn.textContent='✓ Déjà à jour'; btn.style.transform=''; }
-      setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },2000);
-      return;
-    }
-
     const nb = parseInt(prompt('Combien de cartons au total ?','1'))||1;
+    // Trier les pièces : alphabétique naturel (A, B, C... puis 1, 2, 3...)
+    data.pieces.sort((a,b) => {
+      const na = a.nom||'', nb2 = b.nom||'';
+      // Extraire préfixe lettre ou chiffre
+      const pa = na.match(/^([A-Za-z]+|\d+)/)?.[1]||na;
+      const pb = nb2.match(/^([A-Za-z]+|\d+)/)?.[1]||nb2;
+      const aIsNum = /^\d+$/.test(pa), bIsNum = /^\d+$/.test(pb);
+      if (!aIsNum && bIsNum) return -1; // lettres avant chiffres
+      if (aIsNum && !bIsNum) return 1;
+      if (aIsNum && bIsNum) return parseInt(pa)-parseInt(pb);
+      return pa.localeCompare(pb, 'fr');
+    });
     const upd = {};
-    newPieces.forEach((p,i) => {
+    data.pieces.forEach((p,i) => {
       const pid = 'p'+Date.now()+i;
-      // Carton 1 = en cours (ouvert), autres = en stock (fermé = qte à jour mais pas encore entamé)
       const cartons = {};
-      cartons['c1'] = { qte: p.qte, initial: p.qte }; // Carton actif
+      cartons['c1'] = { qte: p.qte, initial: p.qte };
       for (let j=2; j<=nb; j++) {
-        cartons['c'+j] = { qte: p.qte, initial: p.qte, stock: true }; // En stock
+        cartons['c'+j] = { qte: p.qte, initial: p.qte };
       }
-      upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, totalCartons: nb, cartons };
+      upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, cartons };
     });
     await db.ref().update(upd);
-    if (btn) { btn.textContent='✓ '+newPieces.length+' pièces / '+nb+' cartons'; btn.style.transform=''; }
+    if (btn) { btn.textContent='✓ '+data.pieces.length+' pièces / '+nb+' cartons'; btn.style.transform=''; }
     setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },3000);
   } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.style.transform='';btn.disabled=false;} }
 };
@@ -756,6 +767,11 @@ function showTabSilent(key, tab) {
     );
   });
 }
+
+window.resetScan = async function(key) {
+  if (!confirm('Supprimer toutes les pièces et repartir de zéro ?')) return;
+  await db.ref('produits/'+key+'/pieces').remove();
+};
 
 // ── SEARCH ────────────────────────────────────────────────
 let searchTimer;
