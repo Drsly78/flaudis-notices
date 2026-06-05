@@ -503,10 +503,11 @@ function renderInfTab(key, vis) {
     let html='';
     pids.forEach(pid=>{
       const p=pieces[pid];
-      // Stock réel = somme des qte de TOUS les cartons normaux (ouverts)
-      const realQte = nCids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
-      // Stock max = initial × totalCartons (tous les cartons, ouverts ou non)
-      const tc = p.totalCartons || nCids.length;
+      // Stock réel = somme des qte de TOUS les cartons normaux (ouverts + sealed)
+      const allCids = Object.keys(p.cartons||{}).filter(cid=>/^c[0-9]+$/.test(cid));
+      const realQte = allCids.reduce((s,cid)=>s+((p.cartons?.[cid]?.qte)||0),0);
+      // Stock max = initial × totalCartons (tous les cartons déclarés)
+      const tc = p.totalCartons || allCids.length;
       const maxQte = tc * (p.initial||0);
       const col = realQte===0?'#f87171':realQte<maxQte?'#fbbf24':'#4ade80';
       if(!tc&&!nCids.length)return;
@@ -535,7 +536,7 @@ function renderInfTab(key, vis) {
       });
       html+='</div>';
     }
-    const fp=pieces[pids[0]],tc2=fp?.totalCartons||nCids.length;
+    const fp=pieces[pids[0]],tc2=fp?.totalCartons||Object.keys(fp?.cartons||{}).filter(c=>/^c[0-9]+$/.test(c)).length;
     const rid='recap-'+key;
     recapHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">'+
       '<div style="display:flex;align-items:center;padding:10px 12px;cursor:pointer;background:#1e1e1e" data-id="'+rid+'" onclick="toggleRecap(this.dataset.id)">'+
@@ -734,8 +735,12 @@ window.addNewCarton=async function(key){
   const nums=Array.from(cids).filter(c=>/^c[0-9]+$/.test(c)).map(c=>parseInt(c.replace('c',''))).sort((a,b)=>a-b);
   const next=(nums[nums.length-1]||0)+1;
   const upd={};
-  // sealed:true = carton en stock non encore ouvert (ne devient pas "en cours")
-  pids.forEach(pid=>{upd['produits/'+key+'/pieces/'+pid+'/cartons/c'+next]={qte:pieces[pid].initial||0,initial:pieces[pid].initial||0,sealed:true};upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=next;});
+  // sealed:true = carton en réserve, non encore ouvert dans l'onglet Pièces
+  pids.forEach(pid=>{
+    const init=pieces[pid].initial||0;
+    upd['produits/'+key+'/pieces/'+pid+'/cartons/c'+next]={qte:init,initial:init,sealed:true};
+    upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=next;
+  });
   await db.ref().update(upd);
 };
 window.removeLastCarton=async function(key){
@@ -747,7 +752,11 @@ window.removeLastCarton=async function(key){
   if(nums.length<=1){alert('Il faut garder au moins 1 carton');return;}
   if(!confirm('Supprimer le Carton '+nums[nums.length-1]+' ?'))return;
   const upd={};
-  pids.forEach(pid=>{upd['produits/'+key+'/pieces/'+pid+'/cartons/c'+nums[nums.length-1]]=null;upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=nums.length-1;});
+  const newTotal = nums.length - 1;
+  pids.forEach(pid=>{
+    upd['produits/'+key+'/pieces/'+pid+'/cartons/c'+nums[nums.length-1]]=null;
+    upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=newTotal;
+  });
   await db.ref().update(upd);
 };
 
