@@ -240,9 +240,9 @@ function renderAll() {
           ${n.label && n.label !== n.ref ? `<div class="notice-name">${highlight(n.label, q)}${n.year?' · '+n.year:''}</div>` : ''}
         </div>
         <div class="card-badges">
-          ${locStr ? `<span class="mini-badge mb-loc">📍 ${locStr}</span>` : ''}
+          ${(()=>{const d2=fbData[key]||{};const locs=d2.locs||(d2.loc?{loc0:d2.loc}:{});const parts=Object.values(locs).map(loc=>{if(!loc?.allee)return null;if(loc.allee==='SOL')return'SOL';let s='A'+loc.allee;if(loc.cote)s+=' '+loc.cote;if(loc.rack)s+=' R'+loc.rack;if(loc.hauteur!=null)s+=' H'+loc.hauteur;return s;}).filter(Boolean);return parts.length?'<span class="mini-badge mb-loc">📍'+parts.join(' | ')+'</span>':''})()}
           ${vis === true ? `<span class="mini-badge mb-vis">🔩 Oui</span>` : vis === false ? `<span class="mini-badge mb-novis">🔩 Non</span>` : ''}
-          ${stk !== undefined && stk !== null ? `<span class="mini-badge mb-stock">📦 ${stk}</span>` : ''}
+          ${(()=>{const fp=Object.values(fbData[key]?.pieces||{})[0];if(!fp)return'';const tc=fp.totalCartons||0;const oc=Object.keys(fp.cartons||{}).filter(x=>/^c[0-9]+$/.test(x)).length;if(!tc&&!oc)return'';const col=oc<(tc||oc)?'#fbbf24':'#4ade80';return'<span class="mini-badge" style="background:rgba(59,130,246,0.15);color:'+col+'">📦'+oc+(tc?'/'+tc:'')+'</span>';})()}
         </div>
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0;letter-spacing:0.3px">Notice</a>
       </div>
@@ -486,62 +486,116 @@ window.showTab = function(key, tab, btn) {
   btn.classList.add('active');
 };
 
-window.pickLoc = function(key, field, val) {
+window.pickLoc = function(key, field, val, locId) {
+  locId = locId || 'loc0';
   if (!window._locState) window._locState = {};
   if (!window._locState[key]) window._locState[key] = {};
-  window._locState[key][field] = window._locState[key][field] === val ? null : val;
-  if (field === 'allee') { delete window._locState[key].cote; delete window._locState[key].rack; delete window._locState[key].haut; }
-  if (field === 'cote') { delete window._locState[key].rack; delete window._locState[key].haut; }
-  if (field === 'rack') { delete window._locState[key].haut; }
+  if (!window._locState[key][locId]) window._locState[key][locId] = {};
+  const ls = window._locState[key][locId];
+  ls[field] = ls[field] === val ? null : val;
+  if (field === 'allee') { delete ls.cote; delete ls.rack; delete ls.haut; }
+  if (field === 'cote') { delete ls.rack; delete ls.haut; }
+  if (field === 'rack') { delete ls.haut; }
   const tabEl = document.getElementById('tab-loc-' + key);
   if (tabEl) tabEl.innerHTML = buildLocContent(key);
 };
 
 function buildLocContent(key) {
   const d = fbData[key] || {};
-  const loc = d.loc || {};
-  const ls = (window._locState && window._locState[key]) || {};
-  const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-  const sol = al === 'SOL';
-  let sum = '';
-  if (al) sum = sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'');
+  const locs = d.locs || (d.loc ? { loc0: d.loc } : {});
+  const locIds = Object.keys(locs).sort();
 
-  function locBtn(field, val, current) {
-    const sel = current === val || (typeof current === 'number' && current === Number(val));
-    return '<button class="loc-btn' + (sel?' sel':'') + '" data-key="'+key+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
+  function buildOneLoc(locId, loc) {
+    const ls = ((window._locState||{})[key]||{})[locId] || {};
+    const al = ls.allee !== undefined ? ls.allee : (loc?.allee || null);
+    const co = ls.cote  !== undefined ? ls.cote  : (loc?.cote  || null);
+    const ra = ls.rack  !== undefined ? ls.rack  : (loc?.rack  || null);
+    const ha = ls.haut  !== undefined ? ls.haut  : (loc?.hauteur ?? null);
+    const sol = al === 'SOL';
+    let sum = '';
+    if (al) sum = sol ? 'SOL' : 'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'');
+
+    function locBtn(field, val, current) {
+      const sel = current === val || (typeof current === 'number' && current === Number(val));
+      return '<button class="loc-btn'+(sel?' sel':'')+'" data-key="'+key+'" data-locid="'+locId+'" data-field="'+field+'" data-val="'+val+'" onclick="pickLocBtn(this)">'+val+'</button>';
+    }
+
+    const body = '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez')+'</div>'+
+      '<div class="loc-step on"><div class="loc-step-title">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>locBtn('allee',v,al)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>locBtn('cote',v,co)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>locBtn('rack',v,ra)).join('')+'</div></div>'+
+      '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>locBtn('haut',v,ha)).join('')+'</div></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px">'+
+        '<button class="save-btn btn-orange" style="flex:1" id="sloc-'+key+'-'+locId+'" data-key="'+key+'" data-locid="'+locId+'" onclick="saveLocBtn(this)">💾 Enregistrer</button>'+
+        (locIds.length > 1 ? '<button data-key="'+key+'" data-locid="'+locId+'" onclick="deleteLocBtn(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:DM Sans,sans-serif;font-size:12px">🗑</button>' : '')+
+      '</div>';
+
+    const idx = locIds.indexOf(locId);
+    const label = sum || ('Emplacement '+(idx+1));
+    return '<div class="loc-bloc">'+
+      '<div class="loc-bloc-hdr" data-id="loc-body-'+key+'-'+locId+'" onclick="toggleLocBloc(this.dataset.id)">'+
+        '<span style="font-size:12px;font-weight:600;flex:1">📍 '+label+'</span>'+
+        '<span style="color:var(--muted);font-size:12px" id="arr-loc-'+key+'-'+locId+'">▼</span>'+
+      '</div>'+
+      '<div class="loc-bloc-body" id="loc-body-'+key+'-'+locId+'">'+ body +'</div>'+
+    '</div>';
   }
 
-  return '<div class="loc-summary">' + (sum ? '<b>'+sum+'</b>' : 'Sélectionnez un emplacement') + '</div>' +
-    '<div class="loc-step on"><div class="loc-step-title">Allée</div><div class="loc-btns">' +
-    ['1','2','3','SOL'].map(v => locBtn('allee', v, al)).join('') + '</div></div>' +
-    '<div class="loc-step' + (!sol&&al?' on':'') + '"><div class="loc-step-title">Côté</div><div class="loc-btns">' +
-    ['G','D'].map(v => locBtn('cote', v, co)).join('') + '</div></div>' +
-    '<div class="loc-step' + (!sol&&co?' on':'') + '"><div class="loc-step-title">Rack</div><div class="loc-btns">' +
-    [1,2,3,4,5,6,7].map(v => locBtn('rack', v, ra)).join('') + '</div></div>' +
-    '<div class="loc-step' + (!sol&&ra!=null?' on':'') + '"><div class="loc-step-title">Hauteur</div><div class="loc-btns">' +
-    [0,1,2,3].map(v => locBtn('haut', v, ha)).join('') + '</div></div>' +
-    '<button class="save-btn btn-orange" id="sloc-'+key+'" onclick="saveLoc(\''+key+'\')">💾 Enregistrer</button>';
+  let html = locIds.map(locId => buildOneLoc(locId, locs[locId]||{})).join('');
+  if (!locIds.length) html = buildOneLoc('loc0', {});
+  html += '<button data-key="'+key+'" onclick="addLocBtn(this)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
+  return html;
 }
+
+window.saveLocBtn = function(btn) { saveLoc(btn.dataset.key, btn.dataset.locid); };
+window.deleteLocBtn = function(btn) { deleteLoc(btn.dataset.key, btn.dataset.locid); };
+window.addLocBtn = function(btn) { addLoc(btn.dataset.key); };
+window.toggleLocBloc = function(id) {
+  const el = document.getElementById(id);
+  const arr = document.getElementById(id.replace('loc-body-','arr-loc-'));
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : '';
+  if (arr) arr.textContent = open ? '▶' : '▼';
+};
+
+window.addLoc = async function(key) {
+  const d = fbData[key] || {};
+  const locs = d.locs || (d.loc ? { loc0: d.loc } : {});
+  const newId = 'loc'+Date.now();
+  if (!d.locs && d.loc) {
+    // Migrer loc → locs
+    await db.ref('produits/'+key+'/locs').set({ loc0: d.loc, [newId]: {} });
+    await db.ref('produits/'+key+'/loc').remove();
+  } else {
+    await db.ref('produits/'+key+'/locs/'+newId).set({});
+  }
+};
+
+window.deleteLoc = async function(key, locId) {
+  if (!confirm('Supprimer cet emplacement ?')) return;
+  await db.ref('produits/'+key+'/locs/'+locId).remove();
+};
+
 
 window.pickLocBtn = function(btn) {
   const key = btn.dataset.key;
+  const locId = btn.dataset.locid || 'loc0';
   const field = btn.dataset.field;
   const val = ['rack','haut'].includes(field) ? Number(btn.dataset.val) : btn.dataset.val;
-  pickLoc(key, field, val);
+  pickLoc(key, field, val, locId);
 };
 
-window.saveLoc = async function(key) {
+window.saveLoc = async function(key, locId) {
+  locId = locId || 'loc0';
   const d = fbData[key] || {};
-  const loc = d.loc || {};
-  const ls = (window._locState && window._locState[key]) || {};
-  const al = ls.allee !== undefined ? ls.allee : (loc.allee || null);
-  const co = ls.cote  !== undefined ? ls.cote  : (loc.cote  || null);
-  const ra = ls.rack  !== undefined ? ls.rack  : (loc.rack  || null);
-  const ha = ls.haut  !== undefined ? ls.haut  : (loc.hauteur !== undefined ? loc.hauteur : null);
-  const btn = document.getElementById('sloc-' + key);
+  const existingLoc = (d.locs && d.locs[locId]) || d.loc || {};
+  const ls = ((window._locState||{})[key]||{})[locId] || {};
+  const al = ls.allee !== undefined ? ls.allee : (existingLoc.allee || null);
+  const co = ls.cote  !== undefined ? ls.cote  : (existingLoc.cote  || null);
+  const ra = ls.rack  !== undefined ? ls.rack  : (existingLoc.rack  || null);
+  const ha = ls.haut  !== undefined ? ls.haut  : (existingLoc.hauteur ?? null);
+  const btn = document.getElementById('sloc-'+key+'-'+locId);
   if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
   try {
     const nl = {};
@@ -549,9 +603,15 @@ window.saveLoc = async function(key) {
     if (al !== 'SOL' && co) nl.cote = co;
     if (al !== 'SOL' && ra != null) nl.rack = ra;
     if (al !== 'SOL' && ha != null) nl.hauteur = ha;
-    await db.ref('produits/' + key + '/loc').set(Object.keys(nl).length ? nl : null);
-    if (window._locState) delete window._locState[key];
-    if (btn) { btn.textContent = '✓ Enregistré !'; btn.className = btn.className.replace('btn-orange','btn-green'); }
+    // Utiliser locs si déjà migré, sinon créer locs et supprimer loc
+    if (d.locs || Object.keys(d.locs||{}).length > 1) {
+      await db.ref('produits/'+key+'/locs/'+locId).set(Object.keys(nl).length ? nl : null);
+    } else {
+      await db.ref('produits/'+key+'/locs').set({ [locId]: Object.keys(nl).length ? nl : null });
+      if (d.loc) await db.ref('produits/'+key+'/loc').remove();
+    }
+    if (window._locState?.[key]) delete window._locState[key][locId];
+    if (btn) { btn.textContent = '✓'; btn.className = btn.className.replace('btn-orange','btn-green'); }
     setTimeout(() => { if(btn){btn.textContent='💾 Enregistrer';btn.className=btn.className.replace('btn-green','btn-orange');btn.disabled=false;} }, 2000);
   } catch(e) { if (btn) { btn.textContent = '❌'; btn.disabled = false; } }
 };
@@ -756,11 +816,25 @@ window.scanNotice = async function(key) {
       if (aIsNum && bIsNum) return parseInt(pa)-parseInt(pb);
       return pa.localeCompare(pb, 'fr');
     });
+    const existingPieces = (fbData[key]||{}).pieces || {};
+    // Map nom normalisé → pid existant
+    const existingByNom = {};
+    Object.entries(existingPieces).forEach(([pid, p]) => {
+      existingByNom[(p.nom||'').trim().toUpperCase()] = pid;
+    });
+
     const upd = {};
-    data.pieces.forEach((p,i) => {
-      const pid = 'p'+Date.now()+i;
-      // Seul carton c1 est créé et ouvert — les autres s'ouvrent manuellement
-      upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, totalCartons: nb, cartons: { c1: { qte: p.qte, initial: p.qte } } };
+    data.pieces.forEach((p, i) => {
+      const nomKey = (p.nom||'').trim().toUpperCase();
+      const existingPid = existingByNom[nomKey];
+      if (existingPid) {
+        // Mettre à jour totalCartons uniquement si la pièce existe déjà
+        upd['produits/'+key+'/pieces/'+existingPid+'/totalCartons'] = nb;
+        upd['produits/'+key+'/pieces/'+existingPid+'/initial'] = p.qte;
+      } else {
+        const pid = 'p'+Date.now()+i;
+        upd['produits/'+key+'/pieces/'+pid] = { nom: p.nom, initial: p.qte, totalCartons: nb, cartons: { c1: { qte: p.qte, initial: p.qte } } };
+      }
     });
     await db.ref().update(upd);
     if (btn) { btn.textContent='✓ '+data.pieces.length+' pièces / '+nb+' cartons'; btn.style.transform=''; }
