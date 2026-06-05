@@ -66,6 +66,7 @@
   .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 </style>
 </head>
 <body>
@@ -225,6 +226,7 @@ function renderAll() {
           ${vis===true?'<span class="mini-badge mb-vis">🔩 Oui</span>':vis===false?'<span class="mini-badge mb-novis">🔩 Non</span>':''}
           ${d.qty!=null&&!d.pieces?`<span class="mini-badge" style="background:rgba(232,97,26,0.2);color:var(--orange);border:1px solid rgba(232,97,26,0.3)">📦 ${d.qty}</span>`:''}
           ${pieceBadge(key)}
+          ${isAlertTriggered(key)?'<span class="mini-badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.3);animation:pulse 1.5s infinite">⚠️ Stock bas</span>':''}
         </div>
         <a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0">Notice</a>
       </div>
@@ -590,6 +592,26 @@ function renderInfTab(key, vis) {
   return `<div class="tab-content" id="tab-inf-${key}">
     ${simpleBlock}
     ${recapHtml}
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="stock-label" style="margin-bottom:0">🔔 Alerte stock bas</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <div id="alert-toggle-${key}" onclick="toggleAlert('${key}')" style="width:40px;height:22px;border-radius:11px;background:${d.alertEnabled?'var(--orange)':'var(--border)'};position:relative;cursor:pointer;transition:background 0.2s">
+            <div style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:2px;left:${d.alertEnabled?'20px':'2px'};transition:left 0.2s"></div>
+          </div>
+          <span style="font-size:12px;color:${d.alertEnabled?'var(--orange)':'var(--muted)'}">${d.alertEnabled?'Activée':'Désactivée'}</span>
+        </label>
+      </div>
+      ${d.alertEnabled?`<div>
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Seuil (nb cartons)</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button data-key="${key}" onclick="adjAlertThreshold(this.dataset.key,-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>
+          <input id="alert-thr-${key}" type="number" value="${d.alertThreshold||1}" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;padding:6px;outline:none"/>
+          <button data-key="${key}" onclick="adjAlertThreshold(this.dataset.key,1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>
+          <button data-key="${key}" onclick="saveAlertThreshold(this.dataset.key)" style="padding:8px 14px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">💾</button>
+        </div>
+      </div>`:''}
+    </div>
     <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
     <div class="vis-row">
       <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
@@ -637,6 +659,41 @@ window.saveQty=async function(key){
   const btn=document.querySelector('#tab-inf-'+key+' button[onclick*="saveQty"]');
   if(btn){btn.textContent='✓';setTimeout(()=>{btn.textContent='💾 Enregistrer';},2000);}
 };
+// ── Alertes stock bas ────────────────────────────────────
+function isAlertTriggered(key) {
+  const d = fbData[key]||{};
+  if(!d.alertEnabled) return false;
+  const threshold = d.alertThreshold||1;
+  const pieces = d.pieces||{};
+  const pids = Object.keys(pieces);
+  if(!pids.length) {
+    // Produit sans pièces — utiliser qty simple
+    return (d.qty||0) <= threshold;
+  }
+  // Compter les cartons complets (sealed) restants
+  const fp = pieces[pids[0]];
+  const sealedCount = Object.keys(fp?.cartons||{}).filter(cid=>
+    /^c[0-9]+$/.test(cid) && fp.cartons[cid]?.sealed
+  ).length;
+  return sealedCount <= threshold;
+}
+
+window.toggleAlert = async function(key) {
+  const d = fbData[key]||{};
+  const newVal = !d.alertEnabled;
+  await db.ref('produits/'+key+'/alertEnabled').set(newVal);
+};
+window.adjAlertThreshold = function(key, delta) {
+  const inp = document.getElementById('alert-thr-'+key);
+  if(inp) inp.value = Math.max(1, (parseInt(inp.value)||1)+delta);
+};
+window.saveAlertThreshold = async function(key) {
+  const val = parseInt(document.getElementById('alert-thr-'+key)?.value)||1;
+  await db.ref('produits/'+key+'/alertThreshold').set(val);
+  const btn = document.querySelector('[data-key="'+key+'"][onclick*="saveAlertThreshold"]');
+  if(btn){btn.textContent='✓';setTimeout(()=>{btn.textContent='💾';},1500);}
+};
+
 window.toggleRecap=function(id){
   const el=document.getElementById(id),arr=document.getElementById('arr-'+id);
   if(!el)return; const open=el.style.display!=='none';
