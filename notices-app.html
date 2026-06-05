@@ -364,7 +364,7 @@ function buildLocBloc(key, slotId, idx, loc) {
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer">&#x1F4BE; Enregistrer</button>'+
       (idx>0?'<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">&#x1F5D1;</button>':'')+
     '</div>';
-  const open=slotId==='loc';
+  const open=false; // Tous tiroirs fermés par défaut
   return '<div id="locbloc-'+key+'-'+slotId+'" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
     '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="locToggle(this.dataset.id)">'+
       '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">&#x1F4CD; '+label+'</span>'+
@@ -480,7 +480,7 @@ function renderPiecesTab(key, pieces) {
     const isCustom=cid.startsWith('custom_');
     const cartonLabel=isCustom?cid.replace(/^custom_/,'').replace(/_\d+$/,'').replace(/_/g,' ').toUpperCase():'Carton '+(cidx+1);
     const cartonId='cb-'+key+'-'+cid;
-    const isOpen=isCur||(isCustom&&cid.endsWith('_1'));
+    const isOpen=false; // Toujours fermé, l'utilisateur ouvre manuellement
     const rows=pids.map(pid=>{
       const p=pieces[pid],cart=p.cartons?.[cid];
       if(!cart)return '';
@@ -738,9 +738,16 @@ window.addPieceQte=async function(key,pid,cid){
 window.deleteCarton=async function(key,cid,e){
   e.stopPropagation();
   if(!confirm('Supprimer ce carton ?'))return;
-  const pids=Object.keys((fbData[key]||{}).pieces||{});
+  const pieces=(fbData[key]||{}).pieces||{};
+  const pids=Object.keys(pieces);
   const upd={};
   pids.forEach(pid=>upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cid]=null);
+  // Recalculer totalCartons
+  const remainNums = Object.keys(pieces[pids[0]]?.cartons||{})
+    .filter(c=>/^c[0-9]+$/.test(c) && c!==cid)
+    .map(c=>parseInt(c.replace('c',''))).sort((a,b)=>a-b);
+  const newTotal = remainNums.length;
+  pids.forEach(pid=>upd['produits/'+key+'/pieces/'+pid+'/totalCartons']=newTotal);
   await db.ref().update(upd);
 };
 window.openCarton=async function(key,e){
@@ -1054,10 +1061,10 @@ function getPlanData() {
       if(pids.length) {
         const fp=pieces[pids[0]];
         const allC=Object.keys(fp.cartons||{}).filter(cid=>/^c[0-9]+$/.test(cid));
-        const openC=allC.filter(cid=>!fp.cartons[cid]?.sealed).length;
+        const sealedC=allC.filter(cid=>fp.cartons[cid]?.sealed===true).length;
         const totalC=fp.totalCartons||allC.length;
-        stockStr=openC+'/'+totalC+' carton'+(totalC>1?'s':'');
-        status = openC===0?'alert':openC<totalC?'low':'ok';
+        stockStr=sealedC > 0 ? sealedC+' complet'+(sealedC>1?'s':'') : 'ouvert';
+        status = sealedC===0?'low':sealedC<totalC?'ok':'ok';
       } else if(d.qty!=null) {
         stockStr='Qty '+d.qty; status='ok';
       }
@@ -1091,6 +1098,8 @@ function renderPlan() {
   PLAN_AISLES.forEach((aisle,ai)=>{
     html+='<div style="flex:1;min-width:0">';
     html+='<div style="font-family:Bebas Neue,sans-serif;font-size:12px;letter-spacing:2px;color:#4ade80;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:5px 0;text-align:center;margin-bottom:5px">ALLÉE '+aisle.id+'</div>';
+    const sp=planData['A'+aisle.id+'SOL']||[],so=sp.length>0;
+    html+='<div data-pa="'+aisle.id+'" data-ps="SOL" data-pr="0" onclick="openPlanDetail(this.dataset.pa,this.dataset.ps,this.dataset.pr)" style="margin-bottom:4px;height:32px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid '+(so?'rgba(251,191,36,0.45)':'#242424')+';background:'+(so?'rgba(251,191,36,0.08)':'#181818')+'"><span style="font-size:9px;font-weight:700;color:'+(so?'#fbbf24':'var(--muted)')+'">SOL allée</span>'+(so?'<span style="font-size:9px;font-weight:700;color:#fbbf24">'+sp.length+'P</span>':'')+' </div>';
     html+='<div style="display:flex;gap:3px">';
     ['G','D'].forEach(side=>{
       const mR=aisle[side];
@@ -1106,8 +1115,6 @@ function renderPlan() {
       html+='</div>';
     });
     html+='</div>';
-    const sp=planData['A'+aisle.id+'SOL']||[],so=sp.length>0;
-    html+='<div data-pa="'+aisle.id+'" data-ps="SOL" data-pr="0" onclick="openPlanDetail(this.dataset.pa,this.dataset.ps,this.dataset.pr)" style="margin-top:4px;height:32px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid '+(so?'rgba(251,191,36,0.45)':'#242424')+';background:'+(so?'rgba(251,191,36,0.08)':'#181818')+'"><span style="font-size:9px;font-weight:700;color:'+(so?'#fbbf24':'var(--muted)')+'">SOL</span>'+(so?'<span style="font-size:9px;font-weight:700;color:#fbbf24">'+sp.length+'P</span>':'')+' </div>';
     html+='</div>';
     if(ai<PLAN_AISLES.length-1) html+='<div style="width:8px;flex-shrink:0"></div>';
   });
@@ -1123,7 +1130,7 @@ function renderPlan() {
 
   if(!document.getElementById('plan-overlay')){
     const ov=document.createElement('div');ov.id='plan-overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:199;display:none';ov.onclick=closePlanDetail;document.body.appendChild(ov);
-    const dt=document.createElement('div');dt.id='plan-detail';dt.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1c1c1c;border-top:2px solid var(--orange);padding:16px 16px 32px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(.32,.72,0,1);z-index:200;max-height:70vh;overflow-y:auto;border-radius:20px 20px 0 0';dt.innerHTML='<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px"></div><div id="plan-detail-content"></div>';document.body.appendChild(dt);
+    const dt=document.createElement('div');dt.id='plan-detail';dt.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1c1c1c;border-top:2px solid var(--orange);padding:16px 16px 32px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(.32,.72,0,1);z-index:200;max-height:70vh;overflow-y:auto;border-radius:20px 20px 0 0';dt.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="width:40px;height:4px;border-radius:2px;background:var(--border)"></div><button onclick="closePlanDetail()" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:14px">✕</button></div><div id="plan-detail-content"></div>';document.body.appendChild(dt);
   }
 }
 
