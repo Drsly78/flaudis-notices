@@ -175,7 +175,8 @@ async function loadNotices() {
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
         const label = year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
         return { ref, label: label||ref, year,
-          githubUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
+          githubUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name),
+          rawUrl: 'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/' + encodeURIComponent(f.name) };
       })
       .sort((a,b) => a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allNotices }));
@@ -248,9 +249,11 @@ function renderAll() {
       <div class="detail-panel" id="panel-${key}">
         <div class="tabs">
           <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
-          <button class="tab-btn" onclick="showTab('${key}','inf',this)">📦 Stock & Visserie</button>
+          <button class="tab-btn" onclick="showTab('${key}','pieces',this)">📦 Pièces</button>
+          <button class="tab-btn" onclick="showTab('${key}','inf',this)">ℹ️ Info</button>
         </div>
         ${renderLocTab(key, loc)}
+        ${renderPiecesTab(key, (fbData[key]||{}).pieces)}
         ${renderInfTab(key, vis, stk)}
       </div>
     </div>`;
@@ -350,7 +353,7 @@ window.togglePanel = function(key) {
 };
 
 window.showTab = function(key, tab, btn) {
-  ['loc','inf'].forEach(t => {
+  ['loc','pieces','inf'].forEach(t => {
     const el = document.getElementById('tab-' + t + '-' + key);
     if (el) el.classList.toggle('active', t === tab);
   });
@@ -449,6 +452,130 @@ document.getElementById('search').addEventListener('input', e => {
   searchQuery = e.target.value;
   t = setTimeout(renderAll, 100);
 });
+
+// ── PIÈCES ────────────────────────────────────────────────
+function renderPiecesTab(key, pieces) {
+  pieces = pieces || {};
+  const pids = Object.keys(pieces);
+  const cids = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
+  const cartonIds = Array.from(cids).sort();
+  const curIdx = cartonIds.findIndex(cid => pids.some(pid => (pieces[pid].cartons?.[cid]?.qte||0) > 0));
+
+  const cartonsHtml = cartonIds.map((cid, cidx) => {
+    const isCur = cidx === curIdx;
+    const rows = pids.map(pid => {
+      const p = pieces[pid], cart = p.cartons?.[cid];
+      if (!cart) return '';
+      const qte = cart.qte||0, init = cart.initial||qte;
+      const pct = init>0 ? qte/init : 0;
+      const col = qte===0?'#f87171':pct<0.3?'#fbbf24':'#4ade80';
+      return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;flex:1">${p.nom||pid}</span>
+        <div style="width:50px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;width:${Math.round(pct*100)}%;background:${pct>0.5?'var(--green)':pct>0?'#f59e0b':'var(--red)'}"></div></div>
+        <span style="font-size:11px;font-weight:700;min-width:32px;text-align:center;color:${col}">${qte}/${init}</span>
+        <button onclick="takePiece('${key}','${pid}','${cid}')" ${qte===0?'disabled':''} style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#f87171;cursor:pointer;font-size:16px;font-weight:700">−</button>
+        <button onclick="addPieceQte('${key}','${pid}','${cid}')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.15);color:#4ade80;cursor:pointer;font-size:16px;font-weight:700">+</button>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:8px;border:1px solid ${isCur?'var(--orange)':'var(--border)'};border-radius:10px;overflow:hidden;background:var(--surface2)">
+      <div style="display:flex;align-items:center;padding:9px 12px;background:${isCur?'rgba(232,97,26,0.1)':''}">
+        <span style="font-size:12px;font-weight:700;color:${isCur?'var(--orange)':'var(--muted)'}">Carton ${cidx+1}${isCur?' ▶ En cours':''}</span>
+        <button onclick="deleteCarton('${key}','${cid}',event)" style="margin-left:auto;background:none;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+      </div>
+      <div style="padding:0 12px 8px">${rows}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="tab-content" id="tab-pieces-${key}">
+    ${cartonIds.length ? cartonsHtml : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — ajoutez manuellement ou scannez</div>'}
+    <button onclick="openCarton('${key}',event)" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">+ Ouvrir un nouveau carton</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-sm" style="flex:1" onclick="showAddPiece('${key}')">+ Ajouter une pièce</button>
+      <button class="btn-sm" style="flex:1;border-color:var(--blue);color:#60a5fa" onclick="scanNotice('${key}')">🤖 Scanner IA</button>
+    </div>
+    <div id="add-piece-${key}" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="margin-bottom:8px"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Nom / N° pièce</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" id="ap-nom-${key}" placeholder="ex: Mât principal"/></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Qté/carton</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" type="number" id="ap-qte-${key}" placeholder="8" min="1"/></div>
+        <div style="flex:1"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Nb cartons</div><input style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none" type="number" id="ap-nb-${key}" placeholder="3" min="1"/></div>
+      </div>
+      <button style="width:100%;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;background:var(--orange);color:white" onclick="addPiece('${key}')">Ajouter</button>
+    </div>
+  </div>`;
+}
+
+window.takePiece = async function(key, pid, cid) {
+  const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte || 0;
+  if (qte <= 0) return;
+  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte-1);
+};
+window.addPieceQte = async function(key, pid, cid) {
+  const qte = (fbData[key]||{}).pieces?.[pid]?.cartons?.[cid]?.qte || 0;
+  await db.ref('produits/'+key+'/pieces/'+pid+'/cartons/'+cid+'/qte').set(qte+1);
+};
+window.deleteCarton = async function(key, cid, e) {
+  e.stopPropagation();
+  if (!confirm('Supprimer ce carton ?')) return;
+  const pids = Object.keys((fbData[key]||{}).pieces||{});
+  const upd = {};
+  pids.forEach(pid => upd['produits/'+key+'/pieces/'+pid+'/cartons/'+cid] = null);
+  await db.ref().update(upd);
+};
+window.openCarton = async function(key, e) {
+  e.stopPropagation();
+  const pieces = (fbData[key]||{}).pieces || {};
+  const pids = Object.keys(pieces);
+  if (!pids.length) { alert("Ajoutez d'abord des pièces"); return; }
+  const cids = new Set();
+  pids.forEach(pid => Object.keys(pieces[pid].cartons||{}).forEach(cid => cids.add(cid)));
+  const newId = 'c'+(cids.size+1);
+  const upd = {};
+  pids.forEach(pid => { const init=pieces[pid].initial||0; upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init}; });
+  await db.ref().update(upd);
+};
+window.showAddPiece = function(key) {
+  const el = document.getElementById('add-piece-'+key);
+  if (el) el.style.display = el.style.display==='none'?'block':'none';
+};
+window.addPiece = async function(key) {
+  const nom = document.getElementById('ap-nom-'+key)?.value.trim();
+  const qte = parseInt(document.getElementById('ap-qte-'+key)?.value)||0;
+  const nb  = parseInt(document.getElementById('ap-nb-' +key)?.value)||1;
+  if (!nom||qte<=0) { alert('Remplissez le nom et la quantité'); return; }
+  const pid = 'p'+Date.now();
+  const cartons = {};
+  for (let i=1;i<=nb;i++) cartons['c'+i]={qte,initial:qte};
+  await db.ref('produits/'+key+'/pieces/'+pid).set({nom,initial:qte,cartons});
+  document.getElementById('ap-nom-'+key).value='';
+  document.getElementById('ap-qte-'+key).value='';
+  document.getElementById('ap-nb-' +key).value='';
+};
+window.scanNotice = async function(key) {
+  const notice = allNotices.find(n => getKey(n.ref)===key);
+  if (!notice) return;
+  const btn = document.querySelector('#tab-pieces-'+key+' .btn-sm:last-child');
+  if (btn) { btn.textContent='⏳ Scan…'; btn.disabled=true; }
+  try {
+    const res = await fetch('https://sav-server-production.up.railway.app/scan-notice',{
+      method:'POST', headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
+      body: JSON.stringify({pdfUrl:notice.rawUrl, ref:notice.ref})
+    });
+    const data = await res.json();
+    if (!data.pieces?.length) throw new Error('Aucune pièce trouvée');
+    const nb = parseInt(prompt('Combien de cartons ?','1'))||1;
+    const upd = {};
+    data.pieces.forEach((p,i) => {
+      const pid='p'+Date.now()+i;
+      const cartons={};
+      for (let j=1;j<=nb;j++) cartons['c'+j]={qte:p.qte,initial:p.qte};
+      upd['produits/'+key+'/pieces/'+pid]={nom:p.nom,initial:p.qte,cartons};
+    });
+    await db.ref().update(upd);
+    if (btn) btn.textContent='✓ '+data.pieces.length+' pièces';
+    setTimeout(()=>{ if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} },3000);
+  } catch(e) { alert('Erreur: '+e.message); if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;} }
+};
 
 loadNotices();
 </script>
