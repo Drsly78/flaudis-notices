@@ -71,7 +71,10 @@
 </head>
 <body>
 <header>
-  <div class="logo">FLAUDIS <span>NOTICES PRODUITS</span></div>
+  <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
+    <div class="logo" style="margin-bottom:0">FLAUDIS <span>NOTICES PRODUITS</span></div>
+    <button onclick="switchView('plan')" id="nav-plan" style="position:absolute;right:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">🗺️</button>
+  </div>
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input type="search" id="search" placeholder="Référence ou nom produit..." autocomplete="off" autocorrect="off" spellcheck="false"/>
@@ -86,6 +89,7 @@
   </div>
 </header>
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
+<div id="plan-panel" style="display:none;padding:12px 10px 40px"></div>
 <div id="reassort-panel" style="display:none;padding:16px 16px 40px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
     <div style="font-size:14px;font-weight:700;color:var(--orange)">🛒 Liste de réassort</div>
@@ -337,8 +341,10 @@ function buildLocBloc(key, slotId, idx, loc) {
   const co=ls.cote !==undefined?ls.cote :(loc.cote ||null);
   const ra=ls.rack !==undefined?ls.rack :(loc.rack ||null);
   const ha=ls.haut !==undefined?ls.haut :(loc.hauteur??null);
-  const sol=al==='SOL';
-  const sum=al?(sol?'SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')):'' ;
+  const coteSol = co==='SOL';
+  // Nombre de racks selon allée et côté
+  const rackMax = al==='1'?(coteSol?0:co==='G'?4:6):al==='2'?(coteSol?0:4):al==='3'?(coteSol?0:co==='G'?3:4):7;
+  const sum = al?(coteSol?'Allée '+al+' · SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')):'' ;
   const label=sum||('Emplacement '+(idx+1));
   function b(f,v,cur){
     const sel=cur===v||(typeof cur==='number'&&cur===Number(v));
@@ -346,15 +352,17 @@ function buildLocBloc(key, slotId, idx, loc) {
   }
   const body=
     '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
-    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','SOL'].map(v=>b('allee',v,al)).join('')+'</div></div>'+
-    '<div class="loc-step'+(!sol&&al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','D'].map(v=>b('cote',v,co)).join('')+'</div></div>'+
-    '<div class="loc-step'+(!sol&&co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+[1,2,3,4,5,6,7].map(v=>b('rack',v,ra)).join('')+'</div></div>'+
-    '<div class="loc-step'+(!sol&&ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>b('haut',v,ha)).join('')+'</div></div>'+
+    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3'].map(v=>b('allee',v,al)).join('')+'</div></div>'+
+    '<div class="loc-step'+(al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','SOL','D'].map(v=>b('cote',v,co)).join('')+'</div></div>'+
+    (coteSol?'':
+      '<div class="loc-step'+(co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+(rackMax>0?Array.from({length:rackMax},(_,i)=>i+1).map(v=>b('rack',v,ra)).join(''):'')+'</div></div>'+
+      '<div class="loc-step'+(ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>b('haut',v,ha)).join('')+'</div></div>'
+    )+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
-      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif">💾 Enregistrer</button>'+
+      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer">&#x1F4BE; Enregistrer</button>'+
       (idx>0?'<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">🗑</button>':'')+
     '</div>';
-  const open=false; // Tous les tiroirs fermés par défaut
+  const open=slotId==='loc';
   return '<div id="locbloc-'+key+'-'+slotId+'" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
     '<div style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;background:#1e1e1e" data-id="locbody-'+key+'-'+slotId+'" onclick="locToggle(this.dataset.id)">'+
       '<span style="font-size:12px;font-weight:600;color:#60a5fa;flex:1">📍 '+label+'</span>'+
@@ -363,6 +371,7 @@ function buildLocBloc(key, slotId, idx, loc) {
     '<div id="locbody-'+key+'-'+slotId+'" style="padding:12px;border-top:1px solid var(--border);display:'+(open?'block':'none')+'">'+body+'</div>'+
   '</div>';
 }
+
 
 window.locToggle=function(id){
   const el=document.getElementById(id),arr=document.getElementById(id.replace('locbody-','arrloc-'));
@@ -400,9 +409,9 @@ window.locSave=function(btn){
   btn.textContent='⏳…';btn.disabled=true;
   const nl={};
   if(al)nl.allee=al;
-  if(al!=='SOL'&&co)nl.cote=co;
-  if(al!=='SOL'&&ra!=null)nl.rack=ra;
-  if(al!=='SOL'&&ha!=null)nl.hauteur=ha;
+  if(co)nl.cote=co;
+  if(co!=='SOL'&&ra!=null)nl.rack=ra;
+  if(co!=='SOL'&&ha!=null)nl.hauteur=ha;
   db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
     if(window._ls?.[key])delete window._ls[key][slotId];
     btn.textContent='✓';
@@ -944,11 +953,16 @@ window.switchView = function(view) {
   currentView = view;
   document.getElementById('results').style.display = view==='notices' ? '' : 'none';
   document.getElementById('reassort-panel').style.display = view==='reassort' ? '' : 'none';
+  document.getElementById('plan-panel').style.display = view==='plan' ? '' : 'none';
   document.getElementById('nav-notices').style.background = view==='notices' ? 'var(--orange)' : 'var(--surface)';
   document.getElementById('nav-notices').style.color = view==='notices' ? 'white' : 'var(--muted)';
   document.getElementById('nav-reassort').style.background = view==='reassort' ? 'var(--orange)' : 'var(--surface)';
   document.getElementById('nav-reassort').style.color = view==='reassort' ? 'white' : 'var(--muted)';
+  document.getElementById('nav-plan').style.background = view==='plan' ? 'var(--orange)' : 'var(--surface2)';
+  document.getElementById('nav-plan').style.color = view==='plan' ? 'white' : 'var(--muted)';
+  document.getElementById('nav-plan').textContent = view==='plan' ? '✕' : '🗺️';
   if(view==='reassort') renderReassortPanel();
+  if(view==='plan') renderPlan();
 };
 
 function renderReassortPanel() {
@@ -1006,6 +1020,198 @@ window.exportReassort = function() {
   const a = document.createElement('a');
   a.href=url; a.download='reassort_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click(); URL.revokeObjectURL(url);
+};
+
+// ── Plan entrepôt ─────────────────────────────────────────
+const PLAN_AISLES = [{id:'1',G:4,D:6},{id:'2',G:4,D:4},{id:'3',G:3,D:4}];
+
+function getPlanData() {
+  // Construire depuis fbData : { "A1GR2H1": [{ref, label, stock, status}] }
+  const planData = {};
+  Object.entries(fbData).forEach(([key, d]) => {
+    if(!d) return;
+    const notice = allNotices.find(n=>getKey(n.ref)===key);
+    const ref = notice ? notice.ref : key;
+    const label = notice ? notice.label : '';
+    // Collecter tous les emplacements loc, loc2...
+    const slots = ['loc']; let si=2; while(d['loc'+si]!==undefined){slots.push('loc'+si);si++;}
+    slots.forEach(slotId => {
+      const loc = d[slotId];
+      if(!loc||!loc.allee) return;
+      const al = loc.allee, co = loc.cote||'', ra = loc.rack, ha = loc.hauteur;
+      let k;
+      if(co==='SOL') k = 'A'+al+'SOL';
+      else if(co&&ra!=null&&ha!=null) k = 'A'+al+co+'R'+ra+'H'+ha;
+      else return;
+      if(!planData[k]) planData[k]=[];
+      // Stock
+      const pieces = d.pieces||{};
+      const pids = Object.keys(pieces);
+      let stockStr='', status='ok';
+      if(pids.length) {
+        const fp=pieces[pids[0]];
+        const allC=Object.keys(fp.cartons||{}).filter(c=>/^c[0-9]+$/.test(c));
+        const tot=allC.reduce((s,c)=>s+((fp.cartons[c]?.qte)||0),0);
+        const max=(fp.totalCartons||allC.length)*(fp.initial||0);
+        stockStr=tot+'/'+max;
+        status = tot===0?'alert':tot<max*0.3?'low':'ok';
+      } else if(d.qty!=null) {
+        stockStr='Qté: '+d.qty; status='ok';
+      }
+      if(d.alertEnabled) {
+        const sealedC=pids.length?Object.keys(pieces[pids[0]]?.cartons||{}).filter(c=>pieces[pids[0]].cartons[c]?.sealed).length:0;
+        if(sealedC<=(d.alertThreshold||1)) status='alert';
+      }
+      planData[k].push({ref, label, stock:stockStr, status, key});
+    });
+  });
+  return planData;
+}
+
+function renderPlan() {
+  const panel = document.getElementById('plan-panel');
+  const planData = getPlanData();
+
+  function rackStatus(a,side,r) {
+    const hs=[0,1,2,3]; let has=false;
+    hs.forEach(h=>{ if(planData['A'+a+side+'R'+r+'H'+h]?.length) has=true; });
+    return has?'occupied':'empty';
+  }
+  function rackCount(a,side,r) {
+    let n=0; [0,1,2,3].forEach(h=>{n+=(planData['A'+a+side+'R'+r+'H'+h]?.length||0);});
+    return n;
+  }
+  function solStatus(a) {
+    return planData['A'+a+'SOL']?.length?'occupied':'empty';
+  }
+
+  let html = '<div style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:3px;color:var(--orange);text-align:center;margin-bottom:12px">PLAN DE L&#39;ENTREPÔT</div>';
+  html += '<div style="display:flex;flex-direction:row-reverse;gap:6px;justify-content:center;overflow-x:auto;padding-bottom:4px">';
+
+  PLAN_AISLES.forEach((aisle,ai)=>{
+    html += '<div style="flex-shrink:0">';
+    html += '<div style="font-family:Bebas Neue,sans-serif;font-size:12px;letter-spacing:2px;color:#4ade80;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:6px;padding:5px 0;text-align:center;margin-bottom:6px">ALLÉE '+aisle.id+'</div>';
+    html += '<div style="display:flex;gap:4px">';
+
+    ['G','D'].forEach(side=>{
+      const maxR = aisle[side];
+      html += '<div style="display:flex;flex-direction:column;gap:3px;width:44px">';
+      html += '<div style="font-size:9px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:2px;font-weight:700;letter-spacing:1px">'+side+'</div>';
+
+      // Rack SOL (milieu, côté G uniquement pour éviter doublon)
+      if(side==='G') {
+        const sSt=solStatus(aisle.id);
+        const sCnt=planData['A'+aisle.id+'SOL']?.length||0;
+        html += '<div data-pa="'+aisle.id+'" data-ps="SOL" onclick="openPlanDetail(this.dataset.pa,this.dataset.ps,0)" style="height:36px;border-radius:7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1.5px solid '+(sSt==='occupied'?'rgba(251,191,36,0.4)':'#242424')+';background:'+(sSt==='occupied'?'rgba(251,191,36,0.1)':'#181818')+';touch-action:manipulation">'+
+          '<div style="font-size:8px;font-weight:700;color:'+(sSt==='occupied'?'#fbbf24':'var(--muted)')+'">SOL</div>'+
+          (sCnt?'<div style="font-size:9px;font-weight:700;color:#fbbf24">'+sCnt+'P</div>':'')+
+        '</div>';
+      } else {
+        html += '<div style="height:36px;border-radius:7px;background:transparent;border:1.5px solid transparent"></div>';
+      }
+
+      for(let r=maxR;r>=1;r--) {
+        const st=rackStatus(aisle.id,side,r);
+        const cnt=rackCount(aisle.id,side,r);
+        html += '<div data-pa="'+aisle.id+'" data-ps="'+side+'" data-pr="'+r+'" onclick="openPlanDetail(this.dataset.pa,this.dataset.ps,this.dataset.pr)" style="height:36px;border-radius:7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1.5px solid '+(st==='occupied'?'rgba(96,165,250,0.4)':'#242424')+';background:'+(st==='occupied'?'rgba(96,165,250,0.08)':'#181818')+';touch-action:manipulation">'+
+          '<div style="font-size:9px;font-weight:700;color:'+(st==='occupied'?'rgba(96,165,250,0.7)':'var(--muted)')+'">'+r+'</div>'+
+          (cnt?'<div style="font-size:9px;font-weight:700;color:#60a5fa">'+cnt+'P</div>':'')+
+        '</div>';
+      }
+      html += '</div>';
+    });
+
+    html += '</div></div>';
+    if(ai<PLAN_AISLES.length-1) html += '<div style="width:14px;flex-shrink:0"></div>';
+  });
+
+  html += '</div>';
+  html += '<div style="margin-top:10px;display:flex;gap:8px;font-size:10px;color:var(--muted);justify-content:center;flex-wrap:wrap">'+
+    '<span>🔵 Rack occupé</span><span>🟡 Zone SOL allée</span><span>⬛ Vide</span></div>';
+
+  panel.innerHTML = html;
+
+  // Overlay détail plan
+  if(!document.getElementById('plan-overlay')) {
+    const ov=document.createElement('div');
+    ov.id='plan-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:199;display:none';
+    ov.onclick=closePlanDetail;
+    document.body.appendChild(ov);
+    const dt=document.createElement('div');
+    dt.id='plan-detail';
+    dt.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1c1c1c;border-top:2px solid var(--orange);padding:16px 16px 32px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(.32,.72,0,1);z-index:200;max-height:70vh;overflow-y:auto;border-radius:20px 20px 0 0';
+    dt.innerHTML='<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px"></div><div id="plan-detail-content"></div>';
+    document.body.appendChild(dt);
+  }
+}
+
+window.openPlanDetail = function(aisle, side, rack) {
+  const planData = getPlanData();
+  const hs = side==='SOL' ? ['SOL'] : [0,1,2,3];
+  let html = '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:var(--orange);margin-bottom:4px">'+
+    'Allée '+aisle+(side==='SOL'?' — SOL':' — Côté '+(side==='G'?'Gauche':'Droite')+' — Rack '+rack)+'</div>';
+
+  let anyProd = false;
+  if(side==='SOL') {
+    const prods=planData['A'+aisle+'SOL']||[];
+    if(prods.length){anyProd=true;prods.forEach(p=>{html+=prodRow(p);});}
+    else html+='<div style="color:var(--muted);text-align:center;padding:24px 0;font-size:13px">Vide</div>';
+  } else {
+    const hlabels=['Sol','Bas','Milieu','Haut'];
+    let first=true;
+    hs.forEach((h,ri)=>{
+      const prods=planData['A'+aisle+side+'R'+rack+'H'+h]||[];
+      if(!prods.length) return;
+      anyProd=true;
+      html+='<div style="display:flex;align-items:center;gap:8px;margin:'+(first?'8':'16')+'px 0 8px">'+
+        '<div style="flex:1;height:2px;background:rgba(96,165,250,0.5);border-radius:1px"></div>'+
+        '<span style="font-size:10px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:20px;padding:3px 10px">H'+h+' · '+hlabels[h]+'</span>'+
+        '<div style="flex:1;height:2px;background:rgba(96,165,250,0.5);border-radius:1px"></div>'+
+      '</div>';
+      prods.forEach(p=>{html+=prodRow(p);});
+      first=false;
+    });
+    if(!anyProd) html+='<div style="color:var(--muted);text-align:center;padding:24px 0;font-size:13px">Vide</div>';
+  }
+
+  document.getElementById('plan-detail-content').innerHTML=html;
+  document.getElementById('plan-overlay').style.display='block';
+  document.getElementById('plan-detail').style.transform='translateY(0)';
+};
+
+function prodRow(p) {
+  const sColors={ok:'rgba(34,197,94,0.15);color:#4ade80',low:'rgba(232,97,26,0.15);color:var(--orange)',alert:'rgba(239,68,68,0.15);color:#f87171'};
+  const sc=sColors[p.status]||sColors.ok;
+  return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+    '<div style="flex:1"><div style="font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:1px">'+p.ref+'</div>'+
+    (p.label?'<div style="font-size:11px;color:var(--muted)">'+p.label+'</div>':'')+
+    '</div>'+
+    '<div style="display:flex;align-items:center;gap:8px">'+
+      (p.stock?'<div style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;background:'+sc+'">'+p.stock+'</div>':'')+
+      '<button data-k="'+p.key+'" onclick="goToRef(this.dataset.k)" style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;border:1px solid rgba(232,97,26,0.4);background:rgba(232,97,26,0.1);color:var(--orange);cursor:pointer;font-family:DM Sans,sans-serif;white-space:nowrap">→ Notice</button>'+
+    '</div>'+
+  '</div>';
+}
+
+window.goToRef = function(key) {
+  closePlanDetail();
+  switchView('notices');
+  searchQuery = allNotices.find(n=>getKey(n.ref)===key)?.ref||key;
+  document.getElementById('search').value = searchQuery;
+  renderAll();
+  // Ouvrir le panel de la notice
+  setTimeout(()=>{
+    const card=document.getElementById('card-'+key);
+    if(card){card.scrollIntoView({behavior:'smooth',block:'center'});}
+    const panel=document.getElementById('panel-'+key);
+    if(panel&&panel.style.display!=='block'){togglePanel(key);}
+  },200);
+};
+
+window.closePlanDetail = function() {
+  document.getElementById('plan-overlay').style.display='none';
+  document.getElementById('plan-detail').style.transform='translateY(100%)';
 };
 
 loadNotices();
