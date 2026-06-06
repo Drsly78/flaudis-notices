@@ -67,9 +67,36 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+  #pwd-input:focus{border-color:#E8611A !important;}
+  #login-screen button:active{opacity:0.85;}
 </style>
 </head>
 <body>
+
+<!-- ── LOGIN ───────────────────────────────────────────── -->
+<div id="login-screen" style="position:fixed;inset:0;background:#0f0f0f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:0">
+    <img src="https://raw.githubusercontent.com/Drsly78/sav-notices/main/login.png" 
+         style="width:100%;max-width:340px;border-radius:16px;margin-bottom:20px;object-fit:cover;box-shadow:0 8px 40px rgba(0,0,0,0.6)"
+         onerror="this.style.display='none'"/>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:4px;color:#E8611A;text-align:center;line-height:1">SÉCURITÉ !</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:16px;color:#f0f0f0;text-align:center;margin:10px 0 24px;letter-spacing:0.5px">
+      T'as le mot de passe <span style="color:#E8611A;font-weight:700">?</span>
+    </div>
+    <div style="width:100%;position:relative;margin-bottom:14px">
+      <input id="pwd-input" type="password" placeholder="••••••••" 
+             onkeydown="if(event.key==='Enter')checkPwd()"
+             style="width:100%;padding:16px 50px 16px 20px;background:#1a1a1a;border:2px solid #2e2e2e;border-radius:14px;color:#f0f0f0;font-family:'DM Sans',sans-serif;font-size:16px;outline:none;transition:border-color 0.2s;letter-spacing:2px"/>
+      <button onclick="togglePwd()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:#666" id="pwd-eye">👁</button>
+    </div>
+    <div id="pwd-error" style="color:#f87171;font-size:12px;margin-bottom:10px;height:16px;font-family:'DM Sans',sans-serif"></div>
+    <button onclick="checkPwd()" 
+            style="width:100%;padding:16px;background:linear-gradient(135deg,#E8611A,#ff7a35);border:none;border-radius:14px;color:white;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;cursor:pointer;transition:opacity 0.15s;box-shadow:0 4px 20px rgba(232,97,26,0.4)">
+      ENTRER
+    </button>
+    <div style="margin-top:16px;font-size:11px;color:#444;font-family:'DM Sans',sans-serif">Session active 6h</div>
+  </div>
+</div>
 <header>
   <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
     <div class="logo" style="margin-bottom:0">FLAUDIS <span>NOTICES PRODUITS</span></div>
@@ -1207,6 +1234,49 @@ window.closePlanDetail = function() {
   document.getElementById('plan-overlay').style.display='none';
   document.getElementById('plan-detail').style.transform='translateY(100%)';
 };
+
+// ── Login ─────────────────────────────────────────────────
+const PWD_HASH = 'bcb1b9f1ed4a1cbbd7039cbf7db50f4923c99f0b7e2f9662e93ab000e35181c4';
+const SESSION_KEY = 'flaudis_session';
+const SESSION_TTL = 6 * 3600 * 1000; // 6h
+
+function checkSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+    if(s && Date.now() - s.ts < SESSION_TTL) {
+      document.getElementById('login-screen').style.display = 'none';
+      return true;
+    }
+  } catch(e){}
+  return false;
+}
+
+async function checkPwd() {
+  const val = document.getElementById('pwd-input').value;
+  if(!val) return;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash === PWD_HASH) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
+    document.getElementById('login-screen').style.display = 'none';
+  } else {
+    const err = document.getElementById('pwd-error');
+    err.textContent = 'Mauvais mot de passe 🤨';
+    document.getElementById('pwd-input').style.borderColor = '#f87171';
+    setTimeout(()=>{err.textContent='';document.getElementById('pwd-input').style.borderColor='#2e2e2e';},2000);
+  }
+}
+
+function togglePwd() {
+  const inp = document.getElementById('pwd-input');
+  inp.type = inp.type==='password'?'text':'password';
+}
+
+// Vérifier session au chargement
+if(!checkSession()) {
+  // Laisser l'écran de login visible
+  setTimeout(()=>document.getElementById('pwd-input')?.focus(), 300);
+}
 
 loadNotices();
 </script>
