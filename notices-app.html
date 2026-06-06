@@ -391,7 +391,7 @@ function buildLocBloc(key, slotId, idx, loc) {
     )+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer">&#x1F4BE; Enregistrer</button>'+
-      (idx>0?'<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">&#x1F5D1;</button>':'')+
+      '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">&#x1F5D1;</button>'+
     '</div>';
   const open=false; // Tous tiroirs fermés par défaut
   return '<div id="locbloc-'+key+'-'+slotId+'" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">'+
@@ -452,10 +452,21 @@ window.locSave=function(btn){
 window.locDel=function(btn){
   if(!confirm('Supprimer cet emplacement ?'))return;
   const key=btn.dataset.key,slotId=btn.dataset.slot;
-  // Supprimer de fbData local pour éviter que renderAllSoft le recréé
   if(fbData[key]) delete fbData[key][slotId];
   document.getElementById('locbloc-'+key+'-'+slotId)?.remove();
   db.ref('produits/'+key+'/'+slotId).remove();
+  // Si c'était le slot principal (loc) et qu'il n'en reste plus, garder le bouton ajouter visible
+  const tabEl=document.getElementById('tab-loc-'+key);
+  if(tabEl && !tabEl.querySelector('[id^="locbloc-"]')) {
+    // Plus aucun emplacement — afficher un message vide
+    const addBtn=document.getElementById('addbtn-'+key);
+    if(addBtn) {
+      const empty=document.createElement('div');
+      empty.style.cssText='color:var(--muted);font-size:12px;text-align:center;padding:12px 0';
+      empty.textContent='Aucun emplacement défini';
+      tabEl.insertBefore(empty,addBtn);
+    }
+  }
 };
 window.locAdd=function(key){
   const d=fbData[key]||{};
