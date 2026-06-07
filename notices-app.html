@@ -135,13 +135,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 firebase.initializeApp({
-  apiKey:"AIzaSyCrOySPI0DB-K0BBmc8lG3Z9Jno6j5fcuY",
-  authDomain:"flaudis-notices.firebaseapp.com",
-  databaseURL:"https://flaudis-notices-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:"flaudis-notices",
-  storageBucket:"flaudis-notices.firebasestorage.app",
-  messagingSenderId:"1077210292192",
-  appId:"1:1077210292192:web:d949dafeb5641b31d35585"
+  apiKey:"AIzaSyDJETAsWIL3AAiQwb_hCys3OILqBPA_IcE",
+  authDomain:"flaudis-prod.firebaseapp.com",
+  databaseURL:"https://flaudis-prod-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"flaudis-prod",
+  storageBucket:"flaudis-prod.firebasestorage.app",
+  messagingSenderId:"774760567820",
+  appId:"1:774760567820:web:f0c2c3c6bfaab746e54a29"
 });
 const db = firebase.database();
 
@@ -868,7 +868,7 @@ window.scanNotice=async function(key){
   const btn=document.querySelector('#tab-pieces-'+key+' button[onclick*="scanNotice"]');
   if(btn){btn.textContent='⏳ Analyse…';btn.disabled=true;btn.style.transform='scale(0.95)';}
   try{
-    const res=await fetch('https://sav-server-production.up.railway.app/scan-notice',{
+    const res=await fetch('https://flaudis-server-production.up.railway.app/scan-notice',{
       method:'POST',headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
       body:JSON.stringify({pdfUrl:notice.rawUrl,ref:notice.ref})
     });
