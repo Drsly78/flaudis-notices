@@ -1016,9 +1016,7 @@ window.exportReassort = function() {
     const piece = it.piece || '';
     return [it.ref, piece, type, it.qty].join(';');
   });
-  const csv = 'Référence;Pièce;Type;Quantité
-' + rows.join('
-');
+    const csv = 'Référence;Pièce;Type;Quantité\n' + rows.join('\n')
   const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
