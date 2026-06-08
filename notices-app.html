@@ -667,24 +667,41 @@ function renderInfTab(key, vis) {
         </div>
       </div>`:''}
     </div>
-    <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
-    <div class="vis-row">
-      <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
-      <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div class="stock-label" style="margin-bottom:8px">Visserie disponible</div>
+      <div class="vis-row">
+        <button class="vis-btn${vis===true?' sel-yes':''}" id="vis-oui-${key}" onclick="saveVis('${key}',true)">✅ Oui</button>
+        <button class="vis-btn${vis===false?' sel-no':''}" id="vis-non-${key}" onclick="saveVis('${key}',false)">❌ Non</button>
+      </div>
     </div>
-    <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label">Note</div>
-    <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${d.note||''}</textarea>
-    <button class="save-btn orange" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-    <div style="height:1px;background:var(--border);margin:14px 0"></div>
-    <div class="stock-label" style="margin-bottom:10px">Réassort</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,-1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
-      <input id="rq-${key}" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;padding:8px;outline:none"/>
-      <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div class="stock-label" style="margin-bottom:8px">Note</div>
+      <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${d.note||''}</textarea>
+      <button class="save-btn orange" style="margin-top:8px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
     </div>
-    <button data-key="${key}" onclick="addToReassort(this.dataset.key)" style="width:100%;padding:11px;border-radius:10px;background:none;border:1.5px solid var(--orange);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter au réassort</button>
-  </div>`;
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div class="stock-label" style="margin-bottom:10px">📦 Réassort — cartons complets</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,-1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
+        <input id="rq-${key}" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;padding:8px;outline:none"/>
+        <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
+      </div>
+      <button data-key="${key}" onclick="addToReassort(this.dataset.key)" style="width:100%;padding:11px;border-radius:10px;background:none;border:1.5px solid var(--orange);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter au réassort</button>
+      ${pids.length ? `<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+        <div class="stock-label" style="margin-bottom:8px;color:#60a5fa">🔩 Réassort de pièces</div>
+        <select id="rpiece-${key}" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px;outline:none;margin-bottom:8px">
+          <option value="">— Sélectionner une pièce —</option>
+          ${pids.map(pid=>'<option value="'+pid+'">'+((pieces[pid]?.nom)||pid)+'</option>').join('')}
+        </select>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <button data-key="${key}" onclick="adjPieceQty(this.dataset.key,-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>
+          <input id="rpiece-qty-${key}" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;padding:6px;outline:none"/>
+          <button data-key="${key}" onclick="adjPieceQty(this.dataset.key,1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>
+        </div>
+        <button data-key="${key}" onclick="addPieceToReassort(this.dataset.key)" style="width:100%;padding:9px;border-radius:10px;background:none;border:1.5px solid #3b82f6;color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter la pièce au réassort</button>
+      </div>` : ''}
+    </div>
+  </div>\`;
 }
 
 // ── Interactions ──────────────────────────────────────────
@@ -989,8 +1006,11 @@ window.setReassort = function(key, ref, val) {
 window.exportReassort = function() {
   const keys = Object.keys(reassortItems);
   if(!keys.length){alert('Aucun article sélectionné');return;}
-  let csv = 'R\u00e9f\u00e9rence;Quantit\u00e9\n';
-  csv += keys.map(k=>reassortItems[k].ref+';'+reassortItems[k].qty).join('\n');
+  let csv = 'Référence;Pièce;Type;Quantité\n';
+  csv += keys.map(k=>{
+    const it = reassortItems[k];
+    return it.ref+';'+(it.piece||'')+';'+(it.type==='piece'?'Pièce':'Carton')+';'+it.qty;
+  }).join('\n');
   const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1028,8 +1048,11 @@ function renderReassortPanel() {
   }
   el.innerHTML = keys.map(k=>{
     const it = reassortItems[k];
+    const label = it.type==='piece'
+      ? "<span style='color:#60a5fa;font-size:11px'>🔩 PIÈCE</span> <span style='font-family:Bebas Neue,sans-serif;font-size:13px;letter-spacing:1px'>"+it.ref+"</span> <span style='font-size:12px;color:var(--muted)'>"+it.piece+"</span>"
+      : "<span style='font-family:Bebas Neue,sans-serif;font-size:15px;letter-spacing:1px'>"+it.ref+"</span>";
     return "<div style='display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)'>"+
-      "<div style='flex:1;font-family:Bebas Neue,sans-serif;font-size:15px;letter-spacing:1px'>"+it.ref+"</div>"+
+      "<div style='flex:1;line-height:1.4'>"+label+"</div>"+
       "<button data-k='"+k+"' data-d='-1' onclick='adjReassortInList(this.dataset.k,Number(this.dataset.d))' style='width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:15px;font-weight:700;cursor:pointer'>−</button>"+
       "<span style='min-width:36px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)'>"+it.qty+"</span>"+
       "<button data-k='"+k+"' data-d='1' onclick='adjReassortInList(this.dataset.k,Number(this.dataset.d))' style='width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:15px;font-weight:700;cursor:pointer'>+</button>"+
@@ -1048,10 +1071,34 @@ window.addToReassort = function(key) {
   const notice = allNotices.find(n=>getKey(n.ref)===key);
   if(!notice) return;
   if(reassortItems[key]) reassortItems[key].qty += qty;
-  else reassortItems[key] = {ref:notice.ref, qty};
+  else reassortItems[key] = {ref:notice.ref, qty, type:'carton'};
   if(inp) inp.value = 1;
   const btn = document.querySelector('[data-key="'+key+'"][onclick*="addToReassort"]');
   if(btn){const o=btn.textContent;btn.textContent='✓ ('+reassortItems[key].qty+' total)';setTimeout(()=>{btn.textContent=o;},2000);}
+  if(currentView==='reassort') renderReassortPanel();
+};
+
+window.adjPieceQty = function(key, delta) {
+  const inp = document.getElementById('rpiece-qty-'+key);
+  if(inp) inp.value = Math.max(1, (parseInt(inp.value)||1)+delta);
+};
+
+window.addPieceToReassort = function(key) {
+  const sel = document.getElementById('rpiece-'+key);
+  const inp = document.getElementById('rpiece-qty-'+key);
+  const pid = sel?.value;
+  const qty = Math.max(1, parseInt(inp?.value)||1);
+  if(!pid) { alert('Sélectionnez une pièce'); return; }
+  const notice = allNotices.find(n=>getKey(n.ref)===key);
+  const d = fbData[key]||{};
+  const nomPiece = d.pieces?.[pid]?.nom || pid;
+  const itemKey = key+'__piece__'+pid;
+  if(reassortItems[itemKey]) reassortItems[itemKey].qty += qty;
+  else reassortItems[itemKey] = {ref: notice?.ref||key, piece: nomPiece, qty, type:'piece'};
+  if(sel) sel.value = '';
+  if(inp) inp.value = 1;
+  const btn = document.querySelector('[data-key="'+key+'"][onclick*="addPieceToReassort"]');
+  if(btn){const o=btn.textContent;btn.textContent='✓ Ajouté !';setTimeout(()=>{btn.textContent=o;},2000);}
   if(currentView==='reassort') renderReassortPanel();
 };
 window.adjReassortInList = function(key, delta) {
