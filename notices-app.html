@@ -568,6 +568,22 @@ function renderPiecesTab(key, pieces) {
 }
 
 // ── Info ──────────────────────────────────────────────────
+function buildPieceReassortBlock(key, pids, pieces) {
+  const opts = pids.map(pid=>'<option value="'+pid+'">'+(pieces[pid]?.nom||pid)+'</option>').join('');
+  return '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">'+
+    '<div class="stock-label" style="margin-bottom:8px;color:#60a5fa">🔩 Réassort de pièces</div>'+
+    '<select id="rpiece-'+key+'" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:DM Sans,sans-serif;font-size:13px;padding:8px;outline:none;margin-bottom:8px">'+
+      '<option value="">— Sélectionner une pièce —</option>'+opts+
+    '</select>'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+      '<button data-key="'+key+'" onclick="adjPieceQty(this.dataset.key,-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>'+
+      '<input id="rpiece-qty-'+key+'" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-weight:700;padding:6px;outline:none"/>'+
+      '<button data-key="'+key+'" onclick="adjPieceQty(this.dataset.key,1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>'+
+    '</div>'+
+    '<button data-key="'+key+'" onclick="addPieceToReassort(this.dataset.key)" style="width:100%;padding:9px;border-radius:10px;background:none;border:1.5px solid #3b82f6;color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer">+ Ajouter la pièce au réassort</button>'+
+  '</div>';
+}
+
 function renderInfTab(key, vis) {
   const d=fbData[key]||{}, pieces=d.pieces||{};
   const pids=sortPids(pieces);
@@ -687,21 +703,9 @@ function renderInfTab(key, vis) {
         <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
       </div>
       <button data-key="${key}" onclick="addToReassort(this.dataset.key)" style="width:100%;padding:11px;border-radius:10px;background:none;border:1.5px solid var(--orange);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter au réassort</button>
-      ${pids.length ? `<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
-        <div class="stock-label" style="margin-bottom:8px;color:#60a5fa">🔩 Réassort de pièces</div>
-        <select id="rpiece-${key}" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px;outline:none;margin-bottom:8px">
-          <option value="">— Sélectionner une pièce —</option>
-          ${pids.map(pid=>'<option value="'+pid+'">'+((pieces[pid]?.nom)||pid)+'</option>').join('')}
-        </select>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <button data-key="${key}" onclick="adjPieceQty(this.dataset.key,-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>
-          <input id="rpiece-qty-${key}" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;padding:6px;outline:none"/>
-          <button data-key="${key}" onclick="adjPieceQty(this.dataset.key,1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>
-        </div>
-        <button data-key="${key}" onclick="addPieceToReassort(this.dataset.key)" style="width:100%;padding:9px;border-radius:10px;background:none;border:1.5px solid #3b82f6;color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter la pièce au réassort</button>
-      </div>` : ''}
+      \${pids.length ? buildPieceReassortBlock(key, pids, pieces) : ''}
     </div>
-  </div>\`;
+  </div>`;
 }
 
 // ── Interactions ──────────────────────────────────────────
