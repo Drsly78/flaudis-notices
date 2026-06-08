@@ -145,7 +145,7 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-const GITHUB_API = 'https://api.github.com/repos/Drsly78/sav-notices/contents/notices';
+const GITHUB_API = 'https://api.github.com/repos/Drsly78/flaudis-notices/contents/notices';
 const CACHE_KEY  = 'flaudis_notices_v4';
 const CACHE_TTL  = 3600000;
 
@@ -1010,18 +1010,24 @@ window.setReassort = function(key, ref, val) {
 window.exportReassort = function() {
   const keys = Object.keys(reassortItems);
   if(!keys.length){alert('Aucun article sélectionné');return;}
-  let csv = 'Référence;Pièce;Type;Quantité\n';
-  csv += keys.map(k=>{
+  const rows = keys.map(k=>{
     const it = reassortItems[k];
-    return it.ref+';'+(it.piece||'')+';'+(it.type==='piece'?'Pièce':'Carton')+';'+it.qty;
-  }).join('\n');
+    const type = it.type === 'piece' ? 'Pièce' : 'Carton';
+    const piece = it.piece || '';
+    return [it.ref, piece, type, it.qty].join(';');
+  });
+  const csv = 'Référence;Pièce;Type;Quantité
+' + rows.join('
+');
   const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href=url; a.download='reassort_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click(); URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = 'reassort_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
   // Vider le réassort après export
-  Object.keys(reassortItems).forEach(k => delete reassortItems[k]);
+  keys.forEach(k => delete reassortItems[k]);
   renderReassortPanel();
 };
 
