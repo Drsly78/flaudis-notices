@@ -1074,7 +1074,7 @@ window.addToReassort = function(key) {
   const qty = Math.max(1, parseInt(inp?.value)||1);
   const notice = allNotices.find(n=>getKey(n.ref)===key);
   if(!notice) return;
-  if(reassortItems[key]) reassortItems[key].qty += qty;
+  if(reassortItems[key]) { reassortItems[key].qty += qty; if(!reassortItems[key].type) reassortItems[key].type='carton'; }
   else reassortItems[key] = {ref:notice.ref, qty, type:'carton'};
   if(inp) inp.value = 1;
   const btn = document.querySelector('[data-key="'+key+'"][onclick*="addToReassort"]');
