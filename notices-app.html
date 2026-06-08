@@ -1121,17 +1121,7 @@ window.removeReassort = function(key) {
   delete reassortItems[key];
   renderReassortPanel();
 };
-window.exportReassort = function() {
-  const keys = Object.keys(reassortItems);
-  if(!keys.length){alert('Aucun article dans le réassort');return;}
-  let csv = 'R\u00e9f\u00e9rence;Quantit\u00e9\n';
-  csv += keys.map(k=>reassortItems[k].ref+';'+reassortItems[k].qty).join('\n');
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download='reassort_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click(); URL.revokeObjectURL(url);
-};
+
 
 // ── Plan entrepôt ─────────────────────────────────────────
 const PLAN_AISLES = [{id:'1',G:4,D:6},{id:'2',G:4,D:4},{id:'3',G:3,D:4}];
