@@ -1020,6 +1020,9 @@ window.exportReassort = function() {
   const a = document.createElement('a');
   a.href=url; a.download='reassort_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click(); URL.revokeObjectURL(url);
+  // Vider le réassort après export
+  Object.keys(reassortItems).forEach(k => delete reassortItems[k]);
+  renderReassortPanel();
 };
 
 document.getElementById('reassort-search')?.addEventListener('input', ()=>renderReassortList());
