@@ -1001,7 +1001,7 @@ window.adjReassort = function(key, ref, delta) {
 };
 window.setReassort = function(key, ref, val) {
   const q = Math.max(0, parseInt(val)||0);
-  if(q > 0) reassortItems[key] = {ref, qty:q};
+  if(q > 0) reassortItems[key] = {ref, qty:q, type: reassortItems[key]?.type || 'carton', piece: reassortItems[key]?.piece};
   else delete reassortItems[key];
   renderReassortSelected();
 };
