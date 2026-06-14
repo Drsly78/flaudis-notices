@@ -80,7 +80,7 @@
 <!-- ── LOGIN ───────────────────────────────────────────── -->
 <div id="login-screen" style="position:fixed;inset:0;background:#0f0f0f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden;height:100%;width:100%;">
   <div style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:0">
-    <img src="https://raw.githubusercontent.com/Drsly78/sav-notices/main/login.png" 
+    <img src="https://raw.githubusercontent.com/Drsly78/flaudis-notices/main/login.png" 
          style="width:100%;max-width:340px;border-radius:16px;margin-bottom:20px;object-fit:cover;box-shadow:0 8px 40px rgba(0,0,0,0.6)"
          onerror="this.style.display='none'"/>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:4px;color:#E8611A;text-align:center;line-height:1">SÉCURITÉ !</div>
@@ -184,8 +184,8 @@ async function loadNotices() {
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
         const label= year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
         return { ref, label:label||ref, year,
-          githubUrl:'https://mozilla.github.io/pdf.js/web/viewer.html?file='+encodeURIComponent('https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/'+encodeURIComponent(f.name)),
-          rawUrl:'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/'+encodeURIComponent(f.name) };
+          githubUrl:'https://mozilla.github.io/pdf.js/web/viewer.html?file='+encodeURIComponent('https://raw.githubusercontent.com/Drsly78/flaudis-notices/main/notices/'+encodeURIComponent(f.name)),
+          rawUrl:'https://raw.githubusercontent.com/Drsly78/flaudis-notices/main/notices/'+encodeURIComponent(f.name) };
       })
       .sort((a,b)=>a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),data:allNotices}));
