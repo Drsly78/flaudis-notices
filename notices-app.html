@@ -104,7 +104,7 @@
 <script>
 /* Session valide → masquer l'écran sécurité instantanément, sans attendre les gros scripts */
 try{var _s=JSON.parse(localStorage.getItem('flaudis_session')||'null');
-if(_s&&Date.now()-_s.ts<6*3600*1000){document.getElementById('login-screen').style.display='none';}}catch(e){}
+if(_s&&Date.now()-_s.ts<(matchMedia('(pointer:fine)').matches?30*24*3600*1000:6*3600*1000)){document.getElementById('login-screen').style.display='none';}}catch(e){}
 </script>
 <header>
   <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
@@ -1364,7 +1364,7 @@ const SESSION_TTL = 6 * 3600 * 1000; // 6h
 function checkSession() {
   try {
     const s = JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
-    if(s && Date.now() - s.ts < SESSION_TTL) {
+    if(s && Date.now() - s.ts < (matchMedia('(pointer:fine)').matches ? 30*24*3600*1000 : SESSION_TTL)) {
       document.getElementById('login-screen').style.display = 'none';
       document.body.classList.remove('login-active');
       return true;
