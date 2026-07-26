@@ -1391,6 +1391,25 @@ async function checkPwd() {
   }
 }
 
+// ── Auto-connexion via le lien de l'extension SAV (#k=motdepasse) ──
+// Vérifié exactement comme une saisie clavier (même hash), puis le
+// fragment est immédiatement retiré de la barre d'adresse.
+(async function autoLogin() {
+  const m = location.hash.match(/[#&]k=([^&]+)/);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  try {
+    const val = decodeURIComponent(m[1]);
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+    const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    if (hash === PWD_HASH) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
+      document.getElementById('login-screen').style.display = 'none';
+      document.body.classList.remove('login-active');
+    }
+  } catch(e) {}
+})();
+
 function togglePwd() {
   const inp = document.getElementById('pwd-input');
   inp.type = inp.type==='password'?'text':'password';
