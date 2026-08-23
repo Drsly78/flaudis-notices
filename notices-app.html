@@ -156,14 +156,20 @@ const GITHUB_API = 'https://api.github.com/repos/Drsly78/flaudis-notices/content
 
 // Réfs manuelles (produits sans notice : déco, etc.) — même système de
 // fiche (emplacements, pièces, visserie) que les produits à notice
-firebase.database().ref('manuels').on('value', snap => {
+let objData = {};
+// Les abonnements Firebase ne partent qu'une fois AUTHENTIFIÉ : un abonnement
+// rejeté par les règles est annulé définitivement, il ne se relance pas seul
+let _fbPret = false; const _fbAttentes = [];
+function onReady(f) { if (_fbPret) f(); else _fbAttentes.push(f); }
+function demarrerDonnees() { if (_fbPret) return; _fbPret = true; _fbAttentes.forEach(f => f()); _fbAttentes.length = 0; }
+onReady(() => firebase.database().ref('manuels').on('value', snap => {
   const m = snap.val() || {};
   manualRefs = Object.entries(m).map(([k, v]) => ({
     ref: v.ref || k, label: v.label || '', year: null, manual: true,
     githubUrl: null, rawUrl: null
   })).sort((a, b) => a.ref.localeCompare(b.ref));
   if (typeof renderAll === 'function' && noticesReady) renderAll();
-});
+}));
 
 window.addManualRef = async function() {
   const nom = (prompt('Référence à ajouter (sans notice) :') || '').trim();
@@ -193,17 +199,16 @@ let noticesReady = false;
 let searchTimer;
 
 // ── Firebase ──────────────────────────────────────────────
-db.ref('produits').on('value', snap => {
+onReady(() => db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
   if (noticesReady) renderAllSoft();
-});
+}));
 
 // Objets manuels placés dans l'entrepôt (échelles, cartons vides, matériel…)
-let objData = {};
-db.ref('objets').on('value', snap => {
+onReady(() => db.ref('objets').on('value', snap => {
   objData = snap.val() || {};
   if (typeof currentView !== 'undefined' && currentView === 'plan') renderPlan();
-});
+}));
 function objKey(aisle, side, rack) {
   if (aisle === 'AREA') return 'AREA';
   if (side === 'SOL') return 'A' + aisle + 'SOL';
@@ -1433,6 +1438,7 @@ function checkSession() {
   // le marqueur local sert seulement à masquer l'écran sans clignotement
   firebase.auth().onAuthStateChanged(u => {
     if (u) {
+      demarrerDonnees(); // abonnements lancés seulement une fois authentifié
       localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
       document.getElementById('login-screen').style.display = 'none';
       document.body.classList.remove('login-active');
