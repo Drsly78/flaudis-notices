@@ -139,6 +139,7 @@ if(_s&&Date.now()-_s.ts<(matchMedia('(pointer:fine)').matches?30*24*3600*1000:6*
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyDJETAsWIL3AAiQwb_hCys3OILqBPA_IcE",
@@ -1428,9 +1429,21 @@ const SESSION_KEY = 'flaudis_session';
 const SESSION_TTL = 6 * 3600 * 1000; // 6h
 
 function checkSession() {
+  // La vraie session est Firebase (permanente) — restaurée en arrière-plan ;
+  // le marqueur local sert seulement à masquer l'écran sans clignotement
+  firebase.auth().onAuthStateChanged(u => {
+    if (u) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
+      document.getElementById('login-screen').style.display = 'none';
+      document.body.classList.remove('login-active');
+    } else if (!JSON.parse(localStorage.getItem(SESSION_KEY)||'null')) {
+      document.body.classList.add('login-active');
+      const ls = document.getElementById('login-screen'); if (ls) ls.style.display = '';
+    }
+  });
   try {
     const s = JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
-    if(s && Date.now() - s.ts < (matchMedia('(pointer:fine)').matches ? 30*24*3600*1000 : SESSION_TTL)) {
+    if(s && Date.now() - s.ts < 365*24*3600*1000) {
       document.getElementById('login-screen').style.display = 'none';
       document.body.classList.remove('login-active');
       return true;
@@ -1443,9 +1456,13 @@ function checkSession() {
 async function checkPwd() {
   const val = document.getElementById('pwd-input').value;
   if(!val) return;
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
-  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  if(hash === PWD_HASH) {
+  let ok = false;
+  try {
+    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await firebase.auth().signInWithEmailAndPassword('sav@flaudis.fr', val);
+    ok = true;
+  } catch(e) {}
+  if(ok) {
     localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
     document.getElementById('login-screen').style.display = 'none';
     document.body.classList.remove('login-active');
@@ -1466,9 +1483,13 @@ async function checkPwd() {
   history.replaceState(null, '', location.pathname + location.search);
   try {
     const val = decodeURIComponent(m[1]);
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
-    const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-    if (hash === PWD_HASH) {
+    let ok = false;
+    try {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      await firebase.auth().signInWithEmailAndPassword('sav@flaudis.fr', val);
+      ok = true;
+    } catch(e2) {}
+    if (ok) {
       localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
       document.getElementById('login-screen').style.display = 'none';
       document.body.classList.remove('login-active');
