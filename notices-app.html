@@ -1438,7 +1438,7 @@ function checkSession() {
       document.body.classList.remove('login-active');
     } else if (!JSON.parse(localStorage.getItem(SESSION_KEY)||'null')) {
       document.body.classList.add('login-active');
-      const ls = document.getElementById('login-screen'); if (ls) ls.style.display = '';
+      const ls = document.getElementById('login-screen'); if (ls) ls.style.display = 'flex';
     }
   });
   try {
