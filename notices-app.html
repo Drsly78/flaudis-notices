@@ -1436,9 +1436,12 @@ function checkSession() {
       localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
       document.getElementById('login-screen').style.display = 'none';
       document.body.classList.remove('login-active');
-    } else if (!JSON.parse(localStorage.getItem(SESSION_KEY)||'null')) {
+    } else {
+      // Pas de session Firebase : l'ancien marqueur local ne vaut rien — écran obligatoire
+      localStorage.removeItem(SESSION_KEY);
       document.body.classList.add('login-active');
       const ls = document.getElementById('login-screen'); if (ls) ls.style.display = 'flex';
+      setTimeout(()=>document.getElementById('pwd-input')?.focus(), 200);
     }
   });
   try {
