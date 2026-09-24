@@ -157,6 +157,7 @@ const GITHUB_API = 'https://api.github.com/repos/Drsly78/flaudis-notices/content
 // Réfs manuelles (produits sans notice : déco, etc.) — même système de
 // fiche (emplacements, pièces, visserie) que les produits à notice
 let objData = {};
+let masques = {};
 // Les abonnements Firebase ne partent qu'une fois AUTHENTIFIÉ : un abonnement
 // rejeté par les règles est annulé définitivement, il ne se relance pas seul
 let _fbPret = false; const _fbAttentes = [];
@@ -181,6 +182,16 @@ window.addManualRef = async function() {
   await db.ref('manuels/' + key).set({ ref: nom.toUpperCase(), label: '', ts: Date.now() });
 };
 
+window.supprimerRef = async function(key, ref, isManual, e) {
+  if (e) e.stopPropagation();
+  if (isManual) return window.deleteManualRef(key, ref, e);
+  const conf = prompt('⚠️ Masquage de « ' + ref + ' » (référence du répertoire notices — utile pour les doublons).\n\nElle disparaîtra de la liste et ses données locales (emplacements, pièces) seront effacées.\n\nTape SUPPRIMER pour confirmer :');
+  if (conf !== 'SUPPRIMER') { if (conf !== null) alert('Suppression annulée (il fallait taper SUPPRIMER).'); return; }
+  try {
+    await db.ref('masques/' + key).set({ ref: ref, ts: Date.now() });
+    await db.ref('produits/' + key).remove();
+  } catch(err) { alert('Erreur : ' + err.message); }
+};
 window.deleteManualRef = async function(key, ref, e) {
   e.stopPropagation();
   const conf = prompt('⚠️ Suppression DÉFINITIVE de « ' + ref + ' » et de toutes ses données (emplacements, pièces, cartons).\n\nTape SUPPRIMER pour confirmer :');
@@ -205,11 +216,16 @@ onReady(() => db.ref('produits').on('value', snap => {
 }));
 
 // Objets manuels placés dans l'entrepôt (échelles, cartons vides, matériel…)
+onReady(() => db.ref('masques').on('value', snap => {
+  masques = snap.val() || {};
+  if (noticesReady) renderAllSoft();
+}));
 onReady(() => db.ref('objets').on('value', snap => {
   objData = snap.val() || {};
   if (typeof currentView !== 'undefined' && currentView === 'plan') renderPlan();
 }));
 function objKey(aisle, side, rack) {
+  if (aisle === 'HAM') return 'HAM' + rack;
   if (aisle === 'AREA') return 'AREA';
   if (side === 'SOL') return 'A' + aisle + 'SOL';
   return 'A' + aisle + side + 'R' + rack;
@@ -291,7 +307,7 @@ function pieceBadge(key) {
 // ── Render ────────────────────────────────────────────────
 function renderAll() {
   const q = searchQuery.trim().toLowerCase();
-  const source = allNotices.concat(manualRefs);
+  const source = allNotices.filter(n => !masques[getKey(n.ref)]).concat(manualRefs);
   const filtered = q ? source.filter(n=>n.ref.toLowerCase().includes(q)||n.label.toLowerCase().includes(q)) : source;
   document.getElementById('search-hint').textContent = q ? filtered.length+' résultat(s)' : allNotices.length+' notices';
   const badge = document.getElementById('count-badge');
@@ -322,7 +338,7 @@ function renderAll() {
           ${isAlertTriggered(key)?'<span class="mini-badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.3);animation:pulse 1.5s infinite">⚠️ Stock bas</span>':''}
         </div>
         ${n.manual
-          ? `<span style="font-size:10px;color:var(--muted);border:1px dashed var(--border);padding:5px 8px;border-radius:8px;flex-shrink:0">sans notice</span><button onclick="deleteManualRef('${key}','${n.ref}',event)" title="Supprimer cette référence (confirmation requise)" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:12px;font-weight:700;padding:6px 9px;border-radius:8px;cursor:pointer;flex-shrink:0;margin-left:6px">🗑</button>`
+          ? `<span style="font-size:10px;color:var(--muted);border:1px dashed var(--border);padding:5px 8px;border-radius:8px;flex-shrink:0">sans notice</span>`
           : `<a href="${n.githubUrl}" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0">Notice</a>`}
       </div>
       <div class="detail-panel" id="panel-${key}">
@@ -333,7 +349,7 @@ function renderAll() {
         </div>
         <div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>
         ${renderPiecesTab(key, d.pieces)}
-        ${renderInfTab(key, vis)}
+        ${renderInfTab(key, vis, n.manual?1:0, n.ref)}
       </div>
     </div>`;
   }).join('');
@@ -432,10 +448,13 @@ function buildLocBloc(key, slotId, idx, loc) {
   const co=ls.cote !==undefined?ls.cote :(loc.cote ||null);
   const ra=ls.rack !==undefined?ls.rack :(loc.rack ||null);
   const ha=ls.haut !==undefined?ls.haut :(loc.hauteur??null);
+  const cont=ls.cont!==undefined?ls.cont:(loc.conteneur??null);
+  const isHam = al==='HAM';
+  const lieu = al ? (isHam?'HAM':'MAGNY') : null;
   const isArea = al==='AREA';
   const coteSol = co==='SOL';
   const rackMax = al==='1'?(coteSol?0:co==='G'?4:6):al==='2'?(coteSol?0:4):al==='3'?(coteSol?0:co==='G'?3:4):7;
-  const sum = isArea?'Zone AREA':(al?(coteSol?'Allée '+al+' · SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')):'' );
+  const sum = isHam?(cont!=null?'HAM · Conteneur '+cont:'HAM'):isArea?'Zone AREA':(al?(coteSol?'Allée '+al+' · SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')):'' );
   const label=sum||('Emplacement '+(idx+1));
   function b(f,v,cur){
     const sel=cur===v||(typeof cur==='number'&&cur===Number(v));
@@ -443,6 +462,10 @@ function buildLocBloc(key, slotId, idx, loc) {
   }
   const body=
     '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
+    '<div class="loc-step on"><div class="loc-step-title active-step">Lieu</div><div class="loc-btns">'+['MAGNY','HAM'].map(v=>b('lieu',v,lieu)).join('')+'</div></div>'+
+    (isHam
+      ? '<div class="loc-step on"><div class="loc-step-title">Conteneur</div><div class="loc-btns">'+[1,2,3,4].map(v=>b('cont',v,cont)).join('')+'</div></div>'
+      : (!lieu ? '' :
     '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','AREA'].map(v=>b('allee',v,al)).join('')+'</div></div>'+
     (isArea?'':
       '<div class="loc-step'+(al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','SOL','D'].map(v=>b('cote',v,co)).join('')+'</div></div>'+
@@ -450,7 +473,7 @@ function buildLocBloc(key, slotId, idx, loc) {
         '<div class="loc-step'+(co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+(rackMax>0?Array.from({length:rackMax},(_,i)=>i+1).map(v=>b('rack',v,ra)).join(''):'')+'</div></div>'+
         '<div class="loc-step'+(ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>b('haut',v,ha)).join('')+'</div></div>'
       )
-    )+
+    )))+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer">&#x1F4BE; Enregistrer</button>'+
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">&#x1F5D1;</button>'+
@@ -473,12 +496,18 @@ window.locToggle=function(id){
 };
 window.locPick=function(btn){
   const key=btn.dataset.key,slotId=btn.dataset.slot,field=btn.dataset.field;
-  const val=['rack','haut'].includes(field)?Number(btn.dataset.val):btn.dataset.val;
+  const val=['rack','haut','cont'].includes(field)?Number(btn.dataset.val):btn.dataset.val;
   if(!window._ls)window._ls={};
   if(!window._ls[key])window._ls[key]={};
   if(!window._ls[key][slotId])window._ls[key][slotId]={};
   const ls=window._ls[key][slotId];
-  ls[field]=ls[field]===val?null:val;
+  if(field==='lieu'){
+    // Bascule de site : on repart proprement dans le site choisi
+    ls.allee = (val==='HAM') ? 'HAM' : null;
+    delete ls.cote; delete ls.rack; delete ls.haut; delete ls.cont;
+  } else {
+    ls[field]=ls[field]===val?null:val;
+  }
   if(field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;}
   if(field==='cote'){delete ls.rack;delete ls.haut;}
   if(field==='rack'){delete ls.haut;}
@@ -499,12 +528,17 @@ window.locSave=function(btn){
   const co=ls.cote !==undefined?ls.cote :(loc.cote ||null);
   const ra=ls.rack !==undefined?ls.rack :(loc.rack ||null);
   const ha=ls.haut !==undefined?ls.haut :(loc.hauteur??null);
+  const cont=ls.cont!==undefined?ls.cont:(loc.conteneur??null);
   btn.textContent='⏳…';btn.disabled=true;
   const nl={};
   if(al)nl.allee=al;
+  if(al==='HAM'){
+    if(cont!=null)nl.conteneur=cont;
+  } else {
   if(al!=='AREA'&&co)nl.cote=co;
   if(al!=='AREA'&&co!=='SOL'&&ra!=null)nl.rack=ra;
   if(al!=='AREA'&&co!=='SOL'&&ha!=null)nl.hauteur=ha;
+  }
   db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
     if(window._ls?.[key])delete window._ls[key][slotId];
     btn.textContent='✓';
@@ -644,7 +678,7 @@ function buildPieceReassortBlock(key, pids, pieces) {
   '</div>';
 }
 
-function renderInfTab(key, vis) {
+function renderInfTab(key, vis, isManual, refName) {
   const d=fbData[key]||{}, pieces=d.pieces||{};
   const pids=sortPids(pieces);
   const cids=new Set();
@@ -765,7 +799,10 @@ function renderInfTab(key, vis) {
       <button data-key="${key}" onclick="addToReassort(this.dataset.key)" style="width:100%;padding:11px;border-radius:10px;background:none;border:1.5px solid var(--orange);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter au réassort</button>
       ${pids.length ? buildPieceReassortBlock(key, pids, pieces) : ''}
     </div>
-  </div>`;
+  </div>
+    <div style="margin-top:18px;padding-top:12px;border-top:1px dashed var(--border);text-align:right">
+      <button onclick="supprimerRef('${key}','${refName||key}',${isManual?1:0},event)" style="background:none;border:none;color:rgba(239,68,68,0.6);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline dotted">🗑 Supprimer cette référence…</button>
+    </div>`;
 }
 
 // ── Interactions ──────────────────────────────────────────
@@ -1231,7 +1268,8 @@ function getPlanData() {
       if(!loc||!loc.allee) return;
       const al = loc.allee, co = loc.cote||'', ra = loc.rack, ha = loc.hauteur;
       let k;
-      if(al==='AREA') k = 'AREA';
+      if(al==='HAM') { if(loc.conteneur==null) return; k = 'HAM'+loc.conteneur; }
+      else if(al==='AREA') k = 'AREA';
       else if(co==='SOL') k = 'A'+al+'SOL';
       else if(co&&ra!=null&&ha!=null) k = 'A'+al+co+'R'+ra+'H'+ha;
       else return;
@@ -1268,7 +1306,37 @@ function renderPlan() {
   function rackOcc(a,s,r){const hs=curPH==='all'?[0,1,2,3]:[+curPH];return hs.some(h=>planData['A'+a+s+'R'+r+'H'+h]?.length>0);}
   function rackCnt(a,s,r){const hs=curPH==='all'?[0,1,2,3]:[+curPH];let n=0;hs.forEach(h=>{n+=(planData['A'+a+s+'R'+r+'H'+h]?.length||0);});return n;}
 
+  const curSite = panel.dataset.site || 'MAGNY';
   let html='<div style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:3px;color:var(--orange);text-align:center;margin-bottom:10px">PLAN DE L&#39;ENTREPÔT</div>';
+  // Bascule de site
+  html+='<div style="display:flex;gap:6px;margin-bottom:10px;justify-content:center">';
+  [['MAGNY','🏭 MAGNY'],['HAM','📦 HAM']].forEach(([v,l])=>{
+    const a=curSite===v;
+    html+='<button data-sv="'+v+'" onclick="setPlanSite(this.dataset.sv)" style="padding:8px 18px;border-radius:9px;border:1px solid '+(a?'var(--orange)':'var(--border)')+';background:'+(a?'var(--orange)':'var(--surface2)')+';color:'+(a?'white':'var(--muted)')+';font-size:12px;font-weight:800;cursor:pointer;letter-spacing:1px">'+l+'</button>';
+  });
+  html+='</div>';
+
+  if (curSite === 'HAM') {
+    // ── Site HAM : 4 conteneurs ──
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">';
+    [1,2,3,4].forEach(n=>{
+      const prods=planData['HAM'+n]||[], oc=objCnt('HAM'+n), occ=prods.length>0||oc>0;
+      html+='<div data-pc="'+n+'" onclick="openPlanDetail(\'HAM\',\'CONT\',this.dataset.pc)" style="padding:20px 12px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid '+(occ?'rgba(52,211,153,0.5)':'#242424')+';background:'+(occ?'rgba(52,211,153,0.08)':'#181818')+'">'+
+        '<span style="font-size:26px">📦</span>'+
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:15px;letter-spacing:2px;color:'+(occ?'#34d399':'var(--muted)')+'">CONTENEUR '+n+'</span>'+
+        (occ?'<span style="font-size:11px;font-weight:700;color:#34d399">'+prods.length+' produit'+(prods.length>1?'s':'')+(oc?' · 🧰'+oc:'')+'</span>':'<span style="font-size:10px;color:var(--muted)">Vide</span>')+
+      '</div>';
+    });
+    html+='</div>';
+    html+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;justify-content:center"><span style="font-size:10px;color:var(--muted)">🟢 Conteneur occupé</span></div>';
+    panel.innerHTML=html; panel.dataset.h=curPH; panel.dataset.site=curSite;
+    if(!document.getElementById('plan-overlay')){
+      const ov=document.createElement('div');ov.id='plan-overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:199;display:none';ov.onclick=closePlanDetail;document.body.appendChild(ov);
+      const dt=document.createElement('div');dt.id='plan-detail';dt.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1c1c1c;border-top:2px solid var(--orange);padding:16px 16px 32px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(.32,.72,0,1);z-index:200;max-height:70vh;overflow-y:auto;border-radius:20px 20px 0 0';dt.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="width:40px;height:4px;border-radius:2px;background:var(--border)"></div><button onclick="closePlanDetail()" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:14px">✕</button></div><div id="plan-detail-content"></div>';document.body.appendChild(dt);
+    }
+    return;
+  }
+
   html+='<div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;justify-content:center">';
   [{v:"all",l:"Tout"},{v:"0",l:"H0 Sol"},{v:"1",l:"H1"},{v:"2",l:"H2"},{v:"3",l:"H3 Haut"}].forEach(h=>{
     const a=curPH===h.v;
@@ -1309,6 +1377,7 @@ function renderPlan() {
 
   panel.innerHTML=html;
   panel.dataset.h=curPH;
+  panel.dataset.site=curSite;
 
   if(!document.getElementById('plan-overlay')){
     const ov=document.createElement('div');ov.id='plan-overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:199;display:none';ov.onclick=closePlanDetail;document.body.appendChild(ov);
@@ -1319,16 +1388,21 @@ function renderPlan() {
 window.setPlanH=function(h){document.getElementById('plan-panel').dataset.h=h;renderPlan();};
 
 
+window.setPlanSite=function(sv){
+  const panel=document.getElementById('plan-panel');
+  panel.dataset.site=sv;
+  renderPlan();
+};
 window.openPlanDetail = function(aisle, side, rack) {
   window._lastSlot = [aisle, side, rack]; // pour re-render après ajout/suppression
   const planData = getPlanData();
-  const hs = (side==='SOL'||aisle==='AREA') ? ['SOL'] : [0,1,2,3];
+  const hs = (side==='SOL'||aisle==='AREA'||aisle==='HAM') ? ['SOL'] : [0,1,2,3];
   let html = '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:var(--orange);margin-bottom:4px">'+
-    'Allée '+aisle+(side==='SOL'?' — SOL':' — Côté '+(side==='G'?'Gauche':'Droite')+' — Rack '+rack)+'</div>';
+    (aisle==='HAM'?'HAM — Conteneur '+rack:'Allée '+aisle+(side==='SOL'?' — SOL':' — Côté '+(side==='G'?'Gauche':'Droite')+' — Rack '+rack))+'</div>';
 
   let anyProd = false;
-  if(side==='SOL'||aisle==='AREA') {
-    const key2=aisle==='AREA'?'AREA':('A'+aisle+'SOL');
+  if(side==='SOL'||aisle==='AREA'||aisle==='HAM') {
+    const key2=aisle==='HAM'?('HAM'+rack):aisle==='AREA'?'AREA':('A'+aisle+'SOL');
     const prods=planData[key2]||[];
     if(prods.length){anyProd=true;prods.forEach(p=>{html+=prodRow(p);});}
     else html+='<div style="color:var(--muted);text-align:center;padding:24px 0;font-size:13px">Vide</div>';
