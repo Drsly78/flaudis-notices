@@ -450,7 +450,7 @@ function buildLocBloc(key, slotId, idx, loc) {
   const ha=ls.haut !==undefined?ls.haut :(loc.hauteur??null);
   const cont=ls.cont!==undefined?ls.cont:(loc.conteneur??null);
   const isHam = al==='HAM';
-  const lieu = al ? (isHam?'HAM':'MAGNY') : null;
+  const lieu = (ls.lieu!==undefined&&ls.lieu!==null)?ls.lieu:(al ? (isHam?'HAM':'MAGNY') : null);
   const isArea = al==='AREA';
   const coteSol = co==='SOL';
   const rackMax = al==='1'?(coteSol?0:co==='G'?4:6):al==='2'?(coteSol?0:4):al==='3'?(coteSol?0:co==='G'?3:4):7;
@@ -503,6 +503,7 @@ window.locPick=function(btn){
   const ls=window._ls[key][slotId];
   if(field==='lieu'){
     // Bascule de site : on repart proprement dans le site choisi
+    ls.lieu = val;
     ls.allee = (val==='HAM') ? 'HAM' : null;
     delete ls.cote; delete ls.rack; delete ls.haut; delete ls.cont;
   } else {
