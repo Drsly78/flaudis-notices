@@ -152,23 +152,44 @@ function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g,'_'); }
 
 // ── 📝 Réfs sans notice & 🧰 Box — des produits comme les autres dans la liste ──
 // manuels/{key} = { ref, cree, box?:true, description?, items?:{itemId:{ref,qte,note}} }
-let manuelsData = {};
-let _boxIndex = {};   // réf normalisée → box qui la contient (badge sur les cartes)
+let legacyManuels = {};  // anciennes entrées du chemin manuels/ (lecture seule)
+let _boxIndex = {};      // réf normalisée → box qui la contient (badge sur les cartes)
 const escB = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const normB = v => String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fbErr = e => alert('⚠️ Écriture refusée par Firebase : ' + (e && e.message || e) + '\n\nRien n\u2019a été enregistré — préviens Sly.');
 
+// Les box/réfs manuelles vivent DANS la fiche produit (produits/{key}/manuel),
+// le chemin que l'app écrit déjà pour les emplacements. On lit aussi l'ancien
+// chemin manuels/ si des entrées y existent (créées par le serveur).
 db.ref('manuels').on('value', snap => {
-  manuelsData = snap.val() || {};
+  legacyManuels = snap.val() || {};
+  if (noticesReady) renderAllSoft();
+}, () => {});
+
+function getManuels() {
+  const out = {};
+  Object.keys(legacyManuels).forEach(k => {
+    const v = legacyManuels[k];
+    if (v) out[k] = { ...v, ref: v.ref || k };
+  });
+  Object.keys(fbData).forEach(k => {
+    const m = fbData[k] && fbData[k].manuel;
+    if (!m) return;
+    out[k] = { ...(out[k] || {}), ...m, ref: m.ref || (out[k] && out[k].ref) || k,
+      items: { ...((out[k] || {}).items || {}), ...(m.items || {}) } };
+  });
+  return out;
+}
+function buildBoxIndex(man) {
   _boxIndex = {};
-  Object.keys(manuelsData).forEach(k => {
-    const items = manuelsData[k].items || {};
+  Object.keys(man).forEach(k => {
+    const items = man[k].items || {};
     Object.keys(items).forEach(i2 => {
       const n = normB(items[i2].ref);
-      if (n) (_boxIndex[n] = _boxIndex[n] || []).push({ key: k, nom: manuelsData[k].ref || k });
+      if (n) (_boxIndex[n] = _boxIndex[n] || []).push({ key: k, nom: man[k].ref || k });
     });
   });
-  if (noticesReady) renderAllSoft();
-});
+}
 
 function boxBadge(ref) {
   const hits = _boxIndex[normB(ref)];
@@ -203,10 +224,10 @@ window.newRefCreate = function() {
   const ref = document.getElementById('nr-ref').value.trim().toUpperCase();
   if (!ref) { alert(newType==='box' ? 'Donne un nom au box' : 'Donne une référence'); return; }
   const key = getKey(ref);
-  if (manuelsData[key]) { alert('« '+ref+' » existe déjà dans la liste'); return; }
+  if (getManuels()[key]) { alert('« '+ref+' » existe déjà dans la liste'); return; }
   const o = { ref, cree: new Date().toISOString() };
   if (newType === 'box') { o.box = true; const de = document.getElementById('nr-desc').value.trim(); if (de) o.description = de; }
-  db.ref('manuels/'+key).set(o);
+  db.ref('produits/'+key+'/manuel').set(o).catch(fbErr);
   document.getElementById('nr-ref').value = ''; document.getElementById('nr-desc').value = '';
   document.getElementById('newref-form').style.display = 'none';
   setTimeout(() => {
@@ -216,10 +237,11 @@ window.newRefCreate = function() {
   }, 250);
 };
 window.manuelDelete = function(key) {
-  const m = manuelsData[key]; if (!m) return;
+  const m = getManuels()[key]; if (!m) return;
   const estBox = !!m.box;
   if (!confirm('Retirer '+(estBox?'le box « ':'la réf « ')+(m.ref||key)+' » de la liste ?'+(estBox?'\n\nSa liste de contenu ('+Object.keys(m.items||{}).length+' réf) sera supprimée.':'')+'\nSes emplacements entrepôt éventuels sont conservés.')) return;
-  db.ref('manuels/'+key).remove();
+  db.ref('produits/'+key+'/manuel').remove().catch(fbErr);
+  db.ref('manuels/'+key).remove().catch(() => {});
 };
 
 // ── Contenu d'un box ──
@@ -228,25 +250,28 @@ window.boxAdd = function(key) {
   const qte = Math.max(1, parseInt(document.getElementById('bi-qte-'+key).value) || 1);
   const note = document.getElementById('bi-note-'+key).value.trim();
   if (!ref) return;
-  const items = manuelsData[key]?.items || {};
+  const items = getManuels()[key]?.items || {};
   const exist = Object.keys(items).find(k => normB(items[k].ref) === normB(ref));
-  if (exist) db.ref('manuels/'+key+'/items/'+exist).update({ qte: (parseInt(items[exist].qte)||0) + qte, note: note || items[exist].note || '' });
-  else db.ref('manuels/'+key+'/items').push({ ref, qte, note });
+  if (exist) db.ref('produits/'+key+'/manuel/items/'+exist).update({ ref: items[exist].ref, qte: (parseInt(items[exist].qte)||0) + qte, note: note || items[exist].note || '' }).catch(fbErr);
+  else db.ref('produits/'+key+'/manuel/items').push({ ref, qte, note }).catch(fbErr);
 };
 window.boxQty = function(key, itemId, delta) {
-  const it = manuelsData[key]?.items?.[itemId]; if (!it) return;
-  db.ref('manuels/'+key+'/items/'+itemId+'/qte').set(Math.max(1, (parseInt(it.qte)||1) + delta));
+  const it = getManuels()[key]?.items?.[itemId]; if (!it) return;
+  db.ref('produits/'+key+'/manuel/items/'+itemId).update({ ref: it.ref, qte: Math.max(1, (parseInt(it.qte)||1) + delta) }).catch(fbErr);
 };
 window.boxDel = function(key, itemId) {
-  const it = manuelsData[key]?.items?.[itemId]; if (!it) return;
+  const it = getManuels()[key]?.items?.[itemId]; if (!it) return;
   if (!confirm('Retirer '+(it.ref||'cette réf')+' du box ?')) return;
-  db.ref('manuels/'+key+'/items/'+itemId).remove();
+  db.ref('produits/'+key+'/manuel/items/'+itemId).remove().catch(fbErr);
+  db.ref('manuels/'+key+'/items/'+itemId).remove().catch(() => {});
 };
 window.boxNote = function(key, itemId, val) {
-  db.ref('manuels/'+key+'/items/'+itemId+'/note').set(String(val||'').trim());
+  const it = getManuels()[key]?.items?.[itemId];
+  db.ref('produits/'+key+'/manuel/items/'+itemId).update({ ref: (it && it.ref) || '', note: String(val||'').trim(), qte: (it && parseInt(it.qte)) || 1 }).catch(fbErr);
 };
 window.boxDescSave = function(key) {
-  db.ref('manuels/'+key+'/description').set(document.getElementById('bd-'+key).value.trim());
+  const m = getManuels()[key] || {};
+  db.ref('produits/'+key+'/manuel').update({ ref: m.ref || key, box: m.box || null, description: document.getElementById('bd-'+key).value.trim() }).catch(fbErr);
 };
 
 function renderBoxTab(key, m) {
@@ -392,7 +417,13 @@ function renderAll() {
   const q = searchQuery.trim().toLowerCase();
   const filtered = q ? allNotices.filter(n=>n.ref.toLowerCase().includes(q)||n.label.toLowerCase().includes(q)) : allNotices;
   // Réfs sans notice et box : cherchables par nom, description ET réfs rangées dedans
-  const manArr = Object.keys(manuelsData).map(k => ({ key: k, m: manuelsData[k], ref: (manuelsData[k].ref || k) }));
+  const manuels0 = getManuels();
+  buildBoxIndex(manuels0);
+  // Une réf manuelle couverte depuis par une vraie notice disparaît d'elle-même (les box restent)
+  const refsNotices = new Set(allNotices.map(n2 => normB(n2.ref)));
+  const manArr = Object.keys(manuels0)
+    .map(k => ({ key: k, m: manuels0[k], ref: (manuels0[k].ref || k) }))
+    .filter(e => e.m.box || !refsNotices.has(normB(e.ref)));
   const filteredM = (q ? manArr.filter(e =>
       e.ref.toLowerCase().includes(q) ||
       String(e.m.description||'').toLowerCase().includes(q) ||
