@@ -16,7 +16,6 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-  body.login-active{overflow:hidden;position:fixed;width:100%;height:100%;}
   header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:16px 20px 0;}
   .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--orange);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}
   .logo span{color:var(--muted);font-size:13px;letter-spacing:1px;font-family:'DM Sans',sans-serif;font-weight:300;margin-top:4px;}
@@ -71,39 +70,14 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-  #pwd-input:focus{border-color:#E8611A !important;}
-  #login-screen button:active{opacity:0.85;}
 </style>
 </head>
 <body>
 
-<!-- ── LOGIN ───────────────────────────────────────────── -->
-<div id="login-screen" style="position:fixed;inset:0;background:#0f0f0f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden;height:100%;width:100%;">
-  <div style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:0">
-    <img src="https://raw.githubusercontent.com/Drsly78/sav-notices/main/login.png" 
-         style="width:100%;max-width:340px;border-radius:16px;margin-bottom:20px;object-fit:cover;box-shadow:0 8px 40px rgba(0,0,0,0.6)"
-         onerror="this.style.display='none'"/>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:4px;color:#E8611A;text-align:center;line-height:1">SÉCURITÉ !</div>
-    <div style="font-family:'DM Sans',sans-serif;font-size:16px;color:#f0f0f0;text-align:center;margin:10px 0 24px;letter-spacing:0.5px">
-      T'as le mot de passe <span style="color:#E8611A;font-weight:700">?</span>
-    </div>
-    <div style="width:100%;position:relative;margin-bottom:14px">
-      <input id="pwd-input" type="password" placeholder="••••••••" 
-             onkeydown="if(event.key==='Enter')checkPwd()"
-             style="width:100%;padding:16px 50px 16px 20px;background:#1a1a1a;border:2px solid #2e2e2e;border-radius:14px;color:#f0f0f0;font-family:'DM Sans',sans-serif;font-size:16px;outline:none;transition:border-color 0.2s;letter-spacing:2px"/>
-      <button onclick="togglePwd()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:#666" id="pwd-eye">👁</button>
-    </div>
-    <div id="pwd-error" style="color:#f87171;font-size:12px;margin-bottom:10px;height:16px;font-family:'DM Sans',sans-serif"></div>
-    <button onclick="checkPwd()" 
-            style="width:100%;padding:16px;background:linear-gradient(135deg,#E8611A,#ff7a35);border:none;border-radius:14px;color:white;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;cursor:pointer;transition:opacity 0.15s;box-shadow:0 4px 20px rgba(232,97,26,0.4)">
-      ENTRER
-    </button>
-    <div style="margin-top:16px;font-size:11px;color:#444;font-family:'DM Sans',sans-serif">Session active 6h</div>
-  </div>
-</div>
 <header>
   <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
     <div class="logo" style="margin-bottom:0">FLAUDIS <span>NOTICES PRODUITS</span></div>
+    <button onclick="newRefToggle()" id="nav-add" title="Créer une réf sans notice ou un box" style="position:absolute;left:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">➕</button>
     <button onclick="currentView==='plan'?switchView('notices'):switchView('plan')" id="nav-plan" style="position:absolute;right:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">🗺️</button>
   </div>
   <div class="search-wrap">
@@ -117,9 +91,21 @@
   <div style="display:flex;gap:0;margin-top:4px">
     <button id="nav-notices" onclick="switchView('notices')" style="flex:1;padding:9px;background:var(--orange);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">📄 Notices</button>
     <button id="nav-reassort" onclick="switchView('reassort')" style="flex:1;padding:9px;background:var(--surface);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">🛒 Réassort</button>
-    <button id="nav-box" onclick="switchView('box')" style="flex:1;padding:9px;background:var(--surface);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">🧰 Box</button>
   </div>
 </header>
+<div id="newref-form" style="display:none;padding:14px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button id="nt-ref" onclick="newRefType('ref')" style="flex:1;padding:10px;border-radius:9px;border:2px solid var(--orange);background:rgba(232,97,26,0.15);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📝 Réf sans notice</button>
+    <button id="nt-box" onclick="newRefType('box')" style="flex:1;padding:10px;border-radius:9px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">🧰 Box (rangement multi-réfs)</button>
+  </div>
+  <input id="nr-ref" placeholder="Référence (ex : KB-251299)" onkeydown="if(event.key==='Enter')newRefCreate()" style="width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;margin-bottom:8px;text-transform:uppercase"/>
+  <textarea id="nr-desc" rows="2" placeholder="Description du box (ce qu'on garde dedans, pourquoi…)" style="display:none;width:100%;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;margin-bottom:8px"></textarea>
+  <div style="display:flex;gap:8px">
+    <button onclick="newRefCreate()" style="flex:1;padding:12px;border:none;border-radius:9px;background:var(--green);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Créer</button>
+    <button onclick="newRefToggle()" style="padding:12px 18px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuler</button>
+  </div>
+</div>
+<datalist id="box-refs"></datalist>
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
 <div id="plan-panel" style="display:none;padding:12px 10px 40px"></div>
 <div id="reassort-panel" style="display:none;padding:16px 16px 40px">
@@ -130,23 +116,6 @@
   <div id="reassort-items" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
     <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun article — ajoutez depuis l'onglet Info des notices</div>
   </div>
-</div>
-<div id="box-panel" style="display:none;padding:16px 16px 40px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <div style="font-size:14px;font-weight:700;color:var(--orange)">🧰 Box échantillons</div>
-    <button onclick="boxFormToggle()" id="box-new-btn" style="padding:8px 14px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">➕ Nouveau box</button>
-  </div>
-  <div id="box-new-form" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
-    <input id="nb-nom" placeholder="Nom du box (ex : BOX ÉCHANTILLONS JOUETS)" style="width:100%;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:8px"/>
-    <input id="nb-loc" placeholder="Emplacement (ex : Allée 2 D R3 H1)" style="width:100%;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:8px"/>
-    <textarea id="nb-desc" rows="2" placeholder="Description (ce qu'on garde dedans, pourquoi…)" style="width:100%;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;margin-bottom:8px"></textarea>
-    <button onclick="boxCreate()" style="width:100%;padding:11px;border:none;border-radius:9px;background:var(--green);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Créer le box</button>
-  </div>
-  <div style="position:relative;margin-bottom:10px">
-    <input id="box-search" placeholder="🔎 Chercher un box ou une réf dedans…" oninput="renderBoxPanel()" style="width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none"/>
-  </div>
-  <div id="box-list"></div>
-  <datalist id="box-refs"></datalist>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -180,6 +149,173 @@ db.ref('produits').on('value', snap => {
 });
 
 function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g,'_'); }
+
+// ── 📝 Réfs sans notice & 🧰 Box — des produits comme les autres dans la liste ──
+// manuels/{key} = { ref, cree, box?:true, description?, items?:{itemId:{ref,qte,note}} }
+let manuelsData = {};
+let _boxIndex = {};   // réf normalisée → box qui la contient (badge sur les cartes)
+const escB = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const normB = v => String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+
+db.ref('manuels').on('value', snap => {
+  manuelsData = snap.val() || {};
+  _boxIndex = {};
+  Object.keys(manuelsData).forEach(k => {
+    const items = manuelsData[k].items || {};
+    Object.keys(items).forEach(i2 => {
+      const n = normB(items[i2].ref);
+      if (n) (_boxIndex[n] = _boxIndex[n] || []).push({ key: k, nom: manuelsData[k].ref || k });
+    });
+  });
+  if (noticesReady) renderAllSoft();
+});
+
+function boxBadge(ref) {
+  const hits = _boxIndex[normB(ref)];
+  if (!hits || !hits.length) return '';
+  const b = hits[0];
+  return `<span class="mini-badge" data-box="${b.key}" onclick="event.stopPropagation();openBoxFromBadge(this.dataset.box)" style="background:rgba(139,92,246,0.2);color:#a78bfa;border:1px solid rgba(139,92,246,0.4);cursor:pointer">🧰 ${escB(b.nom)}</span>`;
+}
+window.openBoxFromBadge = function(key) {
+  if (currentView !== 'notices') switchView('notices');
+  const p = document.getElementById('panel-'+key);
+  if (p && p.style.display !== 'block') togglePanel(key);
+  setTimeout(() => document.getElementById('card-'+key)?.scrollIntoView({behavior:'smooth', block:'start'}), 60);
+};
+
+// ── Création (bouton ➕ du header) ──
+let newType = 'ref';
+window.newRefToggle = function() {
+  const f = document.getElementById('newref-form');
+  f.style.display = f.style.display === 'none' ? '' : 'none';
+  if (f.style.display !== 'none') document.getElementById('nr-ref').focus();
+};
+window.newRefType = function(t) {
+  newType = t;
+  const on  = '2px solid var(--orange)', off = '2px solid var(--border)';
+  const bR = document.getElementById('nt-ref'), bB = document.getElementById('nt-box');
+  bR.style.border = t==='ref'?on:off; bR.style.color = t==='ref'?'var(--orange)':'var(--muted)'; bR.style.background = t==='ref'?'rgba(232,97,26,0.15)':'var(--surface)';
+  bB.style.border = t==='box'?on:off; bB.style.color = t==='box'?'var(--orange)':'var(--muted)'; bB.style.background = t==='box'?'rgba(232,97,26,0.15)':'var(--surface)';
+  document.getElementById('nr-desc').style.display = t==='box' ? '' : 'none';
+  document.getElementById('nr-ref').placeholder = t==='box' ? 'Nom du box (ex : BOX ÉCHANTILLONS JOUETS)' : 'Référence (ex : KB-251299)';
+};
+window.newRefCreate = function() {
+  const ref = document.getElementById('nr-ref').value.trim().toUpperCase();
+  if (!ref) { alert(newType==='box' ? 'Donne un nom au box' : 'Donne une référence'); return; }
+  const key = getKey(ref);
+  if (manuelsData[key]) { alert('« '+ref+' » existe déjà dans la liste'); return; }
+  const o = { ref, cree: new Date().toISOString() };
+  if (newType === 'box') { o.box = true; const de = document.getElementById('nr-desc').value.trim(); if (de) o.description = de; }
+  db.ref('manuels/'+key).set(o);
+  document.getElementById('nr-ref').value = ''; document.getElementById('nr-desc').value = '';
+  document.getElementById('newref-form').style.display = 'none';
+  setTimeout(() => {
+    const p = document.getElementById('panel-'+key);
+    if (p && p.style.display !== 'block') togglePanel(key);
+    document.getElementById('card-'+key)?.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 250);
+};
+window.manuelDelete = function(key) {
+  const m = manuelsData[key]; if (!m) return;
+  const estBox = !!m.box;
+  if (!confirm('Retirer '+(estBox?'le box « ':'la réf « ')+(m.ref||key)+' » de la liste ?'+(estBox?'\n\nSa liste de contenu ('+Object.keys(m.items||{}).length+' réf) sera supprimée.':'')+'\nSes emplacements entrepôt éventuels sont conservés.')) return;
+  db.ref('manuels/'+key).remove();
+};
+
+// ── Contenu d'un box ──
+window.boxAdd = function(key) {
+  const ref = document.getElementById('bi-ref-'+key).value.trim().toUpperCase();
+  const qte = Math.max(1, parseInt(document.getElementById('bi-qte-'+key).value) || 1);
+  const note = document.getElementById('bi-note-'+key).value.trim();
+  if (!ref) return;
+  const items = manuelsData[key]?.items || {};
+  const exist = Object.keys(items).find(k => normB(items[k].ref) === normB(ref));
+  if (exist) db.ref('manuels/'+key+'/items/'+exist).update({ qte: (parseInt(items[exist].qte)||0) + qte, note: note || items[exist].note || '' });
+  else db.ref('manuels/'+key+'/items').push({ ref, qte, note });
+};
+window.boxQty = function(key, itemId, delta) {
+  const it = manuelsData[key]?.items?.[itemId]; if (!it) return;
+  db.ref('manuels/'+key+'/items/'+itemId+'/qte').set(Math.max(1, (parseInt(it.qte)||1) + delta));
+};
+window.boxDel = function(key, itemId) {
+  const it = manuelsData[key]?.items?.[itemId]; if (!it) return;
+  if (!confirm('Retirer '+(it.ref||'cette réf')+' du box ?')) return;
+  db.ref('manuels/'+key+'/items/'+itemId).remove();
+};
+window.boxNote = function(key, itemId, val) {
+  db.ref('manuels/'+key+'/items/'+itemId+'/note').set(String(val||'').trim());
+};
+window.boxDescSave = function(key) {
+  db.ref('manuels/'+key+'/description').set(document.getElementById('bd-'+key).value.trim());
+};
+
+function renderBoxTab(key, m) {
+  const items = m.items || {};
+  const keys = Object.keys(items).sort((x,y) => String(items[x].ref||'').localeCompare(String(items[y].ref||'')));
+  const lignes = keys.map(k => {
+    const it = items[k];
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;flex:0 0 auto;min-width:88px">${escB(it.ref)}</span>
+      <input value="${escB(it.note||'')}" placeholder="note…" data-box="${key}" data-item="${k}" onchange="boxNote(this.dataset.box,this.dataset.item,this.value)" style="flex:1;min-width:50px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
+      <button data-box="${key}" data-item="${k}" onclick="boxQty(this.dataset.box,this.dataset.item,-1)" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:15px;font-weight:700;cursor:pointer">−</button>
+      <span style="min-width:28px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)">${parseInt(it.qte)||0}</span>
+      <button data-box="${key}" data-item="${k}" onclick="boxQty(this.dataset.box,this.dataset.item,1)" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:15px;font-weight:700;cursor:pointer">+</button>
+      <button data-box="${key}" data-item="${k}" onclick="boxDel(this.dataset.box,this.dataset.item)" style="width:28px;height:28px;border-radius:7px;border:none;background:none;color:#f87171;font-size:12px;cursor:pointer">✕</button>
+    </div>`;
+  }).join('');
+  return `<div class="tab-content" id="tab-boxc-${key}">
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input id="bd-${key}" value="${escB(m.description||'')}" placeholder="Description du box…" style="flex:1;min-width:0;padding:8px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
+      <button data-box="${key}" onclick="boxDescSave(this.dataset.box)" style="padding:8px 12px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer">💾</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      <input id="bi-ref-${key}" list="box-refs" placeholder="Réf à ranger…" onkeydown="if(event.key==='Enter')boxAdd('${key}')" style="flex:1.2;min-width:0;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"/>
+      <input id="bi-qte-${key}" type="number" min="1" value="1" style="width:54px;padding:9px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-align:center"/>
+      <input id="bi-note-${key}" placeholder="note…" onkeydown="if(event.key==='Enter')boxAdd('${key}')" style="flex:1;min-width:0;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
+      <button data-box="${key}" onclick="boxAdd(this.dataset.box)" style="width:38px;border:none;border-radius:8px;background:var(--green);color:white;font-size:16px;font-weight:700;cursor:pointer">＋</button>
+    </div>
+    ${lignes || '<div style="padding:14px;text-align:center;color:var(--muted);font-size:12px">Box vide — range une première réf ci-dessus</div>'}
+  </div>`;
+}
+
+function manuelCard(e, i, q) {
+  const key = e.key, m = e.m, d = fbData[key]||{};
+  const estBox = !!m.box;
+  const ls = locLabel(d);
+  const vis = d.visserie;
+  const items = m.items||{}; const nK = Object.keys(items);
+  const tot = nK.reduce((s2,k) => s2 + (parseInt(items[k].qte)||0), 0);
+  return `<div class="notice-card" style="animation-delay:${Math.min(i*30,300)}ms" id="card-${key}">
+    <div class="notice-main" onclick="togglePanel('${key}')">
+      <div class="notice-icon" style="background:linear-gradient(135deg,${estBox?'#8b5cf6,#a78bfa':'#475569,#64748b'})">${estBox?'🧰':'📝'}</div>
+      <div class="notice-info">
+        <div class="notice-ref">${highlight(escB(m.ref||key),q)}</div>
+        ${estBox&&m.description?`<div class="notice-name">${escB(m.description)}</div>`:(!estBox?`<div class="notice-name">réf sans notice</div>`:'')}
+      </div>
+      <div class="card-badges">
+        ${ls?`<span class="mini-badge mb-loc">📍 ${ls}</span>`:''}
+        ${estBox?`<span class="mini-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa;border:1px solid rgba(139,92,246,0.35)">${nK.length} réf · ${tot} pcs</span>`:''}
+        ${!estBox&&vis===true?'<span class="mini-badge mb-vis">🔩 Oui</span>':!estBox&&vis===false?'<span class="mini-badge mb-novis">🔩 Non</span>':''}
+        ${!estBox?pieceBadge(key):''}
+        ${!estBox?boxBadge(m.ref||key):''}
+      </div>
+      <span style="color:var(--muted);font-size:11px;font-weight:700;padding:6px 10px;border:1px solid var(--border);border-radius:8px;flex-shrink:0">${estBox?'BOX':'📝'}</span>
+    </div>
+    <div class="detail-panel" id="panel-${key}">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('${key}','loc',this)">📍 Emplacement</button>
+        ${estBox
+          ? `<button class="tab-btn" onclick="showTab('${key}','boxc',this)">🧰 Contenu</button>`
+          : `<button class="tab-btn" onclick="showTab('${key}','pieces',this)">📦 Pièces</button><button class="tab-btn" onclick="showTab('${key}','inf',this)">ℹ️ Info</button>`}
+      </div>
+      <div class="tab-content active" id="tab-loc-${key}" data-lockey="${key}"></div>
+      ${estBox ? renderBoxTab(key, m) : renderPiecesTab(key, d.pieces) + renderInfTab(key, vis)}
+      <div style="padding:8px 16px 12px;background:#111;border-top:1px solid var(--border)">
+        <button data-key="${key}" onclick="manuelDelete(this.dataset.key)" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.08);color:#f87171;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">🗑 Retirer ${estBox?'ce box':'cette réf'} de la liste</button>
+      </div>
+    </div>
+  </div>`;
+}
 
 // ── Chargement notices ────────────────────────────────────
 async function loadNotices() {
@@ -255,16 +391,26 @@ function pieceBadge(key) {
 function renderAll() {
   const q = searchQuery.trim().toLowerCase();
   const filtered = q ? allNotices.filter(n=>n.ref.toLowerCase().includes(q)||n.label.toLowerCase().includes(q)) : allNotices;
-  document.getElementById('search-hint').textContent = q ? filtered.length+' résultat(s)' : allNotices.length+' notices';
+  // Réfs sans notice et box : cherchables par nom, description ET réfs rangées dedans
+  const manArr = Object.keys(manuelsData).map(k => ({ key: k, m: manuelsData[k], ref: (manuelsData[k].ref || k) }));
+  const filteredM = (q ? manArr.filter(e =>
+      e.ref.toLowerCase().includes(q) ||
+      String(e.m.description||'').toLowerCase().includes(q) ||
+      Object.values(e.m.items||{}).some(it => [it.ref, it.note].some(v => String(v||'').toLowerCase().includes(q))))
+    : manArr).sort((a,b) => ((b.m.box?1:0)-(a.m.box?1:0)) || a.ref.localeCompare(b.ref));
+  // Autocomplétion des réfs pour le contenu des box
+  const dl = document.getElementById('box-refs');
+  if (dl && !dl.children.length && allNotices.length) dl.innerHTML = allNotices.map(n2 => '<option value="'+escB(n2.ref)+'">').join('');
+  document.getElementById('search-hint').textContent = q ? (filtered.length+filteredM.length)+' résultat(s)' : allNotices.length+' notices'+(manArr.length?' · '+manArr.length+' réf/box':'');
   const badge = document.getElementById('count-badge');
-  badge.textContent = filtered.length; badge.style.display = q?'inline':'none';
+  badge.textContent = filtered.length+filteredM.length; badge.style.display = q?'inline':'none';
 
-  if (!filtered.length) {
+  if (!filtered.length && !filteredM.length) {
     document.getElementById('results').innerHTML = '<div class="state"><div class="state-icon">🔎</div><div class="state-title">Aucun résultat</div></div>';
     return;
   }
 
-  document.getElementById('results').innerHTML = filtered.map((n,i)=>{
+  document.getElementById('results').innerHTML = filteredM.map((e,i)=>manuelCard(e,i,q)).join('') + filtered.map((n,i)=>{
     const key = getKey(n.ref);
     const d   = fbData[key]||{};
     const vis = d.visserie;
@@ -335,7 +481,7 @@ function renderAllSoft() {
       const key=p.id.replace('panel-','');
       openKeys[key]=true;
       const ab=p.querySelector('.tab-btn.active');
-      if(ab) openTabs[key]=ab.textContent.includes('Emplacement')?'loc':ab.textContent.includes('Pièces')?'pieces':'inf';
+      if(ab) openTabs[key]=ab.textContent.includes('Emplacement')?'loc':ab.textContent.includes('Pièces')?'pieces':ab.textContent.includes('Contenu')?'boxc':'inf';
       // Sauvegarder état ouvert/fermé des cartons
       openCartons[key]={};
       p.querySelectorAll('[id^="cb-"]').forEach(el=>{
@@ -352,14 +498,15 @@ function renderAllSoft() {
     if(!p) return;
     p.style.display='block';
     const tab=openTabs[key]||'loc';
-    ['loc','pieces','inf'].forEach(t=>{
+    ['loc','pieces','inf','boxc'].forEach(t=>{
       document.getElementById('tab-'+t+'-'+key)?.classList.toggle('active',t===tab);
     });
     p.querySelectorAll('.tab-btn').forEach(btn=>{
       btn.classList.toggle('active',
         (tab==='loc'&&btn.textContent.includes('Emplacement'))||
         (tab==='pieces'&&btn.textContent.includes('Pièces'))||
-        (tab==='inf'&&btn.textContent.includes('Info'))
+        (tab==='inf'&&btn.textContent.includes('Info'))||
+        (tab==='boxc'&&btn.textContent.includes('Contenu'))
       );
     });
     // Restaurer état des cartons
@@ -733,7 +880,7 @@ window.togglePanel=function(key){
   if(p) p.style.display=p.style.display==='block'?'none':'block';
 };
 window.showTab=function(key,tab,btn){
-  ['loc','pieces','inf'].forEach(t=>{
+  ['loc','pieces','inf','boxc'].forEach(t=>{
     document.getElementById('tab-'+t+'-'+key)?.classList.toggle('active',t===tab);
   });
   btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1056,197 +1203,18 @@ window.switchView = function(view) {
   currentView = view;
   document.getElementById('results').style.display = view==='notices' ? '' : 'none';
   document.getElementById('reassort-panel').style.display = view==='reassort' ? '' : 'none';
-  document.getElementById('box-panel').style.display = view==='box' ? '' : 'none';
   document.getElementById('plan-panel').style.display = view==='plan' ? '' : 'none';
   document.getElementById('nav-notices').style.background = view==='notices' ? 'var(--orange)' : 'var(--surface)';
   document.getElementById('nav-notices').style.color = view==='notices' ? 'white' : 'var(--muted)';
   document.getElementById('nav-reassort').style.background = view==='reassort' ? 'var(--orange)' : 'var(--surface)';
   document.getElementById('nav-reassort').style.color = view==='reassort' ? 'white' : 'var(--muted)';
-  document.getElementById('nav-box').style.background = view==='box' ? 'var(--orange)' : 'var(--surface)';
-  document.getElementById('nav-box').style.color = view==='box' ? 'white' : 'var(--muted)';
   document.getElementById('nav-plan').style.background = view==='plan' ? 'var(--orange)' : 'var(--surface2)';
   document.getElementById('nav-plan').style.color = view==='plan' ? 'white' : 'var(--muted)';
   document.getElementById('nav-plan').textContent = view==='plan' ? '✕' : '🗺️';
   if(view==='reassort') renderReassortPanel();
-  if(view==='box') renderBoxPanel();
   if(view==='notices' && noticesReady) renderAllSoft();
   if(view==='plan') renderPlan();
 };
-
-// ── 🧰 BOX : gros cartons d'échantillons — plein de refs sur un seul emplacement ──
-let boxesData = {};      // Firebase boxes/{id} = { nom, description, loc, items:{itemId:{ref,qte,note}} }
-let _boxIndex = {};      // REF normalisée → [{id, nom}] pour le badge sur les cartes notices
-let openBoxId = null;
-const escB = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const normB = v => String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-
-db.ref('boxes').on('value', snap => {
-  boxesData = snap.val() || {};
-  _boxIndex = {};
-  Object.keys(boxesData).forEach(id => {
-    const items = boxesData[id].items || {};
-    Object.keys(items).forEach(k => {
-      const n = normB(items[k].ref);
-      if (!n) return;
-      (_boxIndex[n] = _boxIndex[n] || []).push({ id, nom: boxesData[id].nom || 'Box' });
-    });
-  });
-  if (currentView === 'box') renderBoxPanel();
-  else if (noticesReady) renderAllSoft();
-});
-
-function boxBadge(ref) {
-  const hits = _boxIndex[normB(ref)];
-  if (!hits || !hits.length) return '';
-  const b = hits[0];
-  return `<span class="mini-badge" data-box="${b.id}" onclick="event.stopPropagation();openBoxFromBadge(this.dataset.box)" style="background:rgba(232,97,26,0.18);color:#ffa06a;border:1px solid rgba(232,97,26,0.4);cursor:pointer">🧰 ${escB(b.nom)}</span>`;
-}
-window.openBoxFromBadge = function(id) {
-  openBoxId = id;
-  switchView('box');
-  setTimeout(() => document.getElementById('boxcard-'+id)?.scrollIntoView({behavior:'smooth', block:'start'}), 80);
-};
-
-window.boxFormToggle = function() {
-  const f = document.getElementById('box-new-form');
-  f.style.display = f.style.display === 'none' ? '' : 'none';
-  if (f.style.display !== 'none') document.getElementById('nb-nom').focus();
-};
-window.boxCreate = function() {
-  const nom = document.getElementById('nb-nom').value.trim();
-  if (!nom) { alert('Donne un nom au box'); return; }
-  const id = db.ref('boxes').push().key;
-  db.ref('boxes/'+id).set({
-    nom, loc: document.getElementById('nb-loc').value.trim(),
-    description: document.getElementById('nb-desc').value.trim(),
-    cree: new Date().toISOString(), items: {}
-  });
-  ['nb-nom','nb-loc','nb-desc'].forEach(i => document.getElementById(i).value = '');
-  document.getElementById('box-new-form').style.display = 'none';
-  openBoxId = id;
-};
-window.boxToggle = function(id) { openBoxId = openBoxId === id ? null : id; renderBoxPanel(); };
-window.boxDelete = function(id) {
-  const b = boxesData[id]; if (!b) return;
-  const n = Object.keys(b.items||{}).length;
-  if (!confirm('Supprimer le box « '+(b.nom||'?')+' » et ses '+n+' référence(s) listées ?\n\n(Seule la liste est supprimée, pas les produits physiques 😉)')) return;
-  db.ref('boxes/'+id).remove();
-  if (openBoxId === id) openBoxId = null;
-};
-window.boxSaveMeta = function(id) {
-  db.ref('boxes/'+id).update({
-    nom: document.getElementById('bm-nom-'+id).value.trim() || 'Box',
-    loc: document.getElementById('bm-loc-'+id).value.trim(),
-    description: document.getElementById('bm-desc-'+id).value.trim()
-  });
-  const z = document.getElementById('bm-zone-'+id); if (z) z.style.display = 'none';
-};
-window.boxMetaToggle = function(id) {
-  const z = document.getElementById('bm-zone-'+id);
-  if (z) z.style.display = z.style.display === 'none' ? '' : 'none';
-};
-window.boxAddItem = function(id) {
-  const ref = document.getElementById('bi-ref-'+id).value.trim().toUpperCase();
-  const qte = Math.max(1, parseInt(document.getElementById('bi-qte-'+id).value) || 1);
-  const note = document.getElementById('bi-note-'+id).value.trim();
-  if (!ref) return;
-  // Si la réf est déjà dans le box : on cumule la quantité
-  const items = boxesData[id]?.items || {};
-  const exist = Object.keys(items).find(k => normB(items[k].ref) === normB(ref));
-  if (exist) {
-    db.ref('boxes/'+id+'/items/'+exist).update({ qte: (parseInt(items[exist].qte)||0) + qte, note: note || items[exist].note || '' });
-  } else {
-    db.ref('boxes/'+id+'/items').push({ ref, qte, note });
-  }
-  document.getElementById('bi-ref-'+id).value = '';
-  document.getElementById('bi-qte-'+id).value = 1;
-  document.getElementById('bi-note-'+id).value = '';
-  document.getElementById('bi-ref-'+id).focus();
-};
-window.boxItemQty = function(id, itemId, delta) {
-  const it = boxesData[id]?.items?.[itemId]; if (!it) return;
-  const q = Math.max(1, (parseInt(it.qte)||1) + delta);
-  db.ref('boxes/'+id+'/items/'+itemId+'/qte').set(q);
-};
-window.boxItemDel = function(id, itemId) {
-  const it = boxesData[id]?.items?.[itemId]; if (!it) return;
-  if (!confirm('Retirer '+(it.ref||'cette réf')+' du box ?')) return;
-  db.ref('boxes/'+id+'/items/'+itemId).remove();
-};
-window.boxItemNote = function(id, itemId, val) {
-  db.ref('boxes/'+id+'/items/'+itemId+'/note').set(String(val||'').trim());
-};
-
-function renderBoxPanel() {
-  const zone = document.getElementById('box-list');
-  if (!zone) return;
-  // Datalist des refs connues (notices) pour l'autocomplétion
-  const dl = document.getElementById('box-refs');
-  if (dl && !dl.children.length && allNotices.length) dl.innerHTML = allNotices.map(n => '<option value="'+escB(n.ref)+'">').join('');
-  const q = (document.getElementById('box-search')?.value || '').trim().toLowerCase();
-  let ids = Object.keys(boxesData);
-  if (q) ids = ids.filter(id => {
-    const b = boxesData[id];
-    if ([b.nom, b.description, b.loc].some(v => String(v||'').toLowerCase().includes(q))) return true;
-    return Object.values(b.items||{}).some(it => [it.ref, it.note].some(v => String(v||'').toLowerCase().includes(q)));
-  });
-  ids.sort((a,b) => String(boxesData[a].nom||'').localeCompare(String(boxesData[b].nom||'')));
-  if (!ids.length) {
-    zone.innerHTML = '<div class="state"><div class="state-icon">🧰</div><div class="state-title">'+(q ? 'Aucun box ne correspond' : 'Aucun box pour l\'instant')+'</div><div style="color:var(--muted);font-size:13px">'+(q ? '' : 'Crée ton premier gros carton d\'échantillons avec ➕ Nouveau box')+'</div></div>';
-    return;
-  }
-  zone.innerHTML = ids.map(id => {
-    const b = boxesData[id];
-    const items = b.items || {};
-    const keys = Object.keys(items).sort((x,y) => String(items[x].ref||'').localeCompare(String(items[y].ref||'')));
-    const tot = keys.reduce((s2,k) => s2 + (parseInt(items[k].qte)||0), 0);
-    const open = openBoxId === id;
-    const lignes = keys.map(k => {
-      const it = items[k];
-      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;flex:0 0 auto;min-width:90px">${escB(it.ref)}</span>
-        <input value="${escB(it.note||'')}" placeholder="note…" data-box="${id}" data-item="${k}" onchange="boxItemNote(this.dataset.box,this.dataset.item,this.value)" style="flex:1;min-width:60px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
-        <button data-box="${id}" data-item="${k}" onclick="boxItemQty(this.dataset.box,this.dataset.item,-1)" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:15px;font-weight:700;cursor:pointer">−</button>
-        <span style="min-width:30px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)">${parseInt(it.qte)||0}</span>
-        <button data-box="${id}" data-item="${k}" onclick="boxItemQty(this.dataset.box,this.dataset.item,1)" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:15px;font-weight:700;cursor:pointer">+</button>
-        <button data-box="${id}" data-item="${k}" onclick="boxItemDel(this.dataset.box,this.dataset.item)" style="width:28px;height:28px;border-radius:7px;border:none;background:none;color:#f87171;font-size:12px;cursor:pointer">✕</button>
-      </div>`;
-    }).join('');
-    return `<div class="notice-card" id="boxcard-${id}">
-      <div class="notice-main" onclick="boxToggle('${id}')">
-        <div class="notice-icon" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa)">🧰</div>
-        <div class="notice-info">
-          <div class="notice-ref">${escB(b.nom||'Box')}</div>
-          ${b.description ? `<div class="notice-name">${escB(b.description)}</div>` : ''}
-        </div>
-        <div class="card-badges">
-          ${b.loc ? `<span class="mini-badge mb-loc">📍 ${escB(b.loc)}</span>` : ''}
-          <span class="mini-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa;border:1px solid rgba(139,92,246,0.35)">${keys.length} réf · ${tot} pcs</span>
-        </div>
-        <span style="color:var(--muted);font-size:12px;flex-shrink:0">${open?'▼':'▶'}</span>
-      </div>
-      <div style="display:${open?'block':'none'};border-top:1px solid var(--border);padding:12px 16px;background:#111">
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button data-box="${id}" onclick="boxMetaToggle(this.dataset.box)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Nom / emplacement / description</button>
-          <button data-box="${id}" onclick="boxDelete(this.dataset.box)" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:12px;cursor:pointer">🗑 Supprimer</button>
-        </div>
-        <div id="bm-zone-${id}" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px">
-          <input id="bm-nom-${id}" value="${escB(b.nom||'')}" placeholder="Nom du box" style="width:100%;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:6px"/>
-          <input id="bm-loc-${id}" value="${escB(b.loc||'')}" placeholder="Emplacement" style="width:100%;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:6px"/>
-          <textarea id="bm-desc-${id}" rows="2" placeholder="Description" style="width:100%;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;resize:vertical;margin-bottom:6px">${escB(b.description||'')}</textarea>
-          <button data-box="${id}" onclick="boxSaveMeta(this.dataset.box)" style="width:100%;padding:9px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Enregistrer</button>
-        </div>
-        <div style="display:flex;gap:6px;margin-bottom:4px">
-          <input id="bi-ref-${id}" list="box-refs" placeholder="Réf à ajouter…" onkeydown="if(event.key==='Enter')boxAddItem('${id}')" style="flex:1;min-width:0;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"/>
-          <input id="bi-qte-${id}" type="number" min="1" value="1" style="width:58px;padding:9px 6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-align:center"/>
-          <input id="bi-note-${id}" placeholder="note…" onkeydown="if(event.key==='Enter')boxAddItem('${id}')" style="flex:1;min-width:0;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
-          <button data-box="${id}" onclick="boxAddItem(this.dataset.box)" style="width:38px;border:none;border-radius:8px;background:var(--green);color:white;font-size:16px;font-weight:700;cursor:pointer">＋</button>
-        </div>
-        ${lignes || '<div style="padding:14px;text-align:center;color:var(--muted);font-size:12px">Box vide — ajoute une première réf ci-dessus</div>'}
-      </div>
-    </div>`;
-  }).join('');
-}
 
 function renderReassortPanel() {
   const keys = Object.keys(reassortItems);
@@ -1496,52 +1464,6 @@ window.closePlanDetail = function() {
   document.getElementById('plan-overlay').style.display='none';
   document.getElementById('plan-detail').style.transform='translateY(100%)';
 };
-
-// ── Login ─────────────────────────────────────────────────
-const PWD_HASH = 'bcb1b9f1ed4a1cbbd7039cbf7db50f4923c99f0b7e2f9662e93ab000e35181c4';
-const SESSION_KEY = 'flaudis_session';
-const SESSION_TTL = 6 * 3600 * 1000; // 6h
-
-function checkSession() {
-  try {
-    const s = JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
-    if(s && Date.now() - s.ts < SESSION_TTL) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.body.classList.remove('login-active');
-      return true;
-    }
-  } catch(e){}
-  document.body.classList.add('login-active');
-  return false;
-}
-
-async function checkPwd() {
-  const val = document.getElementById('pwd-input').value;
-  if(!val) return;
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
-  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  if(hash === PWD_HASH) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ts: Date.now()}));
-    document.getElementById('login-screen').style.display = 'none';
-    document.body.classList.remove('login-active');
-  } else {
-    const err = document.getElementById('pwd-error');
-    err.textContent = 'Mauvais mot de passe 🤨';
-    document.getElementById('pwd-input').style.borderColor = '#f87171';
-    setTimeout(()=>{err.textContent='';document.getElementById('pwd-input').style.borderColor='#2e2e2e';},2000);
-  }
-}
-
-function togglePwd() {
-  const inp = document.getElementById('pwd-input');
-  inp.type = inp.type==='password'?'text':'password';
-}
-
-// Vérifier session au chargement
-if(!checkSession()) {
-  // Laisser l'écran de login visible
-  setTimeout(()=>document.getElementById('pwd-input')?.focus(), 300);
-}
 
 loadNotices();
 </script>
