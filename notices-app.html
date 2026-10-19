@@ -245,6 +245,24 @@ window.manuelDelete = function(key) {
 };
 
 // ── Contenu d'un box ──
+function noticeDe(ref) {
+  const n = normB(ref);
+  if (!n || n.length < 3) return null;
+  let f = allNotices.find(x => normB(x.ref) === n);
+  if (!f) f = allNotices.find(x => normB(x.ref).startsWith(n) || n.startsWith(normB(x.ref)));
+  return f || null;
+}
+window.boxRefCheck = function(key) {
+  const inp = document.getElementById('bi-ref-' + key);
+  const el = document.getElementById('bi-connu-' + key);
+  if (!inp || !el) return;
+  const v = inp.value.trim();
+  if (!v) { el.innerHTML = ''; return; }
+  const n = noticeDe(v);
+  el.innerHTML = n
+    ? '<a href="' + n.githubUrl + '" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;font-size:11px">✓ Réf connue' + (normB(n.ref) !== normB(v) ? ' (' + escB(n.ref) + ')' : '') + ' — 📄 voir la notice</a>'
+    : '<span style="color:#fbbf24;font-size:11px">⚠ Réf inconnue de l\u2019app — elle sera rangée telle quelle</span>';
+};
 window.boxAdd = function(key) {
   const ref = document.getElementById('bi-ref-'+key).value.trim().toUpperCase();
   const qte = Math.max(1, parseInt(document.getElementById('bi-qte-'+key).value) || 1);
@@ -280,7 +298,7 @@ function renderBoxTab(key, m) {
   const lignes = keys.map(k => {
     const it = items[k];
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;flex:0 0 auto;min-width:88px">${escB(it.ref)}</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;flex:0 0 auto;min-width:88px">${escB(it.ref)}${(() => { const n = noticeDe(it.ref); return n ? ` <a href="${n.githubUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Voir la notice ${escB(n.ref)}" style="text-decoration:none;font-size:13px">📄</a>` : ''; })()}</span>
       <input value="${escB(it.note||'')}" placeholder="note…" data-box="${key}" data-item="${k}" onchange="boxNote(this.dataset.box,this.dataset.item,this.value)" style="flex:1;min-width:50px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
       <button data-box="${key}" data-item="${k}" onclick="boxQty(this.dataset.box,this.dataset.item,-1)" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:15px;font-weight:700;cursor:pointer">−</button>
       <span style="min-width:28px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)">${parseInt(it.qte)||0}</span>
@@ -294,11 +312,12 @@ function renderBoxTab(key, m) {
       <button data-box="${key}" onclick="boxDescSave(this.dataset.box)" style="padding:8px 12px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer">💾</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:4px">
-      <input id="bi-ref-${key}" list="box-refs" placeholder="Réf à ranger…" onkeydown="if(event.key==='Enter')boxAdd('${key}')" style="flex:1.2;min-width:0;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"/>
+      <input id="bi-ref-${key}" list="box-refs" placeholder="Réf à ranger…" oninput="boxRefCheck('${key}')" onkeydown="if(event.key==='Enter')boxAdd('${key}')" style="flex:1.2;min-width:0;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"/>
       <input id="bi-qte-${key}" type="number" min="1" value="1" style="width:54px;padding:9px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-align:center"/>
       <input id="bi-note-${key}" placeholder="note…" onkeydown="if(event.key==='Enter')boxAdd('${key}')" style="flex:1;min-width:0;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none"/>
       <button data-box="${key}" onclick="boxAdd(this.dataset.box)" style="width:38px;border:none;border-radius:8px;background:var(--green);color:white;font-size:16px;font-weight:700;cursor:pointer">＋</button>
     </div>
+    <div id="bi-connu-${key}" style="min-height:16px;margin:2px 0 6px;padding-left:2px"></div>
     ${lignes || '<div style="padding:14px;text-align:center;color:var(--muted);font-size:12px">Box vide — range une première réf ci-dessus</div>'}
   </div>`;
 }
