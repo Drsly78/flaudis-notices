@@ -133,7 +133,7 @@ firebase.initializeApp({
 const db = firebase.database();
 
 const GITHUB_API = 'https://api.github.com/repos/Drsly78/flaudis-notices/contents/notices';
-const CACHE_KEY  = 'flaudis_notices_v4';
+const CACHE_KEY  = 'flaudis_notices_v5';
 const CACHE_TTL  = 3600000;
 
 let allNotices   = [];
@@ -363,8 +363,10 @@ async function loadNotices() {
         const year = /^20\d{2}$/.test(parts[parts.length-1]) ? parts[parts.length-1] : null;
         const label= year ? parts.slice(1,-1).join(' ') : parts.slice(1).join(' ');
         return { ref, label:label||ref, year,
-          githubUrl:'https://mozilla.github.io/pdf.js/web/viewer.html?file='+encodeURIComponent('https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/'+encodeURIComponent(f.name)),
-          rawUrl:'https://raw.githubusercontent.com/Drsly78/sav-notices/main/notices/'+encodeURIComponent(f.name) };
+          // PDF servi par le MÊME site GitHub Pages que l'app : même origine,
+          // affichage natif du navigateur — plus de visionneuse Mozilla ni d'ancien repo
+          githubUrl:'https://drsly78.github.io/flaudis-notices/notices/'+encodeURIComponent(f.name),
+          rawUrl:'https://raw.githubusercontent.com/Drsly78/flaudis-notices/main/notices/'+encodeURIComponent(f.name) };
       })
       .sort((a,b)=>a.ref.localeCompare(b.ref));
     localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),data:allNotices}));
