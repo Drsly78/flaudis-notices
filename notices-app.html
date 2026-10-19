@@ -186,7 +186,7 @@ function buildBoxIndex(man) {
     const items = man[k].items || {};
     Object.keys(items).forEach(i2 => {
       const n = normB(items[i2].ref);
-      if (n) (_boxIndex[n] = _boxIndex[n] || []).push({ key: k, nom: man[k].ref || k });
+      if (n) (_boxIndex[n] = _boxIndex[n] || []).push({ key: k, nom: man[k].ref || k, qte: parseInt(items[i2].qte) || 1 });
     });
   });
 }
@@ -262,6 +262,15 @@ window.boxRefCheck = function(key) {
   el.innerHTML = n
     ? '<a href="' + n.githubUrl + '" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;font-size:11px">✓ Réf connue' + (normB(n.ref) !== normB(v) ? ' (' + escB(n.ref) + ')' : '') + ' — 📄 voir la notice</a>'
     : '<span style="color:#fbbf24;font-size:11px">⚠ Réf inconnue de l\u2019app — elle sera rangée telle quelle</span>';
+  // Déjà rangée dans un box ? (le même ou un autre)
+  const hits = _boxIndex[normB(v)] || [];
+  if (hits.length) {
+    const ailleurs = hits.filter(h => h.key !== key);
+    const ici = hits.filter(h => h.key === key);
+    let msg = ailleurs.map(h => '<span onclick="openBoxFromBadge(\'' + h.key + '\')" title="Ouvrir ce box" style="cursor:pointer;color:#a78bfa;font-weight:700">🧰 Déjà dans « ' + escB(h.nom) + ' » — ' + h.qte + ' ex.</span>').join(' · ');
+    if (ici.length) msg += (msg ? ' · ' : '') + '<span style="color:#60a5fa">📦 Déjà ' + ici[0].qte + ' ex. dans ce box — l\u2019ajout s\u2019additionnera</span>';
+    el.innerHTML += '<div style="margin-top:3px;font-size:11px">' + msg + '</div>';
+  }
 };
 window.boxAdd = function(key) {
   const ref = document.getElementById('bi-ref-'+key).value.trim().toUpperCase();
