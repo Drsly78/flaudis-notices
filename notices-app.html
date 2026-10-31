@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#0f0f0f"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Notices Flaudis</title>
+<title>Entrepôt Flaudis</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
   :root {
@@ -70,13 +70,206 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+  /* ══ Barre de l'app Entrepôt : deux sections distinctes ══ */
+  :root{--topbar-h:54px;}
+  #entrepot-bar{position:sticky;top:0;z-index:150;height:var(--topbar-h);background:#0b0b0b;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px;}
+  #entrepot-bar .eb-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--orange);white-space:nowrap;}
+  #entrepot-bar .eb-logo span{color:var(--muted);font-size:20px;letter-spacing:2px;}
+  #entrepot-bar .eb-tabs{margin-left:auto;display:flex;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:3px;gap:3px;}
+  #entrepot-bar .eb-tabs button{border:0;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;padding:8px 13px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  #entrepot-bar .eb-tabs button.on{background:var(--orange);color:#fff;}
+  #sec-notices header{top:var(--topbar-h);}
+  #sec-notices[hidden],#sec-prepa[hidden],#sec-prepa [hidden]{display:none !important;}
+  @media (max-width:520px){ #entrepot-bar .eb-logo span{display:none;} #entrepot-bar .eb-tabs button{padding:8px 10px;} }
+
+  /* ══ Section Prépa SAV (tout est préfixé #sec-prepa : rien ne touche aux notices) ══ */
+  #sec-prepa{--pp-piece:#ff9a5c;--pp-piece-bg:rgba(232,97,26,.12);--pp-piece-line:rgba(232,97,26,.38);--pp-ok:#22c55e;--pp-ok-bg:rgba(34,197,94,.12);--pp-ok-line:rgba(34,197,94,.4);
+    --pp-dsv:#3b82f6;--pp-dsv-bg:rgba(59,130,246,.15);--pp-dpd:#ef4444;--pp-dpd-bg:rgba(239,68,68,.14);--pp-faint:#5f5f5f;--pp-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.45;}
+  #sec-prepa button{font-family:'DM Sans',sans-serif;cursor:pointer;color:inherit;}
+  #sec-prepa .pp-head{position:sticky;top:var(--topbar-h);z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 12px;}
+  #sec-prepa .pp-head-in{max-width:1040px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  #sec-prepa .pp-search{flex:1 1 240px;min-width:0;position:relative;}
+  #sec-prepa .pp-search input{width:100%;padding:12px 12px 12px 40px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;}
+  #sec-prepa .pp-search input:focus{border-color:var(--orange);}
+  #sec-prepa .pp-search::before{content:"🔍";position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.7;}
+  #sec-prepa .pp-seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:3px;gap:2px;}
+  #sec-prepa .pp-seg button{border:0;background:none;color:var(--muted);padding:8px 11px;border-radius:8px;font-weight:700;font-size:12.5px;white-space:nowrap;}
+  #sec-prepa .pp-seg button.on{background:var(--orange);color:#fff;}
+  #sec-prepa .pp-seg .n{opacity:.75;margin-left:4px;}
+  #sec-prepa .pp-hbtn{padding:10px 13px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;white-space:nowrap;}
+  #sec-prepa .pp-hbtn.orange{background:var(--orange);border-color:var(--orange);color:#fff;}
+  #sec-prepa .pp-etat{max-width:1040px;margin:0 auto;padding:10px 16px 0;color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap;}
+  #sec-prepa .pp-main{max-width:1040px;margin:0 auto;padding:4px 16px 60px;}
+  #sec-prepa .pp-vide{text-align:center;color:var(--muted);padding:60px 10px;font-size:15px;}
+
+  /* Connexion */
+  #sec-prepa .pp-login{display:flex;justify-content:center;padding:60px 16px;}
+  #sec-prepa .pp-login form{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 22px 22px;width:100%;max-width:360px;text-align:center;}
+  #sec-prepa .pp-login .ic{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--orange),#FF7A35);display:inline-flex;align-items:center;justify-content:center;font-size:26px;}
+  #sec-prepa .pp-login h2{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:26px;margin:12px 0 2px;font-weight:400;}
+  #sec-prepa .pp-login p{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  #sec-prepa .pp-login input{width:100%;font:700 22px/1 var(--pp-mono);letter-spacing:6px;text-align:center;text-transform:uppercase;padding:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--text);outline:none;}
+  #sec-prepa .pp-login input:focus{border-color:var(--orange);}
+  #sec-prepa .pp-login button{margin-top:12px;width:100%;padding:13px;border:0;border-radius:12px;background:var(--orange);color:#fff;font-weight:700;font-size:15px;}
+  #sec-prepa .pp-login .err{color:var(--red);font-size:13px;min-height:18px;margin-top:10px;}
+
+  /* Groupes */
+  #sec-prepa .groupe{margin-top:20px;}
+  #sec-prepa .g-tete{display:flex;align-items:center;gap:12px;padding:0 2px 10px;flex-wrap:wrap;}
+  #sec-prepa .dept{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--orange),#FF7A35);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;flex:0 0 auto;}
+  #sec-prepa .dept.colis{background:var(--pp-ok);font-size:20px;font-family:'DM Sans',sans-serif;}
+  #sec-prepa .g-titre{flex:1;min-width:0;}
+  #sec-prepa .g-titre b{display:block;font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:22px;letter-spacing:1.2px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .g-titre span{color:var(--muted);font-size:12.5px;}
+  #sec-prepa .g-badge{font-size:12px;font-weight:700;color:#60a5fa;background:var(--pp-dsv-bg);border:1px solid rgba(59,130,246,.3);padding:4px 9px;border-radius:20px;white-space:nowrap;}
+  #sec-prepa .g-badge.attente{color:var(--pp-piece);background:var(--pp-piece-bg);border-color:var(--pp-piece-line);}
+  #sec-prepa .g-act{padding:9px 13px;border-radius:10px;border:0;background:var(--orange);color:#fff;font-weight:700;font-size:13px;white-space:nowrap;}
+  #sec-prepa .pill-t{font-weight:800;font-size:12px;letter-spacing:.6px;padding:7px 11px;border-radius:9px;border:1.5px solid;background:var(--surface);}
+  #sec-prepa .pill-t.dsv{color:#60a5fa;border-color:var(--pp-dsv);}
+  #sec-prepa .pill-t.dpd{color:#f87171;border-color:var(--pp-dpd);}
+  #sec-prepa .pill-t.on.dsv{background:var(--pp-dsv);color:#fff;}
+  #sec-prepa .pill-t.on.dpd{background:var(--pp-dpd);color:#fff;}
+  #sec-prepa .cartes{display:grid;gap:10px;}
+
+  /* Carte : chaque info a TOUJOURS la même place */
+  #sec-prepa .carte{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;animation:fadeIn .2s ease both;}
+  #sec-prepa .carte.prepare{border-color:var(--pp-ok-line);}
+  #sec-prepa .c-ids{display:flex;align-items:center;gap:6px 8px;padding:12px 14px 0;min-height:36px;flex-wrap:wrap;}
+  #sec-prepa .usv{font:700 15px/1.2 var(--pp-mono);letter-spacing:-.2px;cursor:copy;white-space:nowrap;}
+  #sec-prepa .chip{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:7px;white-space:nowrap;}
+  #sec-prepa .chip-fla{font-family:var(--pp-mono);color:#60a5fa;background:var(--pp-dsv-bg);cursor:copy;}
+  #sec-prepa .chip-age{color:var(--muted);background:var(--surface2);}
+  #sec-prepa .chip-age.vieux{color:var(--pp-piece);background:var(--pp-piece-bg);}
+  #sec-prepa .c-date{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;}
+  #sec-prepa .cles{display:grid;grid-template-columns:1.15fr 1.15fr 1fr;gap:8px;padding:10px 14px 4px;}
+  #sec-prepa .cle{border-radius:10px;padding:8px 11px 9px;background:var(--surface2);min-width:0;cursor:copy;min-height:70px;border:1px solid transparent;}
+  #sec-prepa .cle .l{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);}
+  #sec-prepa .cle .v{font-size:16.5px;font-weight:700;line-height:1.25;margin-top:2px;overflow-wrap:anywhere;}
+  #sec-prepa .cle.piece{background:var(--pp-piece-bg);border-color:var(--pp-piece-line);}
+  #sec-prepa .cle.piece .l,#sec-prepa .cle.piece .v{color:var(--pp-piece);}
+  #sec-prepa .cle.ref .v{font-family:var(--pp-mono);font-size:15px;letter-spacing:-.3px;}
+  #sec-prepa .cle.empl .v{color:#60a5fa;}
+  #sec-prepa .cle.empl .v::before{content:"📍 ";font-size:13px;}
+  #sec-prepa .cle .v.rien{color:var(--pp-faint);font-weight:600;}
+  #sec-prepa .cle .v.rien::before{content:none;}
+  #sec-prepa .cle .v.alerte{color:#f87171;}
+  #sec-prepa .pb{margin:8px 14px 0;height:66px;overflow:hidden;cursor:pointer;}
+  #sec-prepa .pb.ouvert{height:auto;min-height:66px;}
+  #sec-prepa .pb .synth{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .pb.ouvert .synth{white-space:normal;}
+  #sec-prepa .pb .msg{margin-top:3px;color:var(--muted);font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line;}
+  #sec-prepa .pb.ouvert .msg{-webkit-line-clamp:unset;display:block;}
+  #sec-prepa .pb .msg::before{content:"💬 ";}
+  #sec-prepa .pb .rien{color:var(--pp-faint);font-size:13px;}
+  #sec-prepa .photos{display:flex;gap:6px;overflow-x:auto;padding:10px 14px 0;height:98px;scrollbar-width:thin;}
+  #sec-prepa .photos button{flex:0 0 auto;padding:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface2);position:relative;height:88px;}
+  #sec-prepa .photos img{display:block;height:100%;width:auto;max-width:150px;min-width:60px;object-fit:cover;}
+  #sec-prepa .photos .tag{position:absolute;left:4px;bottom:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+  #sec-prepa .photos .sans{height:88px;width:118px;border:1.5px dashed var(--border);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--pp-faint);font-size:11.5px;font-weight:600;flex:0 0 auto;}
+  #sec-prepa .photos .sans i{font-style:normal;font-size:20px;opacity:.6;}
+  #sec-prepa details.tiroir{margin:10px 14px 0;border-top:1px dashed var(--border);}
+  #sec-prepa details.tiroir.t2{margin-top:0;border-top:0;}
+  #sec-prepa details.tiroir summary{list-style:none;cursor:pointer;padding:8px 0 2px;color:var(--muted);font-size:12.5px;font-weight:600;user-select:none;}
+  #sec-prepa details.tiroir summary::-webkit-details-marker{display:none;}
+  #sec-prepa details.tiroir summary::before{content:"▸";display:inline-block;width:14px;transition:transform .15s;color:var(--orange);}
+  #sec-prepa details.tiroir[open] summary::before{transform:rotate(90deg);}
+  #sec-prepa .demande{white-space:pre-wrap;font-size:13px;line-height:1.5;padding:4px 0 4px 14px;}
+  #sec-prepa .demande.vide{color:var(--pp-faint);}
+  #sec-prepa .t-grille{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px;padding:6px 0 4px 14px;font-size:13px;}
+  #sec-prepa .t-grille b{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  #sec-prepa .t-grille div{overflow-wrap:anywhere;}
+  #sec-prepa .docs{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0 2px 14px;}
+  #sec-prepa .docs a{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12.5px;background:var(--surface2);max-width:100%;}
+  #sec-prepa .docs a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #sec-prepa .c-pied{display:flex;gap:8px;align-items:center;padding:10px 14px 12px;margin-top:10px;border-top:1px solid var(--border);min-height:60px;flex-wrap:wrap;}
+  #sec-prepa .b-prep{padding:10px 16px;border-radius:10px;border:0;background:var(--orange);color:#fff;font-weight:700;font-size:14px;}
+  #sec-prepa .b-notice{padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;}
+  #sec-prepa .b-notice.absente{color:var(--pp-faint);border-style:dashed;cursor:default;}
+  #sec-prepa .statut-ok{display:inline-flex;align-items:center;gap:8px;color:var(--pp-ok);font-weight:700;font-size:13.5px;flex-wrap:wrap;}
+  #sec-prepa .statut-ok .t{font-weight:800;font-size:12px;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;}
+  #sec-prepa .statut-ok .t.DSV{background:var(--pp-dsv);}
+  #sec-prepa .statut-ok .t.DPD{background:var(--pp-dpd);}
+  #sec-prepa .b-lien{margin-left:auto;border:0;background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;text-underline-offset:2px;padding:6px 2px;}
+  #sec-prepa button:disabled{opacity:.5;cursor:wait;}
+
+  /* Fenêtre « Préparer » */
+  #sec-prepa .voile{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;}
+  #sec-prepa .fen{background:#161616;border:1px solid var(--border);border-radius:18px;width:100%;max-width:560px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  #sec-prepa .f-tete{padding:18px 20px 12px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);}
+  #sec-prepa .f-tete h2{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:24px;line-height:1;}
+  #sec-prepa .f-tete p{margin-top:3px;color:var(--muted);font-size:13px;}
+  #sec-prepa .f-corps{padding:14px 20px;overflow-y:auto;}
+  #sec-prepa .f-sec{margin-bottom:18px;}
+  #sec-prepa .f-sec h3{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:0 0 8px;font-weight:700;}
+  #sec-prepa .f-sec h3 small{text-transform:none;letter-spacing:0;font-weight:500;}
+  #sec-prepa .f-alerte{background:var(--pp-piece-bg);border:1px solid var(--pp-piece-line);border-radius:13px;padding:12px 12px 6px;}
+  #sec-prepa .f-alerte h3{color:var(--pp-piece);}
+  #sec-prepa .f-ligne{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1.5px solid var(--border);border-radius:11px;margin-bottom:6px;cursor:pointer;background:var(--surface);}
+  #sec-prepa .f-ligne.on{border-color:var(--orange);background:rgba(232,97,26,.08);}
+  #sec-prepa .f-ligne input{width:18px;height:18px;accent-color:var(--orange);flex:0 0 auto;margin:0;}
+  #sec-prepa .f-ligne .q{flex:1;min-width:0;}
+  #sec-prepa .f-ligne .q > b{font-family:var(--pp-mono);font-size:13px;}
+  #sec-prepa #pp-f-colis .q > b{font-family:'DM Sans',sans-serif;font-size:13.5px;}
+  #sec-prepa .f-ligne .q div{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .f-ligne .q .p{color:var(--pp-piece);font-weight:700;}
+  #sec-prepa .f-colis-usv{margin-top:5px;display:grid;gap:2px;}
+  #sec-prepa .f-colis-usv span{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .f-colis-usv b{font-family:var(--pp-mono);font-size:12px;}
+  #sec-prepa .f-colis-usv em{font-style:normal;color:var(--pp-piece);font-weight:700;}
+  #sec-prepa .transp-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  #sec-prepa .transp-choix button{padding:16px 10px;border-radius:12px;font-weight:800;font-size:18px;letter-spacing:1px;background:var(--surface);border:2px solid;}
+  #sec-prepa .transp-choix .dsv{color:#60a5fa;border-color:var(--pp-dsv);}
+  #sec-prepa .transp-choix .dpd{color:#f87171;border-color:var(--pp-dpd);}
+  #sec-prepa .transp-choix .dsv.on{background:var(--pp-dsv);color:#fff;}
+  #sec-prepa .transp-choix .dpd.on{background:var(--pp-dpd);color:#fff;}
+  #sec-prepa .transp-choix button:disabled{cursor:not-allowed;opacity:.35;}
+  #sec-prepa .transp-choix.manque button{animation:ppSecoue .35s;}
+  @keyframes ppSecoue{25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  #sec-prepa .f-aide{font-size:12.5px;color:var(--muted);margin-top:6px;}
+  #sec-prepa .f-aide.err{color:#f87171;font-weight:600;}
+  #sec-prepa .f-pied{padding:12px 20px 16px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;padding-bottom:max(16px,env(safe-area-inset-bottom));}
+  #sec-prepa .f-pied .annul{padding:12px 16px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);font-weight:600;}
+  #sec-prepa .f-pied .valid{padding:12px 18px;border-radius:11px;border:0;background:var(--pp-ok);color:#fff;font-weight:800;flex:1;max-width:340px;}
+  #sec-prepa .f-pied .valid.inactif{background:var(--surface2);color:var(--muted);}
+
+  /* Visionneuse + toast */
+  #sec-prepa .lb{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:400;display:flex;align-items:center;justify-content:center;}
+  #sec-prepa .lb img{max-width:100vw;max-height:100vh;object-fit:contain;}
+  #sec-prepa .lb button{position:absolute;background:rgba(255,255,255,.14);border:0;color:#fff;width:46px;height:46px;border-radius:23px;font-size:22px;}
+  #sec-prepa .lb .x{top:max(12px,env(safe-area-inset-top));right:12px;}
+  #sec-prepa .lb .g{left:10px;top:50%;transform:translateY(-50%);}
+  #sec-prepa .lb .d{right:10px;top:50%;transform:translateY(-50%);}
+  #sec-prepa .lb .leg{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#fff;font-size:13px;opacity:.85;padding:0 60px;}
+  .pp-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#262626;border:1px solid #3a3a3a;color:#fff;padding:10px 16px;border-radius:11px;font-size:13.5px;z-index:500;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.4);font-family:'DM Sans',sans-serif;}
+
+  @media (max-width:640px){
+    #sec-prepa .cles{grid-template-columns:1fr;gap:6px;}
+    #sec-prepa .cle{display:grid;grid-template-columns:112px 1fr;align-items:baseline;gap:8px;padding:8px 10px;min-height:0;}
+    #sec-prepa .cle .v{margin-top:0;font-size:15.5px;}
+    #sec-prepa .c-date .rl{display:none;}
+    #sec-prepa .t-grille{grid-template-columns:1fr 1fr;}
+    #sec-prepa .g-act{width:100%;}
+    #sec-prepa .b-prep{flex:1;}
+    #sec-prepa .voile{padding:0;align-items:flex-end;}
+    #sec-prepa .fen{border-radius:18px 18px 0 0;max-height:92vh;}
+  }
 </style>
 </head>
 <body>
 
+<div id="entrepot-bar">
+  <div class="eb-logo">FLAUDIS <span>ENTREPÔT</span></div>
+  <div class="eb-tabs">
+    <button data-sec="notices" class="on">📄 Notices</button>
+    <button data-sec="prepa">📦 Prépa SAV</button>
+  </div>
+</div>
+
+<div id="sec-notices">
 <header>
   <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
-    <div class="logo" style="margin-bottom:0">FLAUDIS <span>NOTICES PRODUITS</span></div>
+    <div class="logo" style="margin-bottom:0;font-size:22px">NOTICES <span>PRODUITS</span></div>
     <button onclick="newRefToggle()" id="nav-add" title="Créer une réf sans notice ou un box" style="position:absolute;left:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">➕</button>
     <button onclick="currentView==='plan'?switchView('notices'):switchView('plan')" id="nav-plan" style="position:absolute;right:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">🗺️</button>
   </div>
@@ -117,6 +310,78 @@
     <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun article — ajoutez depuis l'onglet Info des notices</div>
   </div>
 </div>
+</div><!-- /sec-notices -->
+
+<div id="sec-prepa" hidden>
+  <div id="pp-login" class="pp-login" hidden>
+    <form id="pp-login-form" autocomplete="off">
+      <div class="ic">📦</div>
+      <h2>Prépa SAV</h2>
+      <p>Dossiers « envoi pièce » à préparer</p>
+      <input id="pp-code" maxlength="20" placeholder="CODE" autocapitalize="characters" spellcheck="false"/>
+      <button type="submit">Entrer</button>
+      <div class="err" id="pp-login-err"></div>
+    </form>
+  </div>
+  <div id="pp-app" hidden>
+    <div class="pp-head">
+      <div class="pp-head-in">
+        <div class="pp-search"><input id="pp-recherche" type="search" placeholder="USV, FLA, réf, EAN, ville, pièce…" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+        <div class="pp-seg" id="pp-filtre">
+          <button data-f="afaire">À préparer<span class="n"></span></button>
+          <button data-f="prepares">Préparés<span class="n"></span></button>
+          <button data-f="tous">Tous<span class="n"></span></button>
+        </div>
+        <button class="pp-hbtn orange" id="pp-export" title="Exporter au format « Pour SAV Entrepôt »">📥 Excel</button>
+        <button class="pp-hbtn" id="pp-refresh" title="Rafraîchir">↻</button>
+      </div>
+    </div>
+    <div class="pp-etat"><span id="pp-info"></span><span id="pp-info-colis"></span></div>
+    <div class="pp-main" id="pp-liste"></div>
+  </div>
+
+  <div id="pp-fen" class="voile" hidden>
+    <div class="fen" role="dialog" aria-modal="true">
+      <div class="f-tete">
+        <span class="dept" id="pp-f-dept">44</span>
+        <div><h2>Préparer un colis</h2><p id="pp-f-mag"></p></div>
+      </div>
+      <div class="f-corps">
+        <div class="f-sec f-alerte" id="pp-f-sec-colis" hidden>
+          <h3>⚠️ Un envoi attend déjà pour ce magasin <small>— choisis</small></h3>
+          <div id="pp-f-colis"></div>
+          <div class="f-aide" id="pp-f-aide-colis"></div>
+        </div>
+        <div class="f-sec">
+          <h3><span id="pp-f-titre-dos">Dossiers dans ce colis</span> <small id="pp-f-nb"></small></h3>
+          <div id="pp-f-dossiers"></div>
+          <div class="f-aide" id="pp-f-aide-dossiers"></div>
+        </div>
+        <div class="f-sec">
+          <h3>Transporteur <small>— obligatoire</small></h3>
+          <div class="transp-choix" id="pp-f-transp">
+            <button class="dsv" data-t="DSV" type="button">DSV</button>
+            <button class="dpd" data-t="DPD" type="button">DPD</button>
+          </div>
+          <div class="f-aide" id="pp-f-aide-t"></div>
+        </div>
+      </div>
+      <div class="f-pied">
+        <button class="annul" id="pp-f-annuler" type="button">Annuler</button>
+        <button class="valid inactif" id="pp-f-valider" type="button">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pp-lb" class="lb" hidden>
+    <img id="pp-lb-img" alt=""/>
+    <button class="x" id="pp-lb-x" aria-label="Fermer">✕</button>
+    <button class="g" id="pp-lb-g" aria-label="Précédente">‹</button>
+    <button class="d" id="pp-lb-d" aria-label="Suivante">›</button>
+    <div class="leg" id="pp-lb-leg"></div>
+  </div>
+</div>
+
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -1527,6 +1792,470 @@ window.closePlanDetail = function() {
 };
 
 loadNotices();
+
+// ══════════════════════════════════════════════════════════════════
+//  ENTREPÔT : deux sections distinctes — 📄 Notices | 📦 Prépa SAV
+// ══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const lire = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const ecrire = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+  function montrerSection(nom) {
+    if (nom !== 'prepa') nom = 'notices';
+    document.getElementById('sec-notices').hidden = nom !== 'notices';
+    document.getElementById('sec-prepa').hidden = nom !== 'prepa';
+    document.querySelectorAll('#entrepot-bar [data-sec]').forEach(b => b.classList.toggle('on', b.dataset.sec === nom));
+    ecrire('entrepotSection', nom);
+    try { history.replaceState(null, '', nom === 'prepa' ? '#prepa' : location.pathname + location.search); } catch (e) {}
+    if (nom === 'prepa' && window.prepaDemarrer) window.prepaDemarrer();
+    window.scrollTo(0, 0);
+  }
+  window.entrepotSection = montrerSection;
+  document.querySelectorAll('#entrepot-bar [data-sec]').forEach(b => b.addEventListener('click', () => montrerSection(b.dataset.sec)));
+  const voulu = /prepa/i.test(location.hash) ? 'prepa' : (/notices/i.test(location.hash) ? 'notices' : (lire('entrepotSection') || 'notices'));
+  if (voulu === 'prepa') setTimeout(() => montrerSection('prepa'), 0); else montrerSection('notices');
+})();
+
+// ══ 📦 PRÉPA SAV : dossiers « envoi pièce » (serveur Railway, code d'accès à part) ══
+(function () {
+  'use strict';
+  const API = window.PREPA_API || 'https://flaudis-server-production.up.railway.app';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+  };
+  let CODE = (store.get('prepaCode') || '').toUpperCase();
+  let ITEMS = [];
+  let FILTRE = store.get('prepaFiltre') || 'afaire';
+  let chargement = false, demarre = false;
+  const visible = () => !$('sec-prepa').hidden;
+
+  function toast(m, ms) {
+    document.querySelectorAll('.pp-toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = 'pp-toast'; t.textContent = m;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), ms || 2800);
+  }
+  async function api(route, corps) {
+    const r = await fetch(API + '/prepa-api/' + route, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-prepa-code': CODE },
+      body: JSON.stringify(corps || {})
+    });
+    let d = {};
+    try { d = await r.json(); } catch (e) {}
+    if (r.status === 401) { deconnecter('Code incorrect ou changé — saisis le nouveau code.'); throw new Error('code'); }
+    if (!r.ok || d.error) throw new Error(d.error || ('Erreur ' + r.status));
+    return d;
+  }
+
+  // ── Connexion (code préparateurs, mémorisé sur l'appareil) ──
+  function deconnecter(msg) {
+    CODE = ''; store.set('prepaCode', null);
+    $('pp-app').hidden = true; $('pp-login').hidden = false;
+    $('pp-login-err').textContent = msg || '';
+    setTimeout(() => { if (visible()) $('pp-code').focus(); }, 50);
+  }
+  $('pp-login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    CODE = $('pp-code').value.trim().toUpperCase();
+    if (!CODE) return;
+    $('pp-login-err').textContent = '…';
+    try {
+      await charger(true);
+      store.set('prepaCode', CODE);
+      $('pp-login').hidden = true; $('pp-app').hidden = false;
+      $('pp-login-err').textContent = '';
+    } catch (err) { if (err.message !== 'code') $('pp-login-err').textContent = err.message; }
+  });
+
+  // Rien n'est chargé tant que la section Prépa n'est pas ouverte
+  window.prepaDemarrer = function () {
+    if (!CODE) { deconnecter(); return; }
+    $('pp-login').hidden = true; $('pp-app').hidden = false;
+    if (!demarre) { demarre = true; charger(true).catch(err => { if (err.message !== 'code') $('pp-info').textContent = '⚠️ ' + err.message; }); }
+    else rendre();
+  };
+
+  async function charger(force) {
+    if (chargement) return;
+    chargement = true;
+    $('pp-refresh').disabled = true;
+    try {
+      const d = await api('liste', { force: !!force });
+      ITEMS = d.items || [];
+      rendre();
+      $('pp-info').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } finally { chargement = false; $('pp-refresh').disabled = false; }
+  }
+
+  // ── Outils d'affichage ──
+  const fichierUrl = f => API + '/prepa-api/fichier/' + f.id + '?c=' + encodeURIComponent(CODE);
+  const estImage = f => /^image\//.test(f.media);
+  const flaCourt = v => String(v || '').replace(/^FLA[\s-]*/i, '');
+  const magKey = it => (String(it.enseigne || '') + '|' + String(it.ville || '')).toUpperCase().replace(/\s+/g, ' ').trim();
+  const deptTxt = it => it.dept && it.dept < 999 ? String(it.dept).padStart(2, '0') : '?';
+  const villeSeule = it => String(it.ville || '').replace(/^(2A|2B|\d{2,3})\s+/i, '');
+  function age(iso) {
+    const j = Math.floor((Date.now() - new Date(iso + 'T00:00:00').getTime()) / 86400000);
+    return isNaN(j) ? null : j;
+  }
+  // Notice de la réf (liste des notices de la section Notices) — « TLE014-T2 ANTHRACITE », « HF25286 (KB-251210) »…
+  function noticePour(ref) {
+    if (typeof window.noticeDe !== 'function' && typeof noticeDe !== 'function') return null;
+    const f = typeof noticeDe === 'function' ? noticeDe : window.noticeDe;
+    const r = String(ref || '').trim();
+    const cands = [r].concat(r.split(/[\s()\/,;]+/).filter(t => t.length >= 4 && /\d/.test(t)));
+    for (const c of cands) { try { const n = f(c); if (n) return n; } catch (e) {} }
+    return null;
+  }
+  function correspond(it, q) {
+    if (!q) return true;
+    const h = [it.cnb, it.fla, it.ref, it.ean, it.enseigne, it.ville, it.piece, it.emplacement, it.modele, it.description_panne, it.message_magasin, it.colis ? 'colis ' + it.colis : ''].join(' ').toUpperCase();
+    return q.toUpperCase().split(/\s+/).filter(Boolean).every(m => h.includes(m));
+  }
+  function visibles() {
+    const q = $('pp-recherche').value.trim();
+    return ITEMS.filter(it => (FILTRE === 'tous' || (FILTRE === 'prepares') === !!it.prepare) && correspond(it, q));
+  }
+
+  function carte(it) {
+    const j = age(it.iso);
+    const imgs = it.fichiers.filter(estImage);
+    const docs = it.fichiers.filter(f => !estImage(f));
+    const empl = String(it.emplacement || '').trim();
+    const pasStock = /pas de stock|rupture/i.test(empl);
+    const cle = (cls, lib, val, copie) => '<div class="cle ' + cls + '"' + (val ? ' data-copie="' + esc(copie || val) + '"' : '') + '><div class="l">' + lib + '</div>' +
+      '<div class="v' + (val ? (cls === 'empl' && pasStock ? ' alerte' : '') : ' rien') + '">' + (val ? esc(val) : '—') + '</div></div>';
+    const refAff = it.ref + (it.couleur && !String(it.ref).toUpperCase().includes(String(it.couleur).toUpperCase()) ? ' · ' + it.couleur : '');
+    const detail = (lib, v) => '<div><b>' + lib + '</b>' + (v ? esc(v) : '<span style="color:var(--pp-faint)">—</span>') + '</div>';
+    const notice = noticePour(it.ref);
+    return '<article class="carte' + (it.prepare ? ' prepare' : '') + '" data-cle="' + esc(it.cle) + '">' +
+      '<div class="c-ids">' +
+        '<span class="usv" data-copie="' + esc(it.cnb || it.fla) + '">' + esc(it.cnb || ('FLA ' + flaCourt(it.fla))) + '</span>' +
+        (it.cnb && it.fla ? '<span class="chip chip-fla" data-copie="' + esc(it.fla) + '">FLA ' + esc(flaCourt(it.fla)) + '</span>' : '') +
+        (j != null ? '<span class="chip chip-age' + (j >= 10 ? ' vieux' : '') + '" title="Jours depuis la réception">' + (j === 0 ? "aujourd'hui" : 'J+' + j) + '</span>' : '') +
+        '<span class="c-date"><span class="rl">Reçu le </span>' + esc(it.date) + '</span>' +
+      '</div>' +
+      '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
+      '<div class="pb" title="Cliquer pour tout lire">' +
+        (it.description_panne || it.message_magasin
+          ? (it.description_panne ? '<div class="synth">' + esc(it.description_panne) + '</div>' : '') +
+            (it.message_magasin ? '<div class="msg">' + esc(it.message_magasin) + '</div>' : '')
+          : '<div class="rien">' + (it.avec_donnees || it.fichiers.length ? 'Pas de description du magasin.' : '📸 Photos et description pas encore récupérées.') + '</div>') +
+      '</div>' +
+      '<div class="photos">' + (imgs.length ? imgs.map(f =>
+          '<button data-photo="' + f.id + '" title="' + esc(f.type_doc || f.nom) + '"><img loading="lazy" src="' + fichierUrl(f) + '" alt=""/>' +
+          (f.type_doc ? '<span class="tag">' + esc(f.type_doc) + '</span>' : '') + '</button>').join('')
+        : '<span class="sans"><i>📷</i>Aucune photo</span>') + '</div>' +
+      '<details class="tiroir"><summary>Description de la demande</summary>' +
+        '<div class="demande' + (it.texte_demande ? '' : ' vide') + '">' + (it.texte_demande ? esc(it.texte_demande) : (it.avec_donnees || it.fichiers.length ? 'Pas encore importée.' : '—')) + '</div>' +
+      '</details>' +
+      '<details class="tiroir t2"><summary>Détails · EAN, produit' + (docs.length ? ', ' + docs.length + ' document' + (docs.length > 1 ? 's' : '') : '') + '</summary>' +
+        '<div class="t-grille">' + detail('EAN', it.ean) + detail('Produit', it.modele) + detail('Couleur', it.couleur) + '</div>' +
+        (docs.length ? '<div class="docs">' + docs.map(f => '<a href="' + fichierUrl(f) + '" target="_blank" rel="noopener">🧾 <span>' + esc(f.type_doc ? f.type_doc + ' — ' + f.nom : f.nom) + '</span></a>').join('') + '</div>' : '') +
+      '</details>' +
+      '<div class="c-pied">' +
+        (it.prepare
+          ? '<span class="statut-ok">✅ Préparé' + (it.colis ? ' · Colis ' + it.colis : ' (sans colis)') + (it.transporteur ? ' <span class="t ' + esc(it.transporteur) + '">' + esc(it.transporteur) + '</span>' : '') + '</span>' +
+            (it.colis ? '' : '<button class="b-prep" data-act="prep">📦 Mettre en colis</button>')
+          : '<button class="b-prep" data-act="prep">📦 Préparer…</button>') +
+        (notice
+          ? '<a class="b-notice" href="' + esc(notice.githubUrl) + '" target="_blank" rel="noopener" title="' + esc(notice.ref + ' — ' + (notice.label || '')) + '">📄 Notice</a>'
+          : '<span class="b-notice absente" title="Aucune notice trouvée pour cette réf">📄 Pas de notice</span>') +
+        (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : '') +
+      '</div>' +
+    '</article>';
+  }
+
+  function grouper(liste, cleDe) {
+    const g = [], idx = {};
+    liste.forEach(it => { const k = cleDe(it); if (!(k in idx)) { idx[k] = g.length; g.push({ k, items: [] }); } g[idx[k]].items.push(it); });
+    return g;
+  }
+
+  function rendre() {
+    const nbAF = ITEMS.filter(i => !i.prepare).length, nbP = ITEMS.length - nbAF;
+    const colisOuverts = new Set(ITEMS.filter(i => i.prepare && i.colis).map(i => i.colis));
+    document.querySelectorAll('#pp-filtre button').forEach(b => {
+      b.classList.toggle('on', b.dataset.f === FILTRE);
+      b.querySelector('.n').textContent = b.dataset.f === 'afaire' ? nbAF : b.dataset.f === 'prepares' ? nbP : ITEMS.length;
+    });
+    $('pp-info-colis').textContent = colisOuverts.size ? '· ' + colisOuverts.size + ' colis prêt' + (colisOuverts.size > 1 ? 's' : '') + ' à partir' : '';
+    const v = visibles();
+    if (!v.length) {
+      $('pp-liste').innerHTML = '<div class="pp-vide">' + (ITEMS.length ? 'Aucun dossier ne correspond.' : '🎉 Rien à préparer pour le moment.') + '</div>';
+      return;
+    }
+    let html = '';
+    if (FILTRE === 'prepares') {
+      grouper(v, it => it.colis ? 'C' + it.colis : 'M' + magKey(it)).forEach(g => {
+        const a = g.items[0];
+        if (a.colis) {
+          html += '<section class="groupe"><div class="g-tete"><span class="dept colis">📦</span>' +
+            '<div class="g-titre"><b>Colis ' + a.colis + ' · ' + esc(a.enseigne) + ' ' + esc(deptTxt(a)) + ' ' + esc(villeSeule(a)) + '</b><span>' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
+            '<button class="pill-t dsv' + (a.transporteur === 'DSV' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DSV">DSV</button>' +
+            '<button class="pill-t dpd' + (a.transporteur === 'DPD' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DPD">DPD</button>' +
+            '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
+        } else {
+          html += '<section class="groupe"><div class="g-tete"><span class="dept">' + esc(deptTxt(a)) + '</span>' +
+            '<div class="g-titre"><b>' + esc(villeSeule(a)) + '</b><span>' + esc(a.enseigne) + ' · « x » posé à la main dans le Sheet, sans colis</span></div></div>' +
+            '<div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
+        }
+      });
+    } else {
+      grouper(v, magKey).forEach(g => {
+        const a = g.items[0];
+        const aFaire = g.items.filter(i => !i.prepare).length;
+        const ouverts = [...new Set(ITEMS.filter(i => magKey(i) === g.k && i.prepare && i.colis).map(i => i.colis))];
+        html += '<section class="groupe"><div class="g-tete"><span class="dept">' + esc(deptTxt(a)) + '</span>' +
+          '<div class="g-titre"><b>' + esc(villeSeule(a)) + '</b><span>' + esc(a.enseigne) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
+          (aFaire && ouverts.length ? '<span class="g-badge attente">📦 Colis ' + ouverts.join(', ') + ' prêt, pas encore expédié</span>' : '') +
+          (aFaire >= 2 ? '<span class="g-badge">' + aFaire + ' dossiers → 1 colis possible</span><button class="g-act" data-groupe="' + esc(g.k) + '">📦 Préparer ensemble</button>' : '') +
+          '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
+      });
+    }
+    $('pp-liste').innerHTML = html;
+  }
+
+  // ── Fenêtre « Préparer » ──
+  let FEN = null;
+  function ouvrirPreparer(cles) {
+    const base = ITEMS.find(i => i.cle === cles[0]);
+    const mag = magKey(base);
+    const candidats = ITEMS.filter(i => magKey(i) === mag && (!i.prepare || (cles.includes(i.cle) && !i.colis)));
+    const existants = {};
+    ITEMS.filter(i => magKey(i) === mag && i.prepare && i.colis).forEach(i => {
+      const e = existants[i.colis] = existants[i.colis] || { t: i.transporteur, dossiers: [], le: null };
+      e.dossiers.push(i);
+      if (i.prepare_le && (!e.le || i.prepare_le < e.le)) e.le = i.prepare_le;
+    });
+    const ids = Object.keys(existants);
+    FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '' };
+    $('pp-f-dept').textContent = deptTxt(base);
+    $('pp-f-mag').textContent = base.enseigne + ' · ' + villeSeule(base);
+    $('pp-f-titre-dos').textContent = ids.length ? 'Dossiers à ajouter' : 'Dossiers dans ce colis';
+    $('pp-f-dossiers').innerHTML = candidats.map(i =>
+      '<label class="f-ligne on" data-cle="' + esc(i.cle) + '"><input type="checkbox" checked/>' +
+      '<div class="q"><b>' + esc(i.cnb || i.fla) + '</b><div><span class="p">' + esc(i.piece || '—') + '</span> · ' + esc(i.ref) + (i.emplacement ? ' · 📍 ' + esc(i.emplacement) : '') + '</div></div></label>').join('');
+    $('pp-f-aide-dossiers').textContent = candidats.length > 1 ? 'Tous les dossiers à préparer de ce magasin sont cochés : décoche ceux qui ne partent pas.' : '';
+    $('pp-f-sec-colis').hidden = !ids.length;
+    $('pp-f-aide-colis').textContent = ''; $('pp-f-aide-colis').className = 'f-aide';
+    const depuis = iso => { if (!iso) return ''; const j = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return j <= 0 ? "préparé aujourd'hui" : j === 1 ? 'préparé hier' : 'préparé il y a ' + j + ' jours'; };
+    $('pp-f-colis').innerHTML = ids.map(id => {
+        const e = existants[id];
+        return '<label class="f-ligne" data-colis="' + id + '"><input type="radio" name="pp-colis"/><div class="q"><b>Ajouter à l’envoi existant — Colis ' + id + '</b>' +
+          '<div>' + [esc(e.t || '?'), depuis(e.le), e.dossiers.length + ' dossier' + (e.dossiers.length > 1 ? 's' : '') + ' déjà dedans :'].filter(Boolean).join(' · ') + '</div>' +
+          '<div class="f-colis-usv">' + e.dossiers.map(d => '<span><b>' + esc(d.cnb || d.fla) + '</b> · <em>' + esc(d.piece || '—') + '</em> · ' + esc(d.ref) + '</span>').join('') + '</div></div></label>';
+      }).join('') +
+      '<label class="f-ligne" data-colis="nouveau"><input type="radio" name="pp-colis"/><div class="q"><b>Faire un nouvel envoi</b><div>Nouveau colis séparé</div></div></label>';
+    $('pp-f-aide-t').textContent = ''; $('pp-f-aide-t').className = 'f-aide';
+    majFen();
+    $('pp-fen').hidden = false;
+  }
+  function majFen() {
+    const n = FEN.cochees.size;
+    $('pp-f-nb').textContent = '— ' + n + ' sélectionné' + (n > 1 ? 's' : '');
+    const verrou = (FEN.colis && FEN.colis !== 'nouveau') ? (FEN.existants[FEN.colis] || {}).t : '';
+    if (verrou) FEN.t = verrou;
+    document.querySelectorAll('#pp-f-transp button').forEach(b => { b.classList.toggle('on', b.dataset.t === FEN.t); b.disabled = !!verrou && b.dataset.t !== verrou; });
+    if (verrou) { $('pp-f-aide-t').textContent = 'Transporteur du colis ' + FEN.colis + ' : ' + verrou + '.'; $('pp-f-aide-t').className = 'f-aide'; }
+    const pret = n > 0 && !!FEN.t && !!FEN.colis;
+    const btn = $('pp-f-valider');
+    btn.classList.toggle('inactif', !pret);
+    btn.textContent = !n ? 'Sélectionne au moins un dossier'
+      : !FEN.colis ? 'Choisis : envoi existant ou nouvel envoi'
+      : '✅ Valider · ' + n + ' dossier' + (n > 1 ? 's' : '') + ' · ' + (FEN.colis === 'nouveau' ? 'nouveau colis' : '→ colis ' + FEN.colis) + (FEN.t ? ' ' + FEN.t : '');
+  }
+  $('pp-f-dossiers').addEventListener('change', e => {
+    const l = e.target.closest('.f-ligne'); if (!l) return;
+    e.target.checked ? FEN.cochees.add(l.dataset.cle) : FEN.cochees.delete(l.dataset.cle);
+    l.classList.toggle('on', e.target.checked);
+    majFen();
+  });
+  $('pp-f-colis').addEventListener('change', e => {
+    const l = e.target.closest('.f-ligne'); if (!l) return;
+    document.querySelectorAll('#pp-f-colis .f-ligne').forEach(x => x.classList.toggle('on', x === l));
+    FEN.colis = l.dataset.colis === 'nouveau' ? 'nouveau' : parseInt(l.dataset.colis, 10);
+    if (FEN.colis === 'nouveau') FEN.t = '';
+    $('pp-f-aide-colis').textContent = ''; $('pp-f-aide-colis').className = 'f-aide';
+    majFen();
+  });
+  $('pp-f-transp').addEventListener('click', e => {
+    const b = e.target.closest('button[data-t]');
+    if (!b || b.disabled) return;
+    FEN.t = b.dataset.t;
+    $('pp-f-aide-t').textContent = ''; $('pp-f-aide-t').className = 'f-aide';
+    majFen();
+  });
+  const fermerFen = () => { $('pp-fen').hidden = true; FEN = null; $('pp-f-dossiers').innerHTML = ''; $('pp-f-colis').innerHTML = ''; };
+  $('pp-f-annuler').onclick = fermerFen;
+  $('pp-fen').addEventListener('click', e => { if (e.target.id === 'pp-fen') fermerFen(); });
+  $('pp-f-valider').onclick = async () => {
+    if (!FEN || !FEN.cochees.size) return;
+    if (!FEN.colis) {
+      $('pp-f-aide-colis').textContent = '⚠️ Choisis d’abord : ajouter à l’envoi existant ou faire un nouvel envoi.'; $('pp-f-aide-colis').className = 'f-aide err';
+      return;
+    }
+    if (!FEN.t) {
+      $('pp-f-aide-t').textContent = '⚠️ Choisis DSV ou DPD avant de valider.'; $('pp-f-aide-t').className = 'f-aide err';
+      const tc = $('pp-f-transp'); tc.classList.remove('manque'); void tc.offsetWidth; tc.classList.add('manque');
+      return;
+    }
+    const cles = [...FEN.cochees];
+    const lignes = {};
+    cles.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) lignes[c] = it.ligne; });
+    const btn = $('pp-f-valider');
+    btn.disabled = true;
+    try {
+      const d = await api('preparer', { cles, lignes, transporteur: FEN.t, colis: FEN.colis });
+      const maintenant = new Date().toISOString();
+      cles.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) { it.prepare = true; it.colis = d.colis; it.transporteur = d.transporteur; if (!it.prepare_le) it.prepare_le = maintenant; } });
+      fermerFen();
+      rendre();
+      toast('📦 Colis ' + d.colis + ' · ' + d.transporteur + ' — ' + cles.length + ' dossier' + (cles.length > 1 ? 's' : '') + ' préparé' + (cles.length > 1 ? 's' : '') + ' (« x » posé dans le Sheet)', 3500);
+    } catch (err) {
+      if (err.message !== 'code') toast('⚠️ ' + err.message, 5000);
+    } finally { btn.disabled = false; }
+  };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pp-fen').hidden) fermerFen(); });
+
+  // ── Clics dans la liste ──
+  $('pp-liste').addEventListener('click', async e => {
+    if (e.target.closest('a')) return; // notice, documents : liens normaux
+    const pb = e.target.closest('.pb');
+    if (pb) { pb.classList.toggle('ouvert'); return; }
+    const ph = e.target.closest('[data-photo]');
+    if (ph) { ouvrirVisionneuse(ph.closest('.carte').dataset.cle, parseInt(ph.dataset.photo, 10)); return; }
+    const gr = e.target.closest('[data-groupe]');
+    if (gr) { const it = ITEMS.find(i => magKey(i) === gr.dataset.groupe && !i.prepare); if (it) ouvrirPreparer([it.cle]); return; }
+    const pt = e.target.closest('.pill-t[data-colis]');
+    if (pt) {
+      if (pt.classList.contains('on')) return;
+      pt.disabled = true;
+      try {
+        const d = await api('colis-transporteur', { colis: pt.dataset.colis, transporteur: pt.dataset.t });
+        ITEMS.forEach(i => { if (String(i.colis) === pt.dataset.colis && i.prepare) i.transporteur = d.transporteur; });
+        rendre();
+        toast('🚚 Colis ' + pt.dataset.colis + ' → ' + d.transporteur);
+      } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 4500); pt.disabled = false; }
+      return;
+    }
+    const b = e.target.closest('button[data-act]');
+    if (b) {
+      const cle = b.closest('.carte').dataset.cle;
+      const it = ITEMS.find(x => x.cle === cle);
+      if (!it) return;
+      if (b.dataset.act === 'prep') { ouvrirPreparer([cle]); return; }
+      if (b.dataset.act === 'annuler') {
+        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + '\nLe « x » sera enlevé du Sheet.')) return;
+        b.disabled = true;
+        try {
+          await api('annuler', { cle, ligne: it.ligne });
+          it.prepare = false; it.colis = null; it.prepare_le = null;
+          rendre();
+          toast('↩︎ ' + (it.cnb || it.fla) + ' remis « à préparer »');
+        } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 4500); b.disabled = false; }
+      }
+      return;
+    }
+    const cp = e.target.closest('[data-copie]');
+    if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copie); toast('Copié : ' + cp.dataset.copie, 1300); } catch (err) {} }
+  });
+
+  // ── Visionneuse ──
+  const LB = { photos: [], i: 0, titre: '' };
+  function ouvrirVisionneuse(cle, id) {
+    const it = ITEMS.find(x => x.cle === cle);
+    LB.photos = it.fichiers.filter(estImage);
+    LB.i = Math.max(0, LB.photos.findIndex(f => f.id === id));
+    LB.titre = (it.cnb || it.fla) + ' — ' + it.ref;
+    montrer();
+    $('pp-lb').hidden = false;
+  }
+  function montrer() {
+    const f = LB.photos[LB.i]; if (!f) return;
+    $('pp-lb-img').src = fichierUrl(f);
+    $('pp-lb-leg').textContent = LB.titre + ' · ' + (f.type_doc || f.nom || 'photo') + ' · ' + (LB.i + 1) + '/' + LB.photos.length;
+    $('pp-lb-g').hidden = $('pp-lb-d').hidden = LB.photos.length < 2;
+  }
+  const fermerLB = () => { $('pp-lb').hidden = true; $('pp-lb-img').src = ''; };
+  const pas = n => { LB.i = (LB.i + n + LB.photos.length) % LB.photos.length; montrer(); };
+  $('pp-lb-x').onclick = fermerLB;
+  $('pp-lb-g').onclick = () => pas(-1);
+  $('pp-lb-d').onclick = () => pas(1);
+  $('pp-lb').addEventListener('click', e => { if (e.target.id === 'pp-lb') fermerLB(); });
+  document.addEventListener('keydown', e => {
+    if ($('pp-lb').hidden) return;
+    if (e.key === 'Escape') fermerLB();
+    if (e.key === 'ArrowLeft') pas(-1);
+    if (e.key === 'ArrowRight') pas(1);
+  });
+  let tx = null;
+  $('pp-lb').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  $('pp-lb').addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) pas(dx < 0 ? 1 : -1); tx = null; });
+
+  // ── Filtres / recherche / rafraîchissement ──
+  $('pp-filtre').addEventListener('click', e => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    FILTRE = b.dataset.f; store.set('prepaFiltre', FILTRE); rendre();
+    window.scrollTo({ top: 0 });
+  });
+  let tRech = null;
+  $('pp-recherche').addEventListener('input', () => { clearTimeout(tRech); tRech = setTimeout(rendre, 120); });
+  $('pp-refresh').onclick = () => charger(true).catch(err => { if (err.message !== 'code') toast('⚠️ ' + err.message, 4500); });
+  const occupe = () => !$('pp-lb').hidden || !$('pp-fen').hidden;
+  setInterval(() => { if (CODE && demarre && visible() && !document.hidden && !occupe()) charger(false).catch(() => {}); }, 120000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && CODE && demarre && visible() && !occupe()) charger(false).catch(() => {}); });
+
+  // ── Export Excel : format exact de l'onglet « Pour SAV Entrepôt » ──
+  function chargerXlsx() {
+    if (window.XLSX && window.XLSX.utils) return Promise.resolve(window.XLSX);
+    return new Promise((ok, ko) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+      s.onload = () => ok(window.XLSX);
+      s.onerror = () => ko(new Error('module Excel injoignable'));
+      document.head.appendChild(s);
+    });
+  }
+  const ENTETES_ENTREPOT = ['Date de \nréception', "Date \nD'expédition", 'REFERENCE PRODUIT', 'DESIGNATION\nDES PIECES DEFECTUEUSES', "NOM \nDE \nL'ENSEIGNE", 'DEPARTEMENT \nET VILLE', 'TRACKING', 'Numéro CNB'];
+  $('pp-export').onclick = async () => {
+    const v = visibles();
+    if (!v.length) { toast('Rien à exporter avec ce filtre.'); return; }
+    let X;
+    try { X = await chargerXlsx(); } catch (e) { toast('⚠️ ' + e.message); return; }
+    // Mêmes colonnes, même ordre que l'onglet : la date d'expédition est vide tant que le colis n'est pas parti
+    const lignes = v.map(it => [it.date || '', '', it.ref || '', it.piece || '', it.enseigne || '', it.ville || '', it.emplacement || '', it.cnb || it.fla || '']);
+    const ws = X.utils.aoa_to_sheet([ENTETES_ENTREPOT].concat(lignes));
+    const bord = { style: 'thin', color: { rgb: '000000' } };
+    const B = { top: bord, bottom: bord, left: bord, right: bord };
+    ws['!cols'] = [12, 12, 30, 28, 13, 30, 18, 20].map(w => ({ wch: w }));
+    ws['!rows'] = [{ hpt: 48 }];
+    for (let c = 0; c < ENTETES_ENTREPOT.length; c++) {
+      ws[X.utils.encode_cell({ r: 0, c })].s = { font: { bold: true }, alignment: { vertical: 'center', horizontal: 'center', wrapText: true }, border: B, fill: { fgColor: { rgb: 'D9D9D9' } } };
+      for (let r = 1; r <= lignes.length; r++) {
+        const a = X.utils.encode_cell({ r, c });
+        if (!ws[a]) ws[a] = { t: 's', v: '' };
+        ws[a].s = { alignment: { vertical: 'center', horizontal: c <= 1 ? 'center' : 'left', wrapText: true }, border: B };
+      }
+    }
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, 'Pour SAV Entrepôt');
+    const j = new Date();
+    X.writeFile(wb, 'pour-sav-entrepot-' + j.getFullYear() + '-' + String(j.getMonth() + 1).padStart(2, '0') + '-' + String(j.getDate()).padStart(2, '0') + '.xlsx');
+    toast('📥 ' + v.length + ' dossier(s) exporté(s) au format « Pour SAV Entrepôt »');
+  };
+
+  // Les notices arrivent après : on rafraîchit les boutons « 📄 Notice »
+  let tNotice = 0;
+  const attendreNotices = setInterval(() => {
+    if (++tNotice > 60) return clearInterval(attendreNotices);
+    if (typeof allNotices !== 'undefined' && allNotices.length) { clearInterval(attendreNotices); if (demarre && visible()) rendre(); }
+  }, 1000);
+})();
 </script>
 </body>
 </html>
