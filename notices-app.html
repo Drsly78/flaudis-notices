@@ -342,6 +342,10 @@
   #sec-prepa .fs-sync{font-size:11px;color:var(--muted);}
   #sec-prepa .cle-stock{margin:0 14px;font-size:12px;color:#93c5fd;padding-top:8px;}
   #sec-prepa .cle-stock .approx{color:#fbbf24;font-weight:700;}
+  #sec-prepa .fs-notices{margin-top:6px;}
+  #sec-prepa .fs-notice{display:inline-block;font-size:12px;font-weight:700;color:#93c5fd;text-decoration:none;border:1px solid rgba(147,197,253,.35);border-radius:7px;padding:3px 8px;background:rgba(59,130,246,.08);}
+  #sec-prepa .fs-notice:hover{background:rgba(59,130,246,.18);}
+  #sec-prepa .fs-notice.aucune{color:var(--muted);border-color:var(--border);background:none;font-weight:500;}
   #sec-prepa .fs-choix{display:flex;gap:8px;flex-wrap:wrap;}
   #sec-prepa .fs-choix button{flex:1;min-width:140px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid;}
   #sec-prepa .fs-choix .oui{border-color:var(--pp-ok);color:var(--pp-ok);background:var(--pp-ok-bg);}
@@ -1958,7 +1962,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-t';
+const ENTREPOT_VERSION = '2026-11-01-u';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2145,7 +2149,7 @@ const ENTREPOT_VERSION = '2026-11-01-t';
       '</div>' +
       (function () { const st = stockPour(it.ref); if (!st) return '';
         if (st.propose && choixFiche(it.ref, st.key) === 'non') return '';
-        if (st.propose && !choixFiche(it.ref, st.key)) return '<div class="cle-stock"><span class="approx">🧰 Fiche stock proche : ' + esc(st.ref) + ' ?</span> — à confirmer en préparant</div>'; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt' + (st.approx ? ' <span class="approx">≈ fiche ' + esc(st.ref) + '</span>' : '') + ' · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
+        if (st.propose && !choixFiche(it.ref, st.key)) return '<div class="cle-stock"><span class="approx">🧰 Fiche stock proche : ' + esc(st.ref) + ' ?</span> — à confirmer en préparant · ' + noticeFiche(st) + '</div>'; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt' + (st.approx ? ' <span class="approx">≈ fiche ' + esc(st.ref) + '</span> ' + noticeFiche(st) : '') + ' · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
       '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
       '<div class="photos">' + (imgs.length ? imgs.map(f =>
           '<button data-photo="' + f.id + '" title="' + esc(f.type_doc || f.nom) + '"><img loading="lazy" src="' + fichierUrl(f) + '" alt=""/>' +
@@ -2254,12 +2258,20 @@ const ENTREPOT_VERSION = '2026-11-01-t';
   const CHOIX_FICHE = (() => { try { return JSON.parse(localStorage.getItem('prepaChoixFiche') || '{}') || {}; } catch (e) { return {}; } })();
   const choixFiche = (ref, key) => CHOIX_FICHE[normB(ref) + '>' + key];
   const memoChoix = (ref, key, v) => { CHOIX_FICHE[normB(ref) + '>' + key] = v; try { localStorage.setItem('prepaChoixFiche', JSON.stringify(CHOIX_FICHE)); } catch (e) {} };
+  // 📄 notice de la fiche stock retenue (pour vérifier que c'est le bon produit)
+  function noticeFiche(st) {
+    const n = (typeof allNotices !== 'undefined' && allNotices.find(x => getKey(x.ref) === st.key)) || noticePour(st.ref);
+    return n ? '<a class="fs-notice" href="' + esc(n.githubUrl) + '" target="_blank" rel="noopener" title="' + esc(n.ref + ' — ' + (n.label || '')) + '">📄 Notice ' + esc(n.ref) + '</a>'
+             : '<span class="fs-notice aucune">📄 pas de notice pour ' + esc(st.ref) + '</span>';
+  }
   function stockPour(ref) {
     if (typeof fbData === 'undefined' || !fbData) return null;
     const r = String(ref || '').trim();
     const cands = [r].concat(r.split(/[\s()\/,;]+/).filter(t => t.length >= 4 && /\d/.test(t)));
+    // la notice ne sert qu'à retrouver l'écriture exacte de la réf (tirets, points…) — pas à rapprocher
+    // une variante (« 24551DA-SET7 » ≠ « 24551DA-SET7B ») : ça, ce sont les règles plus bas qui le gèrent
     const n = noticePour(ref);
-    if (n) cands.push(n.ref);
+    if (n && cands.some(c => normB(c) === normB(n.ref))) cands.push(n.ref);
     const aStock = k => fbData[k] && fbData[k].pieces && Object.keys(fbData[k].pieces).length;
     for (const c of cands) {
       const k = getKey(c);
@@ -2334,12 +2346,12 @@ const ENTREPOT_VERSION = '2026-11-01-t';
     if (st.propose && !choixFiche(it.ref, st.key)) {
       return '<div class="f-stock a-faire" data-stock="' + esc(it.cle) + '"' + cache + '>' +
         '<div class="fs-tete">🧰 Fiche stock proche trouvée<span class="fs-etat a-faire">À décider</span></div>' +
-        '<div class="fs-approx">La réf du dossier est <b>' + esc(it.ref) + '</b>, la fiche en entrepôt est <b>' + esc(st.ref) + '</b>. Est-ce le même produit ?</div>' +
+        '<div class="fs-approx">La réf du dossier est <b>' + esc(it.ref) + '</b>, la fiche en entrepôt est <b>' + esc(st.ref) + '</b>. Est-ce le même produit ?<div class="fs-notices">' + noticeFiche(st) + '</div></div>' +
         '<div class="fs-choix"><button type="button" class="oui" data-choix="oui" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">Oui, utiliser ce stock</button>' +
         '<button type="button" class="non" data-choix="non" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">Non, autre produit</button></div></div>';
     }
     if (st.propose && choixFiche(it.ref, st.key) === 'non') {
-      return '<div class="f-stock fait" data-stock="' + esc(it.cle) + '"' + cache + '><div class="fs-recap" style="color:var(--muted);margin:0">🧰 Fiche proche ' + esc(st.ref) + ' écartée (autre produit) · ' +
+      return '<div class="f-stock fait" data-stock="' + esc(it.cle) + '"' + cache + '><div class="fs-recap" style="color:var(--muted);margin:0">🧰 Fiche proche ' + esc(st.ref) + ' écartée (autre produit) · ' + noticeFiche(st) + ' · ' +
         '<button type="button" class="fs-reserve" data-choix="" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">revoir</button></div></div>';
     }
     const cartons = cartonsDe(st);
@@ -2370,8 +2382,8 @@ const ENTREPOT_VERSION = '2026-11-01-t';
     return '<div class="f-stock ' + (fait ? 'fait' : 'a-faire') + '" data-stock="' + esc(it.cle) + '"' + (FEN.cochees.has(it.cle) ? '' : ' hidden') + '>' +
       '<div class="fs-tete">🧰 Stock entrepôt · ' + esc(st.ref) + ' <small>— retire ce que tu as pris du carton</small>' +
         '<span class="fs-etat ' + (fait ? 'fait' : 'a-faire') + '">' + (total ? '✅ −' + total : rien ? '✅ rien pris' : 'À indiquer') + '</span></div>' +
-      (st.propose ? '<div class="fs-approx">✔︎ Fiche <b>' + esc(st.ref) + '</b> acceptée pour <b>' + esc(it.ref) + '</b> · <button type="button" class="fs-reserve" data-choix="" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">changer</button></div>' :
-       st.approx ? '<div class="fs-approx">≈ Fiche rapprochée : <b>' + esc(st.ref) + '</b> pour la réf du dossier <b>' + esc(it.ref) + '</b> — vérifie que c\u2019est le même produit, sinon coche « rien pris ».</div>' : '') +
+      (st.propose ? '<div class="fs-approx">✔︎ Fiche <b>' + esc(st.ref) + '</b> acceptée pour <b>' + esc(it.ref) + '</b> · <button type="button" class="fs-reserve" data-choix="" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">changer</button><div class="fs-notices">' + noticeFiche(st) + '</div></div>' :
+       st.approx ? '<div class="fs-approx">≈ Fiche rapprochée : <b>' + esc(st.ref) + '</b> pour la réf du dossier <b>' + esc(it.ref) + '</b> — vérifie que c\u2019est le même produit, sinon coche « rien pris ».<div class="fs-notices">' + noticeFiche(st) + '</div></div>' : '') +
       (ouverts.length ? ouverts.map(bloc).join('') : '<div class="fs-recap" style="color:var(--muted)">Aucun carton ouvert.</div>') +
       (reserve.length && FEN.reserveVue[it.cle] ? reserve.map(bloc).join('') : '') +
       '<div class="fs-bas">' +
