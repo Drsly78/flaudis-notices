@@ -120,8 +120,9 @@
   #sec-prepa .dept{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--orange),#FF7A35);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;flex:0 0 auto;}
   #sec-prepa .dept.colis{background:var(--pp-ok);font-size:20px;font-family:'DM Sans',sans-serif;}
   #sec-prepa .g-titre{flex:1;min-width:0;}
-  #sec-prepa .g-titre b{display:block;font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:22px;letter-spacing:1.2px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #sec-prepa .g-titre span{color:var(--muted);font-size:12.5px;}
+  #sec-prepa .g-titre b{display:block;font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:26px;letter-spacing:1.3px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .g-titre b .dp{color:var(--orange);}
+  #sec-prepa .g-titre > span{color:var(--muted);font-size:12.5px;}
   #sec-prepa .g-badge{font-size:12px;font-weight:700;color:#60a5fa;background:var(--pp-dsv-bg);border:1px solid rgba(59,130,246,.3);padding:4px 9px;border-radius:20px;white-space:nowrap;}
   #sec-prepa .g-badge.attente{color:var(--pp-piece);background:var(--pp-piece-bg);border-color:var(--pp-piece-line);}
   #sec-prepa .g-act{padding:9px 13px;border-radius:10px;border:0;background:var(--orange);color:#fff;font-weight:700;font-size:13px;white-space:nowrap;}
@@ -168,18 +169,29 @@
   #sec-prepa .photos .tag{position:absolute;left:4px;bottom:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
   #sec-prepa .photos .sans{height:88px;width:118px;border:1.5px dashed var(--border);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--pp-faint);font-size:11.5px;font-weight:600;flex:0 0 auto;}
   #sec-prepa .photos .sans i{font-style:normal;font-size:20px;opacity:.6;}
+  /* Tiroirs : boutons + panneaux (une seule place pour la description) */
+  #sec-prepa .tiroirs{display:flex;gap:8px;padding:12px 14px 0;flex-wrap:wrap;}
+  #sec-prepa .t-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-weight:600;font-size:13px;transition:border-color .15s,background .15s;}
+  #sec-prepa .t-btn:hover{border-color:#444;}
+  #sec-prepa .t-btn .ch{display:inline-block;color:var(--orange);font-size:11px;transition:transform .15s;}
+  #sec-prepa .t-btn.on{border-color:var(--orange);background:rgba(232,97,26,.1);}
+  #sec-prepa .t-btn.on .ch{transform:rotate(90deg);}
+  #sec-prepa .t-btn.vide{color:var(--pp-faint);border-style:dashed;}
+  #sec-prepa .t-btn small{color:var(--muted);font-weight:500;}
+  #sec-prepa .t-panel{margin:10px 14px 0;padding:12px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);}
+  #sec-prepa .t-panel .synth{font-weight:700;margin-bottom:6px;}
   #sec-prepa details.tiroir{margin:10px 14px 0;border-top:1px dashed var(--border);}
   #sec-prepa details.tiroir.t2{margin-top:0;border-top:0;}
   #sec-prepa details.tiroir summary{list-style:none;cursor:pointer;padding:8px 0 2px;color:var(--muted);font-size:12.5px;font-weight:600;user-select:none;}
   #sec-prepa details.tiroir summary::-webkit-details-marker{display:none;}
   #sec-prepa details.tiroir summary::before{content:"▸";display:inline-block;width:14px;transition:transform .15s;color:var(--orange);}
   #sec-prepa details.tiroir[open] summary::before{transform:rotate(90deg);}
-  #sec-prepa .demande{white-space:pre-wrap;font-size:13px;line-height:1.5;padding:4px 0 4px 14px;}
+  #sec-prepa .demande{white-space:pre-wrap;font-size:13.5px;line-height:1.55;color:#d4d4d4;}
   #sec-prepa .demande.vide{color:var(--pp-faint);}
-  #sec-prepa .t-grille{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px;padding:6px 0 4px 14px;font-size:13px;}
+  #sec-prepa .t-grille{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px;font-size:13px;}
   #sec-prepa .t-grille b{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
   #sec-prepa .t-grille div{overflow-wrap:anywhere;}
-  #sec-prepa .docs{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0 2px 14px;}
+  #sec-prepa .docs{display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;}
   #sec-prepa .docs a{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12.5px;background:var(--surface2);max-width:100%;}
   #sec-prepa .docs a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #sec-prepa .c-pied{display:flex;gap:8px;align-items:center;padding:10px 14px 12px;margin-top:10px;border-top:1px solid var(--border);min-height:60px;flex-wrap:wrap;}
@@ -197,7 +209,18 @@
   #sec-prepa .voile{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;}
   #sec-prepa .fen{background:#161616;border:1px solid var(--border);border-radius:18px;width:100%;max-width:560px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5);}
   #sec-prepa .f-tete{padding:18px 20px 12px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);}
-  #sec-prepa .f-tete h2{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:24px;line-height:1;}
+  #sec-prepa .f-tete h2{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:28px;line-height:1;}
+  #sec-prepa .f-tete h2 .dp{color:var(--orange);}
+  #sec-prepa .conf-liste{display:grid;gap:4px;margin-top:8px;}
+  #sec-prepa .conf-liste div{font-size:13px;padding:7px 10px;border-radius:9px;background:var(--surface);border:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .conf-liste b{font-family:var(--pp-mono);font-size:12.5px;}
+  #sec-prepa .conf-note{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
+  #sec-prepa .chip-x{font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px;}
+  #sec-prepa .chip-x.ok{color:var(--pp-ok);background:var(--pp-ok-bg);}
+  #sec-prepa .chip-x.attente{color:var(--pp-piece);background:var(--pp-piece-bg);}
+  #sec-prepa .chip-x.autre{color:#f87171;background:var(--pp-dpd-bg);}
+  #sec-prepa .pp-hbtn .nb{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:rgba(255,255,255,.25);font-size:11.5px;}
+  #sec-prepa .pp-hbtn:disabled{opacity:.45;cursor:default;}
   #sec-prepa .f-tete p{margin-top:3px;color:var(--muted);font-size:13px;}
   #sec-prepa .f-corps{padding:14px 20px;overflow-y:auto;}
   #sec-prepa .f-sec{margin-bottom:18px;}
@@ -332,7 +355,8 @@
           <button data-f="prepares">Préparés<span class="n"></span></button>
           <button data-f="tous">Tous<span class="n"></span></button>
         </div>
-        <button class="pp-hbtn orange" id="pp-export" title="Exporter au format « Pour SAV Entrepôt »">📥 Excel</button>
+        <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings">✍️ Écrire les x<span class="nb" id="pp-nb-x">0</span></button>
+        <button class="pp-hbtn orange" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »">📋 Pour SAV Entrepôt</button>
         <button class="pp-hbtn" id="pp-refresh" title="Rafraîchir">↻</button>
       </div>
     </div>
@@ -343,8 +367,7 @@
   <div id="pp-fen" class="voile" hidden>
     <div class="fen" role="dialog" aria-modal="true">
       <div class="f-tete">
-        <span class="dept" id="pp-f-dept">44</span>
-        <div><h2>Préparer un colis</h2><p id="pp-f-mag"></p></div>
+        <div><h2 id="pp-f-dept">44 NANTES</h2><p id="pp-f-mag"></p></div>
       </div>
       <div class="f-corps">
         <div class="f-sec f-alerte" id="pp-f-sec-colis" hidden>
@@ -369,6 +392,17 @@
       <div class="f-pied">
         <button class="annul" id="pp-f-annuler" type="button">Annuler</button>
         <button class="valid inactif" id="pp-f-valider" type="button">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pp-conf" class="voile" hidden>
+    <div class="fen" role="dialog" aria-modal="true">
+      <div class="f-tete"><div><h2 id="pp-conf-titre"></h2><p id="pp-conf-sous"></p></div></div>
+      <div class="f-corps" id="pp-conf-corps"></div>
+      <div class="f-pied">
+        <button class="annul" id="pp-conf-non" type="button">Annuler</button>
+        <button class="valid" id="pp-conf-oui" type="button">Confirmer</button>
       </div>
     </div>
   </div>
@@ -1940,26 +1974,14 @@ loadNotices();
         '<span class="c-date"><span class="rl">Reçu le </span>' + esc(it.date) + '</span>' +
       '</div>' +
       '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
-      '<div class="pb" title="Cliquer pour tout lire">' +
-        (it.description_panne || it.message_magasin
-          ? (it.description_panne ? '<div class="synth">' + esc(it.description_panne) + '</div>' : '') +
-            (it.message_magasin ? '<div class="msg">' + esc(it.message_magasin) + '</div>' : '')
-          : '<div class="rien">' + (it.avec_donnees || it.fichiers.length ? 'Pas de description du magasin.' : '📸 Photos et description pas encore récupérées.') + '</div>') +
-      '</div>' +
       '<div class="photos">' + (imgs.length ? imgs.map(f =>
           '<button data-photo="' + f.id + '" title="' + esc(f.type_doc || f.nom) + '"><img loading="lazy" src="' + fichierUrl(f) + '" alt=""/>' +
           (f.type_doc ? '<span class="tag">' + esc(f.type_doc) + '</span>' : '') + '</button>').join('')
         : '<span class="sans"><i>📷</i>Aucune photo</span>') + '</div>' +
-      '<details class="tiroir"><summary>Description de la demande</summary>' +
-        '<div class="demande' + (it.texte_demande ? '' : ' vide') + '">' + (it.texte_demande ? esc(it.texte_demande) : (it.avec_donnees || it.fichiers.length ? 'Pas encore importée.' : '—')) + '</div>' +
-      '</details>' +
-      '<details class="tiroir t2"><summary>Détails · EAN, produit' + (docs.length ? ', ' + docs.length + ' document' + (docs.length > 1 ? 's' : '') : '') + '</summary>' +
-        '<div class="t-grille">' + detail('EAN', it.ean) + detail('Produit', it.modele) + detail('Couleur', it.couleur) + '</div>' +
-        (docs.length ? '<div class="docs">' + docs.map(f => '<a href="' + fichierUrl(f) + '" target="_blank" rel="noopener">🧾 <span>' + esc(f.type_doc ? f.type_doc + ' — ' + f.nom : f.nom) + '</span></a>').join('') + '</div>' : '') +
-      '</details>' +
+      tiroirs(it, docs, detail) +
       '<div class="c-pied">' +
         (it.prepare
-          ? '<span class="statut-ok">✅ Préparé' + (it.colis ? ' · Colis ' + it.colis : ' (sans colis)') + (it.transporteur ? ' <span class="t ' + esc(it.transporteur) + '">' + esc(it.transporteur) + '</span>' : '') + '</span>' +
+          ? '<span class="statut-ok">✅ Préparé' + (it.colis ? ' · Colis ' + it.colis : ' (sans colis)') + (it.transporteur ? ' <span class="t ' + esc(it.transporteur) + '">' + esc(it.transporteur) + '</span>' : '') + '</span>' + chipX(it) +
             (it.colis ? '' : '<button class="b-prep" data-act="prep">📦 Mettre en colis</button>')
           : '<button class="b-prep" data-act="prep">📦 Préparer…</button>') +
         (notice
@@ -1968,6 +1990,30 @@ loadNotices();
         (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : '') +
       '</div>' +
     '</article>';
+  }
+
+  // Description (une seule fois) + détails : boutons qui ouvrent un panneau sous la carte
+  function tiroirs(it, docs, detail) {
+    const texte = it.texte_demande || it.message_magasin || '';
+    const aDesc = !!(texte || it.description_panne);
+    const ouvert = OUVERTS[it.cle] || '';
+    const desc = '<div class="t-panel" data-panel="desc"' + (ouvert === 'desc' ? '' : ' hidden') + '>' +
+      (it.description_panne ? '<div class="synth">' + esc(it.description_panne) + '</div>' : '') +
+      (texte ? '<div class="demande">' + esc(texte) + '</div>' : '<div class="demande vide">' + (it.avec_donnees || it.fichiers.length ? 'Pas de texte dans la section commentaire.' : 'Description pas encore récupérée.') + '</div>') + '</div>';
+    const det = '<div class="t-panel" data-panel="det"' + (ouvert === 'det' ? '' : ' hidden') + '>' +
+      '<div class="t-grille">' + detail('EAN', it.ean) + detail('Produit', it.modele) + detail('Couleur', it.couleur) + '</div>' +
+      (docs.length ? '<div class="docs">' + docs.map(f => '<a href="' + fichierUrl(f) + '" target="_blank" rel="noopener">🧾 <span>' + esc(f.type_doc ? f.type_doc + ' — ' + f.nom : f.nom) + '</span></a>').join('') + '</div>' : '') + '</div>';
+    return '<div class="tiroirs">' +
+      '<button class="t-btn' + (aDesc ? '' : ' vide') + (ouvert === 'desc' ? ' on' : '') + '" data-tiroir="desc"><span class="ch">▶</span>📝 Description de la demande</button>' +
+      '<button class="t-btn' + (ouvert === 'det' ? ' on' : '') + '" data-tiroir="det"><span class="ch">▶</span>🔎 EAN · produit' + (docs.length ? ' <small>· ' + docs.length + ' doc' + (docs.length > 1 ? 's' : '') + '</small>' : '') + '</button>' +
+      '</div>' + desc + det;
+  }
+  const OUVERTS = {};
+  const titreVille = it => '<span class="dp">' + esc(deptTxt(it)) + '</span> ' + esc(villeSeule(it));
+  function chipX(it) {
+    if (it.x) return '<span class="chip-x ok" title="« x » présent en colonne B : sera lu à l\u2019import des trackings">✍️ x écrit</span>';
+    if (it.b_autre) return '<span class="chip-x autre" title="Colonne B de SYSTEME U">B : ' + esc(it.b_autre) + '</span>';
+    return '<span class="chip-x attente" title="Le « x » n\u2019est pas encore écrit dans SYSTEME U">x à écrire</span>';
   }
 
   function grouper(liste, cleDe) {
@@ -1983,6 +2029,9 @@ loadNotices();
       b.classList.toggle('on', b.dataset.f === FILTRE);
       b.querySelector('.n').textContent = b.dataset.f === 'afaire' ? nbAF : b.dataset.f === 'prepares' ? nbP : ITEMS.length;
     });
+    const nbX = ITEMS.filter(i => i.prepare && !i.x && !i.b_autre).length;
+    $('pp-nb-x').textContent = nbX;
+    $('pp-ecrire-x').disabled = !nbX;
     $('pp-info-colis').textContent = colisOuverts.size ? '· ' + colisOuverts.size + ' colis prêt' + (colisOuverts.size > 1 ? 's' : '') + ' à partir' : '';
     const v = visibles();
     if (!v.length) {
@@ -1995,13 +2044,13 @@ loadNotices();
         const a = g.items[0];
         if (a.colis) {
           html += '<section class="groupe"><div class="g-tete"><span class="dept colis">📦</span>' +
-            '<div class="g-titre"><b>Colis ' + a.colis + ' · ' + esc(a.enseigne) + ' ' + esc(deptTxt(a)) + ' ' + esc(villeSeule(a)) + '</b><span>' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
+            '<div class="g-titre"><b>Colis ' + a.colis + ' · ' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
             '<button class="pill-t dsv' + (a.transporteur === 'DSV' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DSV">DSV</button>' +
             '<button class="pill-t dpd' + (a.transporteur === 'DPD' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DPD">DPD</button>' +
             '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
         } else {
-          html += '<section class="groupe"><div class="g-tete"><span class="dept">' + esc(deptTxt(a)) + '</span>' +
-            '<div class="g-titre"><b>' + esc(villeSeule(a)) + '</b><span>' + esc(a.enseigne) + ' · « x » posé à la main dans le Sheet, sans colis</span></div></div>' +
+          html += '<section class="groupe"><div class="g-tete">' +
+            '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · « x » posé à la main dans le Sheet, sans colis</span></div></div>' +
             '<div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
         }
       });
@@ -2010,8 +2059,8 @@ loadNotices();
         const a = g.items[0];
         const aFaire = g.items.filter(i => !i.prepare).length;
         const ouverts = [...new Set(ITEMS.filter(i => magKey(i) === g.k && i.prepare && i.colis).map(i => i.colis))];
-        html += '<section class="groupe"><div class="g-tete"><span class="dept">' + esc(deptTxt(a)) + '</span>' +
-          '<div class="g-titre"><b>' + esc(villeSeule(a)) + '</b><span>' + esc(a.enseigne) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
+        html += '<section class="groupe"><div class="g-tete">' +
+          '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
           (aFaire && ouverts.length ? '<span class="g-badge attente">📦 Colis ' + ouverts.join(', ') + ' prêt, pas encore expédié</span>' : '') +
           (aFaire >= 2 ? '<span class="g-badge">' + aFaire + ' dossiers → 1 colis possible</span><button class="g-act" data-groupe="' + esc(g.k) + '">📦 Préparer ensemble</button>' : '') +
           '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
@@ -2034,8 +2083,8 @@ loadNotices();
     });
     const ids = Object.keys(existants);
     FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '' };
-    $('pp-f-dept').textContent = deptTxt(base);
-    $('pp-f-mag').textContent = base.enseigne + ' · ' + villeSeule(base);
+    $('pp-f-dept').innerHTML = titreVille(base);
+    $('pp-f-mag').textContent = base.enseigne + ' · préparer un colis';
     $('pp-f-titre-dos').textContent = ids.length ? 'Dossiers à ajouter' : 'Dossiers dans ce colis';
     $('pp-f-dossiers').innerHTML = candidats.map(i =>
       '<label class="f-ligne on" data-cle="' + esc(i.cle) + '"><input type="checkbox" checked/>' +
@@ -2115,7 +2164,7 @@ loadNotices();
       cles.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) { it.prepare = true; it.colis = d.colis; it.transporteur = d.transporteur; if (!it.prepare_le) it.prepare_le = maintenant; } });
       fermerFen();
       rendre();
-      toast('📦 Colis ' + d.colis + ' · ' + d.transporteur + ' — ' + cles.length + ' dossier' + (cles.length > 1 ? 's' : '') + ' préparé' + (cles.length > 1 ? 's' : '') + ' (« x » posé dans le Sheet)', 3500);
+      toast('📦 Colis ' + d.colis + ' · ' + d.transporteur + ' — ' + cles.length + ' dossier' + (cles.length > 1 ? 's' : '') + ' préparé' + (cles.length > 1 ? 's' : '') + ' — pense à « ✍️ Écrire les x » avant l\u2019import des trackings', 4000);
     } catch (err) {
       if (err.message !== 'code') toast('⚠️ ' + err.message, 5000);
     } finally { btn.disabled = false; }
@@ -2125,8 +2174,14 @@ loadNotices();
   // ── Clics dans la liste ──
   $('pp-liste').addEventListener('click', async e => {
     if (e.target.closest('a')) return; // notice, documents : liens normaux
-    const pb = e.target.closest('.pb');
-    if (pb) { pb.classList.toggle('ouvert'); return; }
+    const tb = e.target.closest('.t-btn[data-tiroir]');
+    if (tb) {
+      const c = tb.closest('.carte'), cle = c.dataset.cle, quoi = tb.dataset.tiroir;
+      OUVERTS[cle] = OUVERTS[cle] === quoi ? '' : quoi;
+      c.querySelectorAll('.t-btn').forEach(x => x.classList.toggle('on', x.dataset.tiroir === OUVERTS[cle]));
+      c.querySelectorAll('.t-panel').forEach(x => { x.hidden = x.dataset.panel !== OUVERTS[cle]; });
+      return;
+    }
     const ph = e.target.closest('[data-photo]');
     if (ph) { ouvrirVisionneuse(ph.closest('.carte').dataset.cle, parseInt(ph.dataset.photo, 10)); return; }
     const gr = e.target.closest('[data-groupe]');
@@ -2150,11 +2205,11 @@ loadNotices();
       if (!it) return;
       if (b.dataset.act === 'prep') { ouvrirPreparer([cle]); return; }
       if (b.dataset.act === 'annuler') {
-        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + '\nLe « x » sera enlevé du Sheet.')) return;
+        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + (it.x ? '\nLe « x » sera enlevé du Sheet.' : ''))) return;
         b.disabled = true;
         try {
           await api('annuler', { cle, ligne: it.ligne });
-          it.prepare = false; it.colis = null; it.prepare_le = null;
+          it.prepare = false; it.colis = null; it.prepare_le = null; it.x = false;
           rendre();
           toast('↩︎ ' + (it.cnb || it.fla) + ' remis « à préparer »');
         } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 4500); b.disabled = false; }
@@ -2206,48 +2261,63 @@ loadNotices();
   let tRech = null;
   $('pp-recherche').addEventListener('input', () => { clearTimeout(tRech); tRech = setTimeout(rendre, 120); });
   $('pp-refresh').onclick = () => charger(true).catch(err => { if (err.message !== 'code') toast('⚠️ ' + err.message, 4500); });
-  const occupe = () => !$('pp-lb').hidden || !$('pp-fen').hidden;
+  const occupe = () => !$('pp-lb').hidden || !$('pp-fen').hidden || !$('pp-conf').hidden;
   setInterval(() => { if (CODE && demarre && visible() && !document.hidden && !occupe()) charger(false).catch(() => {}); }, 120000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && CODE && demarre && visible() && !occupe()) charger(false).catch(() => {}); });
 
-  // ── Export Excel : format exact de l'onglet « Pour SAV Entrepôt » ──
-  function chargerXlsx() {
-    if (window.XLSX && window.XLSX.utils) return Promise.resolve(window.XLSX);
-    return new Promise((ok, ko) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
-      s.onload = () => ok(window.XLSX);
-      s.onerror = () => ko(new Error('module Excel injoignable'));
-      document.head.appendChild(s);
+  // ── Fenêtre de confirmation ──
+  function confirmer(titre, sous, corps, libelle) {
+    return new Promise(ok => {
+      $('pp-conf-titre').textContent = titre;
+      $('pp-conf-sous').textContent = sous || '';
+      $('pp-conf-corps').innerHTML = corps;
+      $('pp-conf-oui').textContent = libelle || 'Confirmer';
+      $('pp-conf').hidden = false;
+      const fin = r => { $('pp-conf').hidden = true; $('pp-conf-oui').onclick = $('pp-conf-non').onclick = null; ok(r); };
+      $('pp-conf-oui').onclick = () => fin(true);
+      $('pp-conf-non').onclick = () => fin(false);
+      $('pp-conf').onclick = e => { if (e.target.id === 'pp-conf') fin(false); };
     });
   }
-  const ENTETES_ENTREPOT = ['Date de \nréception', "Date \nD'expédition", 'REFERENCE PRODUIT', 'DESIGNATION\nDES PIECES DEFECTUEUSES', "NOM \nDE \nL'ENSEIGNE", 'DEPARTEMENT \nET VILLE', 'TRACKING', 'Numéro CNB'];
+  const ligneConf = it => '<div><b>' + esc(it.cnb || it.fla) + '</b> · ' + esc(deptTxt(it) + ' ' + villeSeule(it)) + (it.colis ? ' · Colis ' + it.colis : '') + (it.transporteur ? ' · ' + esc(it.transporteur) : '') + '</div>';
+
+  // ✍️ Écrire les x (dossiers préparés sans x) — lus par l'import des trackings
+  $('pp-ecrire-x').onclick = async () => {
+    const cibles = ITEMS.filter(i => i.prepare && !i.x && !i.b_autre);
+    if (!cibles.length) return;
+    const ok = await confirmer('Écrire les x ?', cibles.length + ' dossier' + (cibles.length > 1 ? 's' : '') + ' préparé' + (cibles.length > 1 ? 's' : '') + ' · colonne B de SYSTEME U',
+      '<div class="conf-liste">' + cibles.map(ligneConf).join('') + '</div>' +
+      '<div class="conf-note">Un « x » sera écrit en face de chacun de ces USV : ils seront pris en compte au prochain import des trackings.<br>Tant qu’un colis n’est pas expédié, tu peux encore y ajouter des dossiers : il suffira de réécrire les x pour les nouveaux.</div>',
+      '✍️ Écrire ' + cibles.length + ' x');
+    if (!ok) return;
+    const b = $('pp-ecrire-x'); b.disabled = true;
+    try {
+      const d = await api('ecrire-x', { cles: cibles.map(i => i.cle) });
+      d.ecrits.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) it.x = true; });
+      rendre();
+      toast('✍️ ' + d.ecrits.length + ' x écrit' + (d.ecrits.length > 1 ? 's' : '') + ' dans SYSTEME U' + (d.refuses.length ? ' — ⚠️ ' + d.refuses.length + ' non écrit(s) : ' + d.refuses.map(r => r.cle + ' (' + r.raison + ')').join(', ') : ''), d.refuses.length ? 7000 : 3500);
+    } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 5000); }
+    finally { rendre(); }
+  };
+
+  // 📋 Remplir l'onglet « Pour SAV Entrepôt » avec la liste affichée (mêmes colonnes, même ordre que l'onglet)
   $('pp-export').onclick = async () => {
     const v = visibles();
-    if (!v.length) { toast('Rien à exporter avec ce filtre.'); return; }
-    let X;
-    try { X = await chargerXlsx(); } catch (e) { toast('⚠️ ' + e.message); return; }
-    // Mêmes colonnes, même ordre que l'onglet : la date d'expédition est vide tant que le colis n'est pas parti
-    const lignes = v.map(it => [it.date || '', '', it.ref || '', it.piece || '', it.enseigne || '', it.ville || '', it.emplacement || '', it.cnb || it.fla || '']);
-    const ws = X.utils.aoa_to_sheet([ENTETES_ENTREPOT].concat(lignes));
-    const bord = { style: 'thin', color: { rgb: '000000' } };
-    const B = { top: bord, bottom: bord, left: bord, right: bord };
-    ws['!cols'] = [12, 12, 30, 28, 13, 30, 18, 20].map(w => ({ wch: w }));
-    ws['!rows'] = [{ hpt: 48 }];
-    for (let c = 0; c < ENTETES_ENTREPOT.length; c++) {
-      ws[X.utils.encode_cell({ r: 0, c })].s = { font: { bold: true }, alignment: { vertical: 'center', horizontal: 'center', wrapText: true }, border: B, fill: { fgColor: { rgb: 'D9D9D9' } } };
-      for (let r = 1; r <= lignes.length; r++) {
-        const a = X.utils.encode_cell({ r, c });
-        if (!ws[a]) ws[a] = { t: 's', v: '' };
-        ws[a].s = { alignment: { vertical: 'center', horizontal: c <= 1 ? 'center' : 'left', wrapText: true }, border: B };
-      }
-    }
-    const wb = X.utils.book_new();
-    X.utils.book_append_sheet(wb, ws, 'Pour SAV Entrepôt');
-    const j = new Date();
-    X.writeFile(wb, 'pour-sav-entrepot-' + j.getFullYear() + '-' + String(j.getMonth() + 1).padStart(2, '0') + '-' + String(j.getDate()).padStart(2, '0') + '.xlsx');
-    toast('📥 ' + v.length + ' dossier(s) exporté(s) au format « Pour SAV Entrepôt »');
+    if (!v.length) { toast('Rien à écrire avec ce filtre.'); return; }
+    const lib = FILTRE === 'afaire' ? 'à préparer' : FILTRE === 'prepares' ? 'préparés' : 'en cours';
+    const ok = await confirmer('Remplir « Pour SAV Entrepôt » ?', v.length + ' dossier' + (v.length > 1 ? 's' : '') + ' ' + lib + ($('pp-recherche').value.trim() ? ' (recherche en cours)' : ''),
+      '<div class="conf-liste">' + v.map(ligneConf).join('') + '</div>' +
+      '<div class="conf-note">Le tableau de l’onglet « Pour SAV Entrepôt » est vidé puis rempli avec ces dossiers, dans cet ordre (par département), avec ses 8 colonnes habituelles. Les entêtes et la mise en forme ne bougent pas.</div>',
+      '📋 Remplir l’onglet');
+    if (!ok) return;
+    const b = $('pp-export'); b.disabled = true;
+    try {
+      const d = await api('remplir-entrepot', { cles: v.map(i => i.cle) });
+      toast('📋 « Pour SAV Entrepôt » rempli : ' + d.ecrites + ' ligne' + (d.ecrites > 1 ? 's' : ''), 3500);
+    } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 5000); }
+    finally { b.disabled = false; }
   };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pp-conf').hidden) $('pp-conf-non').click(); });
 
   // Les notices arrivent après : on rafraîchit les boutons « 📄 Notice »
   let tNotice = 0;
