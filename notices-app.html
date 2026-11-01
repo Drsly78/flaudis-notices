@@ -142,10 +142,20 @@
   /* Un encart propre par dossier */
   #sec-prepa .groupe .carte{background:#1c1c1c;border:1px solid #2c2c2c;border-radius:13px;}
   #sec-prepa .groupe .carte.prepare{border-color:var(--pp-ok-line);}
-  #sec-prepa .c-entete{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;}
+  #sec-prepa .c-entete{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;}
   #sec-prepa .c-entete:hover{background:#222;}
   #sec-prepa .ch{display:inline-block;width:8px;height:8px;border-right:2px solid var(--orange);border-bottom:2px solid var(--orange);transform:rotate(-45deg);transition:transform .15s;margin-left:2px;}
   #sec-prepa .carte.ouverte .c-entete .ch{transform:rotate(45deg);}
+  /* Flèche du dossier : bien visible, dans une pastille orange */
+  #sec-prepa .c-entete .ch{width:11px;height:11px;border-right-width:3px;border-bottom-width:3px;margin:0;justify-self:center;position:relative;left:-2px;}
+  #sec-prepa .carte.ouverte .c-entete .ch{left:0;top:-2px;}
+  #sec-prepa .c-entete::before{content:"";grid-column:1;grid-row:1;width:30px;height:30px;border-radius:50%;background:rgba(232,97,26,.16);border:1px solid rgba(232,97,26,.45);justify-self:center;}
+  #sec-prepa .c-entete .ch{grid-column:1;grid-row:1;}
+  #sec-prepa .c-entete .e-txt{grid-column:2;grid-row:1;}
+  #sec-prepa .c-entete .e-ok{grid-column:3;grid-row:1;}
+  /* Dossier replié : l'USV n'est pas un lien (le clic ouvre le dossier) */
+  #sec-prepa .carte:not(.ouverte) .c-entete a.usv{pointer-events:none;text-decoration:none;}
+  #sec-prepa .carte:not(.ouverte) .c-entete a.usv::after{content:none;}
   #sec-prepa .c-entete .e-txt{display:flex;flex-direction:column;gap:3px;min-width:0;}
   #sec-prepa .c-entete .usv{font-size:15.5px;}
   #sec-prepa .c-entete .e-ref{font-family:var(--pp-mono);font-size:13px;color:#b5b5b5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1857,7 +1867,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-e';
+const ENTREPOT_VERSION = '2026-11-01-f';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
