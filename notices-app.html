@@ -1196,10 +1196,14 @@ function renderPiecesTab(key, pieces) {
     </div>`;
   }).join('');
 
+  // cartons réellement en stock et pas encore ouverts : on ne peut pas en ouvrir plus
+  const nbReserve=Array.from(cids).filter(cid=>/^c[0-9]+$/.test(cid)&&pids.some(pid=>pieces[pid].cartons?.[cid]?.sealed)).length;
   return `<div class="tab-content" id="tab-pieces-${key}">
     ${cartonIds.length?cartonsHtml:'<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Aucune pièce — scannez ou ajoutez</div>'}
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Ouvrir un nouveau carton</button>
+      ${nbReserve
+        ? `<button onclick="openCarton('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--orange);background:rgba(232,97,26,0.1);color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📦 Ouvrir un carton <span style="opacity:.75;font-weight:500">(${nbReserve} en réserve)</span></button>`
+        : `<button disabled title="Tous les cartons en stock sont déjà ouverts" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;cursor:default;font-family:'DM Sans',sans-serif">📦 Plus de carton en réserve</button>`}
       <button onclick="openCartonCustom('${key}',event)" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--green);background:rgba(34,197,94,0.1);color:#4ade80;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Carton personnalisé</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
@@ -1468,16 +1472,12 @@ window.openCarton=async function(key,e){
   // Trouver le premier carton sealed à ouvrir, sinon en créer un nouveau
   const sealedCid = nums.map(n=>'c'+n).find(cid=>pids.some(pid=>pieces[pid].cartons?.[cid]?.sealed));
   const upd={};
-  if(sealedCid){
-    // Ouvrir ce carton (enlever sealed)
-    pids.forEach(pid=>{
-      const cart=pieces[pid].cartons?.[sealedCid];
-      if(cart) upd['produits/'+key+'/pieces/'+pid+'/cartons/'+sealedCid]={qte:cart.qte,initial:cart.initial};
-    });
-  } else {
-    const newId='c'+((nums[nums.length-1]||0)+1);
-    pids.forEach(pid=>{const init=pieces[pid].initial||0;upd['produits/'+key+'/pieces/'+pid+'/cartons/'+newId]={qte:init,initial:init};});
-  }
+  // On n'ouvre qu'un carton réellement en stock (en réserve) : jamais de carton créé ici
+  if(!sealedCid){alert('Plus de carton en réserve : tous les cartons en stock sont déjà ouverts.');return;}
+  pids.forEach(pid=>{
+    const cart=pieces[pid].cartons?.[sealedCid];
+    if(cart) upd['produits/'+key+'/pieces/'+pid+'/cartons/'+sealedCid]={qte:cart.qte,initial:cart.initial};
+  });
   await db.ref().update(upd);
 };
 window.openCartonCustom=async function(key,e){
@@ -1948,7 +1948,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-p';
+const ENTREPOT_VERSION = '2026-11-01-q';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
