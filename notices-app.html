@@ -149,7 +149,7 @@
   #sec-prepa .carte{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;animation:fadeIn .2s ease both;}
   #sec-prepa .carte.prepare{border-color:var(--pp-ok-line);}
   /* Un encart par ville */
-  #sec-prepa .groupe{margin-top:16px;background:#131313;border:1px solid var(--border);border-radius:18px;padding:14px 12px 12px;}
+  #sec-prepa .groupe{margin-top:16px;background:#131313;border:1.5px solid rgba(34,197,94,.55);border-radius:18px;padding:14px 12px 12px;}
   #sec-prepa .groupe .g-tete{padding:0 4px 12px;margin-bottom:12px;border-bottom:1px solid var(--border);}
   /* Un encart propre par dossier */
   #sec-prepa .groupe .carte{background:#1c1c1c;border:1.5px solid rgba(59,130,246,.55);border-radius:13px;}
@@ -1895,7 +1895,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-k';
+const ENTREPOT_VERSION = '2026-11-01-l';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
