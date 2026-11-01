@@ -164,12 +164,16 @@
   #sec-prepa .carte.ouverte .c-entete .ch{left:0;top:-2px;}
   #sec-prepa .c-entete::before{content:"";grid-column:1;grid-row:1;width:30px;height:30px;border-radius:50%;background:rgba(232,97,26,.16);border:1px solid rgba(232,97,26,.45);justify-self:center;}
   #sec-prepa .c-entete .ch{grid-column:1;grid-row:1;}
-  #sec-prepa .c-entete .e-txt{grid-column:2;grid-row:1;}
-  #sec-prepa .c-entete .e-ok{grid-column:3;grid-row:1;}
+  #sec-prepa .c-entete .e-txt{grid-column:2 / span 2;grid-row:1;}
   /* Dossier replié : l'USV n'est pas un lien (le clic ouvre le dossier) */
   #sec-prepa .carte:not(.ouverte) .c-entete a.usv{pointer-events:none;text-decoration:none;}
   #sec-prepa .carte:not(.ouverte) .c-entete a.usv::after{content:none;}
-  #sec-prepa .c-entete .e-txt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;}
+  #sec-prepa .c-entete .e-txt{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  #sec-prepa .c-entete .e-l{display:flex;align-items:center;gap:8px;min-width:0;}
+  #sec-prepa .c-entete .e-date{margin-left:auto;display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;}
+  #sec-prepa .c-entete .c-date{margin-left:0;}
+  #sec-prepa .c-entete .e-l .e-ref{flex:1 1 auto;}
+  #sec-prepa .c-entete .e-ok{flex:0 0 auto;margin-left:auto;}
   /* Le lien USV ne couvre QUE les caractères (sinon toute la ligne ouvre Revers.io par erreur) */
   #sec-prepa .c-entete a.usv{display:inline-block;width:auto;max-width:100%;flex:0 0 auto;}
   #sec-prepa .c-entete .e-ref{max-width:100%;}
@@ -1895,7 +1899,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-l';
+const ENTREPOT_VERSION = '2026-11-01-m';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2065,15 +2069,20 @@ const ENTREPOT_VERSION = '2026-11-01-l';
     return '<article class="carte' + (it.prepare ? ' prepare' : '') + (CARTES_OUVERTES[it.cle] ? ' ouverte' : '') + '" data-cle="' + esc(it.cle) + '">' +
       '<div class="c-entete" title="Ouvrir / fermer le dossier">' +
         '<span class="ch" aria-hidden="true"></span>' +
-        '<div class="e-txt">' + usv + '<span class="e-ref">' + esc(it.ref || '—') + '</span></div>' +
-        (it.prepare ? '<span class="e-ok">' + (it.colis ? 'Colis ' + it.colis : 'Préparé') + '</span>' : '') +
+        '<div class="e-txt">' +
+          '<div class="e-l">' + usv +
+            '<span class="e-date">' + (j != null ? '<span class="chip chip-age' + (j >= 10 ? ' vieux' : '') + '" title="Jours depuis la réception">' + (j === 0 ? "aujourd'hui" : 'J+' + j) + '</span>' : '') +
+            '<span class="c-date" title="Date de réception">' + esc(it.date) + '</span></span>' +
+          '</div>' +
+          '<div class="e-l"><span class="e-ref">' + esc(it.ref || '—') + '</span>' +
+            (it.prepare ? '<span class="e-ok">' + (it.colis ? 'Colis ' + it.colis : 'Préparé') + '</span>' : '') + '</div>' +
+        '</div>' +
       '</div>' +
       '<div class="c-corps">' +
       '<div class="c-ids">' +
         '<button class="cp-usv" data-copie="' + esc(it.cnb || it.fla) + '" title="Copier le numéro">⧉ ' + numero + '</button>' +
         (it.cnb && it.fla ? '<span class="chip chip-fla" data-copie="' + esc(it.fla) + '">FLA ' + esc(flaCourt(it.fla)) + '</span>' : '') +
-        (j != null ? '<span class="chip chip-age' + (j >= 10 ? ' vieux' : '') + '" title="Jours depuis la réception">' + (j === 0 ? "aujourd'hui" : 'J+' + j) + '</span>' : '') +
-        '<span class="c-date"><span class="rl">Reçu le </span>' + esc(it.date) + '</span>' +
+
       '</div>' +
       '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
       '<div class="photos">' + (imgs.length ? imgs.map(f =>
