@@ -295,6 +295,42 @@
   #sec-prepa .f-colis-usv span{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #sec-prepa .f-colis-usv b{font-family:var(--pp-mono);font-size:12px;}
   #sec-prepa .f-colis-usv em{font-style:normal;color:var(--pp-piece);font-weight:700;}
+  /* 🧰 Stock entrepôt (pièces par carton) dans la fenêtre Préparer */
+  #sec-prepa .f-stock.manque{animation:ppSecoue .35s;}
+  #sec-prepa .f-stock{margin:-2px 0 10px 28px;border:1px solid rgba(59,130,246,.35);border-radius:11px;background:#121a26;padding:10px 11px;}
+  #sec-prepa .f-stock[hidden]{display:none !important;}
+  #sec-prepa .fs-tete{display:flex;align-items:baseline;gap:8px;font-size:12.5px;font-weight:700;color:#93c5fd;margin-bottom:8px;flex-wrap:wrap;}
+  #sec-prepa .fs-tete small{color:var(--muted);font-weight:500;}
+  #sec-prepa .fs-carton{border:1px solid var(--border);border-radius:9px;background:var(--surface);margin-bottom:7px;overflow:hidden;}
+  #sec-prepa .fs-carton.cours{border-color:var(--orange);}
+  #sec-prepa .fs-ct{display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:12px;font-weight:700;color:var(--muted);}
+  #sec-prepa .fs-carton.cours .fs-ct{color:var(--orange);background:rgba(232,97,26,.08);}
+  #sec-prepa .fs-ct .tot{margin-left:auto;font-weight:600;color:var(--muted);}
+  #sec-prepa .fs-p{display:grid;grid-template-columns:minmax(0,1fr) 54px 58px auto;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid var(--border);}
+  #sec-prepa .fs-p .nom{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .fs-p .bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden;}
+  #sec-prepa .fs-p .bar i{display:block;height:100%;border-radius:3px;}
+  #sec-prepa .fs-p .q{font-size:12px;font-weight:700;text-align:right;white-space:nowrap;}
+  #sec-prepa .fs-p .q .apres{color:#fbbf24;}
+  #sec-prepa .fs-pas{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  #sec-prepa .fs-pas button{width:30px;height:28px;border:0;background:var(--surface2);font-size:16px;font-weight:700;line-height:1;}
+  #sec-prepa .fs-pas button.moins{color:#f87171;}
+  #sec-prepa .fs-pas button.plus{color:#4ade80;}
+  #sec-prepa .fs-pas button:disabled{opacity:.3;cursor:default;}
+  #sec-prepa .fs-pas b{min-width:28px;text-align:center;font-size:13px;}
+  #sec-prepa .fs-pas b.actif{color:#f87171;}
+  #sec-prepa .fs-reserve{border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:2px 0;}
+  #sec-prepa .fs-carton.scelle{opacity:.75;border-style:dashed;}
+  #sec-prepa .fs-recap{font-size:12px;color:#fbbf24;margin-top:4px;min-height:16px;}
+  #sec-prepa .f-stock.a-faire{border-color:var(--orange);box-shadow:0 0 0 1px rgba(232,97,26,.25);}
+  #sec-prepa .f-stock.fait{border-color:rgba(34,197,94,.55);}
+  #sec-prepa .fs-etat{margin-left:auto;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:7px;}
+  #sec-prepa .fs-etat.a-faire{color:var(--orange);background:rgba(232,97,26,.12);}
+  #sec-prepa .fs-etat.fait{color:var(--pp-ok);background:var(--pp-ok-bg);}
+  #sec-prepa .fs-rien{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:8px;cursor:pointer;}
+  #sec-prepa .fs-rien input{width:16px;height:16px;accent-color:var(--orange);margin:0;}
+  #sec-prepa .fs-sync{font-size:11px;color:var(--muted);}
+  #sec-prepa .cle-stock{margin:0 14px;font-size:12px;color:#93c5fd;padding-top:8px;}
   #sec-prepa .transp-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   #sec-prepa .transp-choix button{padding:16px 10px;border-radius:12px;font-weight:800;font-size:18px;letter-spacing:1px;background:var(--surface);border:2px solid;}
   #sec-prepa .transp-choix .dsv{color:#60a5fa;border-color:var(--pp-dsv);}
@@ -323,6 +359,12 @@
 
   @media (max-width:640px){
     #sec-prepa .cles{grid-template-columns:1fr;gap:6px;}
+    #sec-prepa .f-stock{margin-left:0;}
+    #sec-prepa .fs-p{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nom nom" "bar pas";row-gap:6px;}
+    #sec-prepa .fs-p .nom{grid-area:nom;white-space:normal;}
+    #sec-prepa .fs-p .bar{grid-area:bar;align-self:center;max-width:150px;}
+    #sec-prepa .fs-p .q{grid-area:bar;justify-self:end;margin-right:4px;}
+    #sec-prepa .fs-p .fs-pas{grid-area:pas;}
     #sec-prepa .pp-head{padding:10px 12px;}
     #sec-prepa .pp-l2{flex-direction:column;}
     #sec-prepa .pp-seg{display:flex;}
@@ -1899,7 +1941,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-m';
+const ENTREPOT_VERSION = '2026-11-01-n';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2084,6 +2126,7 @@ const ENTREPOT_VERSION = '2026-11-01-m';
         (it.cnb && it.fla ? '<span class="chip chip-fla" data-copie="' + esc(it.fla) + '">FLA ' + esc(flaCourt(it.fla)) + '</span>' : '') +
 
       '</div>' +
+      (function () { const st = stockPour(it.ref); if (!st) return ''; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
       '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
       '<div class="photos">' + (imgs.length ? imgs.map(f =>
           '<button data-photo="' + f.id + '" title="' + esc(f.type_doc || f.nom) + '"><img loading="lazy" src="' + fichierUrl(f) + '" alt=""/>' +
@@ -2188,8 +2231,94 @@ const ENTREPOT_VERSION = '2026-11-01-m';
     $('pp-liste').innerHTML = html;
   }
 
+  // ── 🧰 Stock entrepôt de la réf (produits/{clé}/pieces/{pièce}/cartons/{carton}) ──
+  function stockPour(ref) {
+    if (typeof fbData === 'undefined' || !fbData) return null;
+    const r = String(ref || '').trim();
+    const cands = [r].concat(r.split(/[\s()\/,;]+/).filter(t => t.length >= 4 && /\d/.test(t)));
+    const n = noticePour(ref);
+    if (n) cands.push(n.ref);
+    for (const c of cands) {
+      const k = getKey(c);
+      const pieces = fbData[k] && fbData[k].pieces;
+      if (pieces && Object.keys(pieces).length) return { key: k, ref: c, pieces };
+    }
+    return null;
+  }
+  function cartonsDe(st) {
+    const pids = sortPids(st.pieces);
+    const cids = [...new Set(pids.flatMap(pid => Object.keys(st.pieces[pid].cartons || {})))].sort((a, b) => {
+      const na = parseInt((a.match(/^c(\d+)$/) || [])[1] || '9999', 10), nb = parseInt((b.match(/^c(\d+)$/) || [])[1] || '9999', 10);
+      return na - nb || a.localeCompare(b);
+    });
+    const liste = cids.map((cid, i) => {
+      const scelle = pids.some(pid => st.pieces[pid].cartons?.[cid]?.sealed);
+      const lignes = pids.filter(pid => st.pieces[pid].cartons?.[cid]).map(pid => {
+        const c = st.pieces[pid].cartons[cid];
+        return { pid, nom: st.pieces[pid].nom || pid, qte: c.qte || 0, init: c.initial || c.qte || 0 };
+      });
+      const label = cid.startsWith('custom_') ? '📦 ' + cid.replace(/^custom_/, '').replace(/_\d+$/, '').replace(/_/g, ' ').toUpperCase() : 'Carton ' + (i + 1);
+      return { cid, label, scelle, lignes, reste: lignes.reduce((t, l) => t + l.qte, 0) };
+    });
+    const cours = liste.find(c => !c.scelle && c.reste > 0);
+    if (cours) cours.cours = true;
+    return liste;
+  }
+  function stockHtml(it) {
+    const st = stockPour(it.ref);
+    if (!st) return '';
+    const cartons = cartonsDe(st);
+    const ouverts = cartons.filter(c => !c.scelle), reserve = cartons.filter(c => c.scelle);
+    const ret = (FEN.retraits[it.cle] = FEN.retraits[it.cle] || {});
+    const ligne = (c, l) => {
+      const k = st.key + '|' + l.pid + '|' + c.cid, n = ret[k] || 0, pct = l.init ? l.qte / l.init : 0;
+      const col = l.qte === 0 ? '#f87171' : pct < 0.3 ? '#fbbf24' : '#4ade80';
+      return '<div class="fs-p"><span class="nom" title="' + esc(l.nom) + '">' + esc(l.nom) + '</span>' +
+        '<div class="bar"><i style="width:' + Math.round(pct * 100) + '%;background:' + col + '"></i></div>' +
+        '<span class="q" style="color:' + col + '">' + (n ? l.qte + ' → <span class="apres">' + (l.qte - n) + '</span>' : l.qte + '/' + l.init) + '</span>' +
+        '<span class="fs-pas"><button class="moins" data-k="' + esc(k) + '" data-d="1"' + (l.qte - n <= 0 ? ' disabled' : '') + ' title="Retirer 1 pièce">−</button><b class="' + (n ? 'actif' : '') + '">' + (n ? '−' + n : '0') + '</b><button class="plus" data-k="' + esc(k) + '" data-d="-1"' + (n <= 0 ? ' disabled' : '') + ' title="Annuler 1">+</button></span></div>';
+    };
+    const bloc = (c) => '<div class="fs-carton' + (c.cours ? ' cours' : '') + (c.scelle ? ' scelle' : '') + '"><div class="fs-ct">' + esc(c.label) + (c.cours ? ' · en cours' : '') + (c.scelle ? ' · en réserve (scellé)' : '') + '<span class="tot">' + c.reste + ' pièce' + (c.reste > 1 ? 's' : '') + '</span></div>' +
+      c.lignes.map(l => ligne(c, l)).join('') + '</div>';
+    const total = Object.values(ret).reduce((t, x) => t + x, 0);
+    const rien = !!FEN.sansRetrait[it.cle];
+    const fait = total > 0 || rien;
+    return '<div class="f-stock ' + (fait ? 'fait' : 'a-faire') + '" data-stock="' + esc(it.cle) + '"' + (FEN.cochees.has(it.cle) ? '' : ' hidden') + '>' +
+      '<div class="fs-tete">🧰 Stock entrepôt · ' + esc(st.ref) + ' <small>— retire ce que tu as pris du carton</small>' +
+        '<span class="fs-etat ' + (fait ? 'fait' : 'a-faire') + '">' + (total ? '✅ −' + total : rien ? '✅ rien pris' : 'À indiquer') + '</span></div>' +
+      (ouverts.length ? ouverts.map(bloc).join('') : '<div class="fs-recap" style="color:var(--muted)">Aucun carton ouvert.</div>') +
+      (reserve.length ? (FEN.reserveVue[it.cle] ? reserve.map(bloc).join('') : '<button class="fs-reserve" data-reserve="' + esc(it.cle) + '">＋ ' + reserve.length + ' carton' + (reserve.length > 1 ? 's' : '') + ' en réserve</button>') : '') +
+      '<div class="fs-recap">' + (total ? '🧰 ' + total + (total > 1 ? ' pièces seront déduites' : ' pièce sera déduite') + ' du stock à la validation' : '') + '</div>' +
+      (total ? '' : '<label class="fs-rien"><input type="checkbox" data-rien="' + esc(it.cle) + '"' + (rien ? ' checked' : '') + '/>Je n\u2019ai rien pris dans ce stock (pièce venue d\u2019ailleurs)</label>') +
+      '<div class="fs-sync">⟳ synchronisé en direct avec l\u2019onglet « Pièces » des notices</div>' +
+      '</div>';
+  }
+  function majStocks() {
+    const html = FEN.candidats.map(i =>
+      '<label class="f-ligne' + (FEN.cochees.has(i.cle) ? ' on' : '') + '" data-cle="' + esc(i.cle) + '"><input type="checkbox"' + (FEN.cochees.has(i.cle) ? ' checked' : '') + '/>' +
+      '<div class="q"><b>' + esc(i.cnb || i.fla) + '</b><div><span class="p">' + esc(i.piece || '—') + '</span> · ' + esc(i.ref) + (i.emplacement ? ' · 📍 ' + esc(i.emplacement) : '') + '</div></div></label>' +
+      stockHtml(i)).join('');
+    $('pp-f-dossiers').innerHTML = html;
+  }
+  const stockAIndiquer = () => FEN ? FEN.candidats.filter(i => FEN.cochees.has(i.cle) && stockPour(i.ref) &&
+    !FEN.sansRetrait[i.cle] && !Object.values(FEN.retraits[i.cle] || {}).some(n => n > 0)) : [];
+  const nbRetraits = () => FEN ? Object.entries(FEN.retraits).filter(([c]) => FEN.cochees.has(c)).reduce((t, [, r]) => t + Object.values(r).reduce((a, b) => a + b, 0), 0) : 0;
+
   // ── Fenêtre « Préparer » ──
   let FEN = null;
+  if (typeof db !== 'undefined') db.ref('produits').on('value', () => {
+    if (FEN && !$('pp-fen').hidden) {
+      // ne jamais retirer plus que ce qu'il reste après un retrait fait ailleurs entre-temps
+      Object.values(FEN.retraits).forEach(ret => Object.keys(ret).forEach(k => {
+        const [key, pid, cid] = k.split('|');
+        const reste = ((((fbData[key] || {}).pieces || {})[pid] || {}).cartons || {})[cid]?.qte || 0;
+        if (ret[k] > reste) ret[k] = reste;
+        if (!ret[k]) delete ret[k];
+      }));
+      majStocks(); majFen();
+    } else if (demarre && visible()) rendre();
+  });
+
   function ouvrirPreparer(cles) {
     const base = ITEMS.find(i => i.cle === cles[0]);
     const mag = magKey(base);
@@ -2201,13 +2330,11 @@ const ENTREPOT_VERSION = '2026-11-01-m';
       if (i.prepare_le && (!e.le || i.prepare_le < e.le)) e.le = i.prepare_le;
     });
     const ids = Object.keys(existants);
-    FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '' };
+    FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '', retraits: {}, reserveVue: {}, sansRetrait: {} };
     $('pp-f-dept').innerHTML = titreVille(base);
     $('pp-f-mag').innerHTML = nomMag(base) + ' · préparer un colis';
     $('pp-f-titre-dos').textContent = ids.length ? 'Dossiers à ajouter' : 'Dossiers dans ce colis';
-    $('pp-f-dossiers').innerHTML = candidats.map(i =>
-      '<label class="f-ligne on" data-cle="' + esc(i.cle) + '"><input type="checkbox" checked/>' +
-      '<div class="q"><b>' + esc(i.cnb || i.fla) + '</b><div><span class="p">' + esc(i.piece || '—') + '</span> · ' + esc(i.ref) + (i.emplacement ? ' · 📍 ' + esc(i.emplacement) : '') + '</div></div></label>').join('');
+    majStocks();
     $('pp-f-aide-dossiers').textContent = candidats.length > 1 ? 'Tous les dossiers à préparer de ce magasin sont cochés : décoche ceux qui ne partent pas.' : '';
     $('pp-f-sec-colis').hidden = !ids.length;
     $('pp-f-aide-colis').textContent = ''; $('pp-f-aide-colis').className = 'f-aide';
@@ -2230,18 +2357,42 @@ const ENTREPOT_VERSION = '2026-11-01-m';
     if (verrou) FEN.t = verrou;
     document.querySelectorAll('#pp-f-transp button').forEach(b => { b.classList.toggle('on', b.dataset.t === FEN.t); b.disabled = !!verrou && b.dataset.t !== verrou; });
     if (verrou) { $('pp-f-aide-t').textContent = 'Transporteur du colis ' + FEN.colis + ' : ' + verrou + '.'; $('pp-f-aide-t').className = 'f-aide'; }
-    const pret = n > 0 && !!FEN.t && !!FEN.colis;
+    const manque = stockAIndiquer();
+    const pret = n > 0 && !!FEN.t && !!FEN.colis && !manque.length;
     const btn = $('pp-f-valider');
     btn.classList.toggle('inactif', !pret);
     btn.textContent = !n ? 'Sélectionne au moins un dossier'
       : !FEN.colis ? 'Choisis : envoi existant ou nouvel envoi'
-      : '✅ Valider · ' + n + ' dossier' + (n > 1 ? 's' : '') + ' · ' + (FEN.colis === 'nouveau' ? 'nouveau colis' : '→ colis ' + FEN.colis) + (FEN.t ? ' ' + FEN.t : '');
+      : manque.length ? '🧰 Indique le stock retiré (' + manque.map(i => i.cnb || i.fla).join(', ') + ')'
+      : '✅ Valider · ' + n + ' dossier' + (n > 1 ? 's' : '') + ' · ' + (FEN.colis === 'nouveau' ? 'nouveau colis' : '→ colis ' + FEN.colis) + (FEN.t ? ' ' + FEN.t : '') + (nbRetraits() ? ' · −' + nbRetraits() + ' pièce' + (nbRetraits() > 1 ? 's' : '') : '');
   }
   $('pp-f-dossiers').addEventListener('change', e => {
+    if (e.target.closest('[data-rien]')) return;
     const l = e.target.closest('.f-ligne'); if (!l) return;
     e.target.checked ? FEN.cochees.add(l.dataset.cle) : FEN.cochees.delete(l.dataset.cle);
     l.classList.toggle('on', e.target.checked);
+    const blocStock = $('pp-f-dossiers').querySelector('[data-stock="' + CSS.escape(l.dataset.cle) + '"]');
+    if (blocStock) blocStock.hidden = !e.target.checked;
     majFen();
+  });
+  // − / + sur les pièces du carton (retrait décidé par le préparateur, appliqué à la validation)
+  $('pp-f-dossiers').addEventListener('change', e => {
+    const c = e.target.closest('[data-rien]');
+    if (!c) return;
+    FEN.sansRetrait[c.dataset.rien] = c.checked;
+    majStocks(); majFen();
+  });
+  $('pp-f-dossiers').addEventListener('click', e => {
+    const r = e.target.closest('[data-reserve]');
+    if (r) { e.preventDefault(); FEN.reserveVue[r.dataset.reserve] = true; majStocks(); return; }
+    const b = e.target.closest('.fs-pas button[data-k]');
+    if (!b || b.disabled) return;
+    e.preventDefault();
+    const cle = b.closest('[data-stock]').dataset.stock;
+    const ret = FEN.retraits[cle] = FEN.retraits[cle] || {};
+    ret[b.dataset.k] = Math.max(0, (ret[b.dataset.k] || 0) + parseInt(b.dataset.d, 10));
+    if (!ret[b.dataset.k]) delete ret[b.dataset.k];
+    majStocks(); majFen();
   });
   $('pp-f-colis').addEventListener('change', e => {
     const l = e.target.closest('.f-ligne'); if (!l) return;
@@ -2267,6 +2418,13 @@ const ENTREPOT_VERSION = '2026-11-01-m';
       $('pp-f-aide-colis').textContent = '⚠️ Choisis d’abord : ajouter à l’envoi existant ou faire un nouvel envoi.'; $('pp-f-aide-colis').className = 'f-aide err';
       return;
     }
+    const manque = stockAIndiquer();
+    if (manque.length) {
+      const bloc = $('pp-f-dossiers').querySelector('[data-stock="' + CSS.escape(manque[0].cle) + '"]');
+      if (bloc) { bloc.scrollIntoView({ block: 'center', behavior: 'smooth' }); bloc.classList.remove('manque'); void bloc.offsetWidth; bloc.classList.add('manque'); }
+      toast('🧰 Indique ce que tu as retiré du stock pour ' + manque.map(i => i.cnb || i.fla).join(', ') + ' (ou coche « rien pris »)', 4000);
+      return;
+    }
     if (!FEN.t) {
       $('pp-f-aide-t').textContent = '⚠️ Choisis DSV ou DPD avant de valider.'; $('pp-f-aide-t').className = 'f-aide err';
       const tc = $('pp-f-transp'); tc.classList.remove('manque'); void tc.offsetWidth; tc.classList.add('manque');
@@ -2279,11 +2437,21 @@ const ENTREPOT_VERSION = '2026-11-01-m';
     btn.disabled = true;
     try {
       const d = await api('preparer', { cles, lignes, transporteur: FEN.t, colis: FEN.colis });
+      let deduites = 0;
+      for (const c of cles) {
+        for (const [k, nb] of Object.entries(FEN.retraits[c] || {})) {
+          const [key, pid, cid] = k.split('|');
+          try {
+            await db.ref('produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte').transaction(q => Math.max(0, (parseInt(q, 10) || 0) - nb));
+            deduites += nb;
+          } catch (e) {}
+        }
+      }
       const maintenant = new Date().toISOString();
       cles.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) { it.prepare = true; it.colis = d.colis; it.transporteur = d.transporteur; if (!it.prepare_le) it.prepare_le = maintenant; } });
       fermerFen();
       rendre();
-      toast('📦 Colis ' + d.colis + ' · ' + d.transporteur + ' — ' + cles.length + ' dossier' + (cles.length > 1 ? 's' : '') + ' préparé' + (cles.length > 1 ? 's' : '') + ' — pense à « ✍️ Écrire les x » avant l\u2019import des trackings', 4000);
+      toast('📦 Colis ' + d.colis + ' · ' + d.transporteur + ' — ' + cles.length + ' dossier' + (cles.length > 1 ? 's' : '') + ' préparé' + (cles.length > 1 ? 's' : '') + (deduites ? ' · 🧰 ' + deduites + ' pièce' + (deduites > 1 ? 's' : '') + ' déduite' + (deduites > 1 ? 's' : '') + ' du stock' : '') + ' — pense à « ✍️ Écrire les x »', 4500);
     } catch (err) {
       if (err.message !== 'code') toast('⚠️ ' + err.message, 5000);
     } finally { btn.disabled = false; }
