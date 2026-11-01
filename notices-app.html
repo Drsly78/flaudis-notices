@@ -93,6 +93,12 @@
   #sec-prepa .pp-l2{display:flex;gap:8px;align-items:stretch;justify-content:space-between;flex-wrap:wrap;}
   #sec-prepa .pp-actions{display:flex;gap:8px;}
   #sec-prepa .pp-actions .pp-hbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+  /* Boutons d'action : look « à cliquer » (contour), pas « déjà sélectionné » comme les filtres */
+  #sec-prepa .pp-actions .pp-hbtn{background:var(--surface);border:1.5px solid #3a3a3a;box-shadow:0 2px 0 rgba(0,0,0,.45);transition:background .15s,border-color .15s,transform .05s;}
+  #sec-prepa .pp-actions .pp-hbtn:hover:not(:disabled){border-color:var(--orange);background:rgba(232,97,26,.08);}
+  #sec-prepa .pp-actions .pp-hbtn:active:not(:disabled){transform:translateY(2px);box-shadow:none;}
+  #sec-prepa .pp-actions #pp-export{color:var(--orange);border-color:var(--orange);}
+  #sec-prepa .pp-actions #pp-export:hover{background:rgba(232,97,26,.14);}
   #sec-prepa .pp-hbtn.icone{width:48px;padding:0;font-size:20px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
   #sec-prepa .pp-hbtn.icone:disabled .tourne{display:inline-block;animation:spin .8s linear infinite;}
   #sec-prepa .pp-search{flex:1 1 auto;min-width:0;position:relative;}
@@ -406,7 +412,7 @@
             <button data-f="tous">Tous<span class="n"></span></button>
           </div>
           <div class="pp-actions">
-            <button class="pp-hbtn orange" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »"><span class="ic">📋</span><span class="lib">Pour SAV Entrepôt</span></button>
+            <button class="pp-hbtn" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »"><span class="ic">📋</span><span class="lib">Pour SAV Entrepôt</span></button>
             <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings"><span class="ic">✍️</span><span class="lib">Écrire les x</span><span class="nb" id="pp-nb-x">0</span></button>
           </div>
         </div>
@@ -1884,7 +1890,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-g';
+const ENTREPOT_VERSION = '2026-11-01-h';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
