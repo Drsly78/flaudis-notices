@@ -195,6 +195,8 @@
   #sec-prepa .cle.piece{background:var(--pp-piece-bg);border-color:var(--pp-piece-line);}
   #sec-prepa .cle.piece .l,#sec-prepa .cle.piece .v{color:var(--pp-piece);}
   #sec-prepa .cle.ref .v{font-family:var(--pp-mono);font-size:15px;letter-spacing:-.3px;}
+  #sec-prepa .cle.ref{background:var(--pp-dsv-bg);border-color:rgba(59,130,246,.42);}
+  #sec-prepa .cle.ref .l,#sec-prepa .cle.ref .v{color:#60a5fa;}
   #sec-prepa .cle.empl .v{color:#60a5fa;}
   #sec-prepa .cle.empl .v::before{content:"📍 ";font-size:13px;}
   #sec-prepa .cle .v.rien{color:var(--pp-faint);font-weight:600;}
@@ -1890,7 +1892,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-h';
+const ENTREPOT_VERSION = '2026-11-01-i';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
