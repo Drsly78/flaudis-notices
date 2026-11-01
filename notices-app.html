@@ -2302,11 +2302,14 @@ loadNotices();
 
   // 📋 Remplir l'onglet « Pour SAV Entrepôt » avec la liste affichée (mêmes colonnes, même ordre que l'onglet)
   $('pp-export').onclick = async () => {
-    const v = visibles();
-    if (!v.length) { toast('Rien à écrire avec ce filtre.'); return; }
+    const tous = visibles();
+    const v = tous.filter(i => !i.x);          // x déjà écrit = le colis part : on ne le remet pas dans la liste de prépa
+    const avecX = tous.length - v.length;
+    if (!v.length) { toast(avecX ? 'Tous les dossiers affichés ont déjà leur x : rien à remettre dans « Pour SAV Entrepôt ».' : 'Rien à écrire avec ce filtre.', 4000); return; }
     const lib = FILTRE === 'afaire' ? 'à préparer' : FILTRE === 'prepares' ? 'préparés' : 'en cours';
     const ok = await confirmer('Remplir « Pour SAV Entrepôt » ?', v.length + ' dossier' + (v.length > 1 ? 's' : '') + ' ' + lib + ($('pp-recherche').value.trim() ? ' (recherche en cours)' : ''),
       '<div class="conf-liste">' + v.map(ligneConf).join('') + '</div>' +
+      (avecX ? '<div class="conf-note">✍️ ' + avecX + ' dossier' + (avecX > 1 ? 's' : '') + ' avec leur x déjà écrit ne ' + (avecX > 1 ? 'sont' : 'est') + ' pas repris.</div>' : '') +
       '<div class="conf-note">Le tableau de l’onglet « Pour SAV Entrepôt » est vidé puis rempli avec ces dossiers, dans cet ordre (par département), avec ses 8 colonnes habituelles. Les entêtes et la mise en forme ne bougent pas.</div>',
       '📋 Remplir l’onglet');
     if (!ok) return;
