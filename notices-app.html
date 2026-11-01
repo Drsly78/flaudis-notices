@@ -136,11 +136,23 @@
   /* Carte : chaque info a TOUJOURS la même place */
   #sec-prepa .carte{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;animation:fadeIn .2s ease both;}
   #sec-prepa .carte.prepare{border-color:var(--pp-ok-line);}
+  #sec-prepa .c-entete{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;user-select:none;min-width:0;}
+  #sec-prepa .c-entete:hover{background:var(--surface2);}
+  #sec-prepa .c-entete .ch{color:var(--orange);font-size:11px;transition:transform .15s;flex:0 0 auto;}
+  #sec-prepa .carte.ouverte .c-entete .ch{transform:rotate(90deg);}
+  #sec-prepa .c-entete .e-ville{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;white-space:nowrap;}
+  #sec-prepa .c-entete .e-ville .dp{color:var(--orange);}
+  #sec-prepa .c-entete .e-ref{font-family:var(--pp-mono);font-size:13.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;}
+  #sec-prepa .c-entete .sep{color:#444;}
+  #sec-prepa .c-entete .e-ok{flex:0 0 auto;color:var(--pp-ok);font-size:13px;}
+  #sec-prepa .c-corps{display:none;border-top:1px solid var(--border);}
+  #sec-prepa .carte.ouverte .c-corps{display:block;}
   #sec-prepa .c-ids{display:flex;align-items:center;gap:6px 8px;padding:12px 14px 0;min-height:36px;flex-wrap:wrap;}
   #sec-prepa .usv{font:700 15px/1.2 var(--pp-mono);letter-spacing:-.2px;cursor:copy;white-space:nowrap;color:var(--text);}
   #sec-prepa a.usv{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(232,97,26,.55);text-underline-offset:3px;}
   #sec-prepa a.usv:hover{color:var(--orange);}
   #sec-prepa a.usv::after{content:" ↗";font-size:11px;color:var(--orange);}
+  #sec-prepa .c-ids .cp-usv{font-family:var(--pp-mono);font-size:12px;padding:3px 8px;}
   #sec-prepa .cp-usv{border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:7px;font-size:11px;padding:2px 6px;}
   #sec-prepa .cp-usv:hover{color:var(--text);}
   #sec-prepa .chip{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:7px;white-space:nowrap;}
@@ -224,6 +236,7 @@
   #sec-prepa .chip-x.ok{color:var(--pp-ok);background:var(--pp-ok-bg);}
   #sec-prepa .chip-x.attente{color:var(--pp-piece);background:var(--pp-piece-bg);}
   #sec-prepa .chip-x.autre{color:#f87171;background:var(--pp-dpd-bg);}
+  #sec-prepa #pp-ecrire-x{margin-left:auto;}
   #sec-prepa .pp-hbtn .nb{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:rgba(255,255,255,.25);font-size:11.5px;}
   #sec-prepa .pp-hbtn:disabled{opacity:.45;cursor:default;}
   #sec-prepa .f-tete p{margin-top:3px;color:var(--muted);font-size:13px;}
@@ -360,9 +373,9 @@
           <button data-f="prepares">Préparés<span class="n"></span></button>
           <button data-f="tous">Tous<span class="n"></span></button>
         </div>
-        <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings">✍️ Écrire les x<span class="nb" id="pp-nb-x">0</span></button>
         <button class="pp-hbtn orange" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »">📋 Pour SAV Entrepôt</button>
         <button class="pp-hbtn" id="pp-refresh" title="Rafraîchir">↻</button>
+        <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings">✍️ Écrire les x<span class="nb" id="pp-nb-x">0</span></button>
       </div>
     </div>
     <div class="pp-etat"><span id="pp-info"></span><span id="pp-info-colis"></span></div>
@@ -1835,6 +1848,30 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 //  ENTREPÔT : deux sections distinctes — 📄 Notices | 📦 Prépa SAV
 // ══════════════════════════════════════════════════════════════════
+// Version de la page : à changer à chaque publication. Les appareils qui ont
+// une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
+const ENTREPOT_VERSION = '2026-11-01-c';
+(function () {
+  if (!/^https?:/.test(location.protocol)) return;
+  let enCours = false;
+  async function verifier() {
+    if (enCours || document.hidden) return;
+    enCours = true;
+    try {
+      const url = location.pathname + '?maj=' + Date.now();
+      const txt = await fetch(url, { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+      const m = txt.match(/const ENTREPOT_VERSION = '([^']+)'/);
+      const occupe = document.querySelector('#pp-fen:not([hidden]), #pp-conf:not([hidden]), #pp-lb:not([hidden])') ||
+        (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName) && document.activeElement.value);
+      if (m && m[1] !== ENTREPOT_VERSION && !occupe) {
+        location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]) + location.hash);
+      }
+    } catch (e) {} finally { enCours = false; }
+  }
+  setTimeout(verifier, 4000);
+  setInterval(verifier, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) verifier(); });
+})();
 (function () {
   'use strict';
   const lire = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -1971,12 +2008,20 @@ loadNotices();
     const refAff = it.ref + (it.couleur && !String(it.ref).toUpperCase().includes(String(it.couleur).toUpperCase()) ? ' · ' + it.couleur : '');
     const detail = (lib, v) => '<div><b>' + lib + '</b>' + (v ? esc(v) : '<span style="color:var(--pp-faint)">—</span>') + '</div>';
     const notice = noticePour(it.ref);
-    return '<article class="carte' + (it.prepare ? ' prepare' : '') + '" data-cle="' + esc(it.cle) + '">' +
+    const numero = esc(it.cnb || ('FLA ' + flaCourt(it.fla)));
+    const usv = lienRevers(it)
+      ? '<a class="usv" href="' + esc(lienRevers(it)) + '" target="_blank" rel="noopener" title="Ouvrir le dossier dans Revers.io">' + numero + '</a>'
+      : '<span class="usv" title="Lien Revers.io inconnu">' + numero + '</span>';
+    return '<article class="carte' + (it.prepare ? ' prepare' : '') + (CARTES_OUVERTES[it.cle] ? ' ouverte' : '') + '" data-cle="' + esc(it.cle) + '">' +
+      '<div class="c-entete" title="Ouvrir / fermer le dossier">' +
+        '<span class="ch">▶</span>' + usv +
+        '<span class="sep">·</span><span class="e-ville">' + titreVille(it) + '</span>' +
+        '<span class="sep">·</span><span class="e-ref">' + esc(it.ref || '—') + '</span>' +
+        (it.prepare ? '<span class="e-ok" title="Préparé">✅</span>' : '') +
+      '</div>' +
+      '<div class="c-corps">' +
       '<div class="c-ids">' +
-        (lienRevers(it)
-          ? '<a class="usv" href="' + esc(lienRevers(it)) + '" target="_blank" rel="noopener" title="Ouvrir le dossier dans Revers.io">' + esc(it.cnb || ('FLA ' + flaCourt(it.fla))) + '</a>' +
-            '<button class="cp-usv" data-copie="' + esc(it.cnb || it.fla) + '" title="Copier le numéro">⧉</button>'
-          : '<span class="usv" data-copie="' + esc(it.cnb || it.fla) + '" title="Lien Revers.io inconnu — clic pour copier">' + esc(it.cnb || ('FLA ' + flaCourt(it.fla))) + '</span>') +
+        '<button class="cp-usv" data-copie="' + esc(it.cnb || it.fla) + '" title="Copier le numéro">⧉ ' + numero + '</button>' +
         (it.cnb && it.fla ? '<span class="chip chip-fla" data-copie="' + esc(it.fla) + '">FLA ' + esc(flaCourt(it.fla)) + '</span>' : '') +
         (j != null ? '<span class="chip chip-age' + (j >= 10 ? ' vieux' : '') + '" title="Jours depuis la réception">' + (j === 0 ? "aujourd'hui" : 'J+' + j) + '</span>' : '') +
         '<span class="c-date"><span class="rl">Reçu le </span>' + esc(it.date) + '</span>' +
@@ -1996,6 +2041,7 @@ loadNotices();
           ? '<a class="b-notice" href="' + esc(notice.githubUrl) + '" target="_blank" rel="noopener" title="' + esc(notice.ref + ' — ' + (notice.label || '')) + '">📄 Notice</a>'
           : '<span class="b-notice absente" title="Aucune notice trouvée pour cette réf">📄 Pas de notice</span>') +
         (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : '') +
+      '</div>' +
       '</div>' +
     '</article>';
   }
@@ -2017,6 +2063,7 @@ loadNotices();
       '</div>' + desc + det;
   }
   const OUVERTS = {};
+  const CARTES_OUVERTES = {};
   // Lien vers le dossier Revers.io (onglet résumé)
   const lienRevers = it => {
     const u = String(it.revers_url || '').trim();
@@ -2188,6 +2235,13 @@ loadNotices();
   // ── Clics dans la liste ──
   $('pp-liste').addEventListener('click', async e => {
     if (e.target.closest('a')) return; // notice, documents : liens normaux
+    const ent = e.target.closest('.c-entete');
+    if (ent) {
+      const c = ent.closest('.carte');
+      CARTES_OUVERTES[c.dataset.cle] = !CARTES_OUVERTES[c.dataset.cle];
+      c.classList.toggle('ouverte', !!CARTES_OUVERTES[c.dataset.cle]);
+      return;
+    }
     const tb = e.target.closest('.t-btn[data-tiroir]');
     if (tb) {
       const c = tb.closest('.carte'), cle = c.dataset.cle, quoi = tb.dataset.tiroir;
