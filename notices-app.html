@@ -342,6 +342,10 @@
   #sec-prepa .fs-sync{font-size:11px;color:var(--muted);}
   #sec-prepa .cle-stock{margin:0 14px;font-size:12px;color:#93c5fd;padding-top:8px;}
   #sec-prepa .cle-stock .approx{color:#fbbf24;font-weight:700;}
+  #sec-prepa .fs-choix{display:flex;gap:8px;flex-wrap:wrap;}
+  #sec-prepa .fs-choix button{flex:1;min-width:140px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:700;border:1.5px solid;}
+  #sec-prepa .fs-choix .oui{border-color:var(--pp-ok);color:var(--pp-ok);background:var(--pp-ok-bg);}
+  #sec-prepa .fs-choix .non{border-color:var(--border);color:var(--muted);background:var(--surface2);}
   #sec-prepa .fs-approx{font-size:12px;color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:6px 9px;margin:-2px 0 8px;}
   #sec-prepa .transp-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   #sec-prepa .transp-choix button{padding:16px 10px;border-radius:12px;font-weight:800;font-size:18px;letter-spacing:1px;background:var(--surface);border:2px solid;}
@@ -1954,7 +1958,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-s';
+const ENTREPOT_VERSION = '2026-11-01-t';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2139,7 +2143,9 @@ const ENTREPOT_VERSION = '2026-11-01-s';
         (it.cnb && it.fla ? '<span class="chip chip-fla" data-copie="' + esc(it.fla) + '">FLA ' + esc(flaCourt(it.fla)) + '</span>' : '') +
 
       '</div>' +
-      (function () { const st = stockPour(it.ref); if (!st) return ''; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt' + (st.approx ? ' <span class="approx">≈ fiche ' + esc(st.ref) + '</span>' : '') + ' · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
+      (function () { const st = stockPour(it.ref); if (!st) return '';
+        if (st.propose && choixFiche(it.ref, st.key) === 'non') return '';
+        if (st.propose && !choixFiche(it.ref, st.key)) return '<div class="cle-stock"><span class="approx">🧰 Fiche stock proche : ' + esc(st.ref) + ' ?</span> — à confirmer en préparant</div>'; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt' + (st.approx ? ' <span class="approx">≈ fiche ' + esc(st.ref) + '</span>' : '') + ' · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
       '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
       '<div class="photos">' + (imgs.length ? imgs.map(f =>
           '<button data-photo="' + f.id + '" title="' + esc(f.type_doc || f.nom) + '"><img loading="lazy" src="' + fichierUrl(f) + '" alt=""/>' +
@@ -2245,6 +2251,9 @@ const ENTREPOT_VERSION = '2026-11-01-s';
   }
 
   // ── 🧰 Stock entrepôt de la réf (produits/{clé}/pieces/{pièce}/cartons/{carton}) ──
+  const CHOIX_FICHE = (() => { try { return JSON.parse(localStorage.getItem('prepaChoixFiche') || '{}') || {}; } catch (e) { return {}; } })();
+  const choixFiche = (ref, key) => CHOIX_FICHE[normB(ref) + '>' + key];
+  const memoChoix = (ref, key, v) => { CHOIX_FICHE[normB(ref) + '>' + key] = v; try { localStorage.setItem('prepaChoixFiche', JSON.stringify(CHOIX_FICHE)); } catch (e) {} };
   function stockPour(ref) {
     if (typeof fbData === 'undefined' || !fbData) return null;
     const r = String(ref || '').trim();
@@ -2279,6 +2288,15 @@ const ENTREPOT_VERSION = '2026-11-01-s';
       const f = fiches.find(x => { const sg = segs(x.k.split(/[\s\u00a0]+/)[0]); for (let i = 1; i < sg.length; i++) if (normB(sg.slice(i).join('')) === n) return true; return false; });
       if (f) return trouve(f);
     }
+    // Variante « collée » (« CD-23179B » ↔ fiche « CD-23179 », ou l'inverse) : seulement PROPOSÉE,
+    // le préparateur décide si c'est le même produit
+    for (const n of ns) {
+      if (n.length < 6) continue;
+      const plusCourte = fiches.filter(x => x.n1.length >= 6 && n.startsWith(x.n1) && n.length - x.n1.length <= 3).sort((a, b) => b.n1.length - a.n1.length)[0];
+      const plusLongues = fiches.filter(x => x.n1.startsWith(n) && x.n1.length - n.length <= 3);
+      const f = plusCourte || (plusLongues.length === 1 ? plusLongues[0] : null);
+      if (f) return Object.assign(trouve(f), { propose: true });
+    }
     return null;
   }
   function cartonsDe(st) {
@@ -2312,6 +2330,18 @@ const ENTREPOT_VERSION = '2026-11-01-s';
   function stockHtml(it) {
     const st = stockPour(it.ref);
     if (!st) return '';
+    const cache = FEN.cochees.has(it.cle) ? '' : ' hidden';
+    if (st.propose && !choixFiche(it.ref, st.key)) {
+      return '<div class="f-stock a-faire" data-stock="' + esc(it.cle) + '"' + cache + '>' +
+        '<div class="fs-tete">🧰 Fiche stock proche trouvée<span class="fs-etat a-faire">À décider</span></div>' +
+        '<div class="fs-approx">La réf du dossier est <b>' + esc(it.ref) + '</b>, la fiche en entrepôt est <b>' + esc(st.ref) + '</b>. Est-ce le même produit ?</div>' +
+        '<div class="fs-choix"><button type="button" class="oui" data-choix="oui" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">Oui, utiliser ce stock</button>' +
+        '<button type="button" class="non" data-choix="non" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">Non, autre produit</button></div></div>';
+    }
+    if (st.propose && choixFiche(it.ref, st.key) === 'non') {
+      return '<div class="f-stock fait" data-stock="' + esc(it.cle) + '"' + cache + '><div class="fs-recap" style="color:var(--muted);margin:0">🧰 Fiche proche ' + esc(st.ref) + ' écartée (autre produit) · ' +
+        '<button type="button" class="fs-reserve" data-choix="" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">revoir</button></div></div>';
+    }
     const cartons = cartonsDe(st);
     const ouverts = cartons.filter(c => !c.scelle), reserve = cartons.filter(c => c.scelle);
     const ret = (FEN.retraits[it.cle] = FEN.retraits[it.cle] || {});
@@ -2340,7 +2370,8 @@ const ENTREPOT_VERSION = '2026-11-01-s';
     return '<div class="f-stock ' + (fait ? 'fait' : 'a-faire') + '" data-stock="' + esc(it.cle) + '"' + (FEN.cochees.has(it.cle) ? '' : ' hidden') + '>' +
       '<div class="fs-tete">🧰 Stock entrepôt · ' + esc(st.ref) + ' <small>— retire ce que tu as pris du carton</small>' +
         '<span class="fs-etat ' + (fait ? 'fait' : 'a-faire') + '">' + (total ? '✅ −' + total : rien ? '✅ rien pris' : 'À indiquer') + '</span></div>' +
-      (st.approx ? '<div class="fs-approx">≈ Fiche rapprochée : <b>' + esc(st.ref) + '</b> pour la réf du dossier <b>' + esc(it.ref) + '</b> — vérifie que c\u2019est le même produit, sinon coche « rien pris ».</div>' : '') +
+      (st.propose ? '<div class="fs-approx">✔︎ Fiche <b>' + esc(st.ref) + '</b> acceptée pour <b>' + esc(it.ref) + '</b> · <button type="button" class="fs-reserve" data-choix="" data-ref="' + esc(it.ref) + '" data-key="' + esc(st.key) + '">changer</button></div>' :
+       st.approx ? '<div class="fs-approx">≈ Fiche rapprochée : <b>' + esc(st.ref) + '</b> pour la réf du dossier <b>' + esc(it.ref) + '</b> — vérifie que c\u2019est le même produit, sinon coche « rien pris ».</div>' : '') +
       (ouverts.length ? ouverts.map(bloc).join('') : '<div class="fs-recap" style="color:var(--muted)">Aucun carton ouvert.</div>') +
       (reserve.length && FEN.reserveVue[it.cle] ? reserve.map(bloc).join('') : '') +
       '<div class="fs-bas">' +
@@ -2359,8 +2390,12 @@ const ENTREPOT_VERSION = '2026-11-01-s';
       stockHtml(i)).join('');
     $('pp-f-dossiers').innerHTML = html;
   }
-  const stockAIndiquer = () => FEN ? FEN.candidats.filter(i => FEN.cochees.has(i.cle) && stockPour(i.ref) &&
-    !FEN.sansRetrait[i.cle] && !Object.values(FEN.retraits[i.cle] || {}).some(n => n > 0)) : [];
+  const stockAIndiquer = () => FEN ? FEN.candidats.filter(i => {
+    if (!FEN.cochees.has(i.cle)) return false;
+    const st = stockPour(i.ref); if (!st) return false;
+    if (st.propose) { const c = choixFiche(i.ref, st.key); if (!c) return true; if (c === 'non') return false; }
+    return !FEN.sansRetrait[i.cle] && !Object.values(FEN.retraits[i.cle] || {}).some(n => n > 0);
+  }) : [];
   const nbRetraits = () => FEN ? Object.entries(FEN.retraits).filter(([c]) => FEN.cochees.has(c)).reduce((t, [, r]) => t + Object.values(r).reduce((a, b) => a + b, 0), 0) : 0;
 
   // Remet dans leur carton d'origine les pièces retirées à la préparation (annulation)
@@ -2460,6 +2495,15 @@ const ENTREPOT_VERSION = '2026-11-01-s';
   $('pp-f-dossiers').addEventListener('click', e => {
     const r = e.target.closest('[data-reserve]');
     if (r) { e.preventDefault(); FEN.reserveVue[r.dataset.reserve] = true; majStocks(); return; }
+    const ch = e.target.closest('[data-choix]');
+    if (ch) {
+      e.preventDefault();
+      memoChoix(ch.dataset.ref, ch.dataset.key, ch.dataset.choix || undefined);
+      const cle = ch.closest('[data-stock]').dataset.stock;
+      if (ch.dataset.choix !== 'oui') { delete FEN.retraits[cle]; FEN.sansRetrait[cle] = false; }
+      majStocks(); majFen();
+      return;
+    }
     const tc = e.target.closest('[data-tiroir-carton]');
     if (tc) { e.preventDefault(); FEN.cartonsVus[tc.dataset.tiroirCarton] = !FEN.cartonsVus[tc.dataset.tiroirCarton]; majStocks(); return; }
     const o = e.target.closest('[data-ouvrir]');
