@@ -152,7 +152,7 @@
   #sec-prepa .groupe{margin-top:16px;background:#131313;border:1px solid var(--border);border-radius:18px;padding:14px 12px 12px;}
   #sec-prepa .groupe .g-tete{padding:0 4px 12px;margin-bottom:12px;border-bottom:1px solid var(--border);}
   /* Un encart propre par dossier */
-  #sec-prepa .groupe .carte{background:#1c1c1c;border:1px solid #2c2c2c;border-radius:13px;}
+  #sec-prepa .groupe .carte{background:#1c1c1c;border:1.5px solid rgba(59,130,246,.55);border-radius:13px;}
   #sec-prepa .groupe .carte.prepare{border-color:var(--pp-ok-line);}
   #sec-prepa .carte,#sec-prepa .c-entete,#sec-prepa .groupe{scroll-margin-top:200px;}
   #sec-prepa .c-entete{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;}
@@ -1895,7 +1895,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-j';
+const ENTREPOT_VERSION = '2026-11-01-k';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2018,7 +2018,10 @@ const ENTREPOT_VERSION = '2026-11-01-j';
   const flaCourt = v => String(v || '').replace(/^FLA[\s-]*/i, '');
   const magKey = it => it.mag_cle || (String(it.enseigne || '') + '|' + String(it.ville || '')).toUpperCase().replace(/\s+/g, ' ').trim();
   // Sous-titre du magasin : nom exact Revers.io quand on l'a (indispensable s'il y a 2 magasins dans la ville)
-  const nomMag = it => it.magasin_nom ? esc(it.magasin_nom) + (it.mag_multi && it.magasin_tel ? ' · ' + esc(String(it.magasin_tel).replace(/^33/, '0').replace(/(\d{2})(?=\d)/g, '$1 ')) : '') : esc(it.enseigne);
+  // (la ville est déjà dans le titre : on ne montre le nom exact que s'il faut distinguer 2 magasins de la même ville)
+  const nomMag = it => (it.mag_multi && it.magasin_nom)
+    ? esc(it.magasin_nom) + (it.magasin_tel ? ' · ' + esc(String(it.magasin_tel).replace(/^33/, '0').replace(/(\d{2})(?=\d)/g, '$1 ')) : '')
+    : esc(it.enseigne);
   const deptTxt = it => it.dept && it.dept < 999 ? String(it.dept).padStart(2, '0') : '?';
   const villeSeule = it => String(it.ville || '').replace(/^(2A|2B|\d{2,3})\s+/i, '');
   function age(iso) {
