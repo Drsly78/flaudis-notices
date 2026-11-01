@@ -322,6 +322,7 @@
   #sec-prepa .fs-bas{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:2px;}
   #sec-prepa .fs-ouvrir{border:1px dashed var(--orange);background:rgba(232,97,26,.08);color:var(--orange);font-size:12.5px;font-weight:700;border-radius:8px;padding:6px 10px;}
   #sec-prepa .fs-ouvrir.fort{border-style:solid;background:rgba(232,97,26,.16);}
+  #sec-prepa .fs-plus-res{font-size:12px;color:var(--muted);}
   #sec-prepa .fs-ouvrir.arme{border-style:solid;background:var(--orange);color:#fff;}
   #sec-prepa .fs-p .fs-lect{font-size:11px;color:var(--muted);text-align:right;}
   #sec-prepa .fs-reserve{border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:2px 0;}
@@ -1947,7 +1948,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-o';
+const ENTREPOT_VERSION = '2026-11-01-p';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2270,12 +2271,12 @@ const ENTREPOT_VERSION = '2026-11-01-o';
     if (cours) cours.cours = true;
     return liste;
   }
-  // 📦 Ouvrir un carton — même action que le bouton de l'onglet « Pièces » (premier carton scellé, sinon un neuf)
+  // 📦 Ouvrir le prochain carton en réserve — même écriture que l'onglet « Pièces »
   function boutonOuvrir(st, cartons, cle) {
+    // uniquement un carton réellement en stock (scellé) : on n'en crée jamais un nouveau d'ici
     const prochain = cartons.find(c => c.scelle && /^c\d+$/.test(c.cid));
-    const neuf = !prochain && sortPids(st.pieces).some(pid => (st.pieces[pid].initial || 0) > 0);
-    if (!prochain && !neuf) return '';
-    const lib = prochain ? 'Ouvrir le ' + prochain.label.toLowerCase() + ' (réserve)' : 'Ouvrir un nouveau carton';
+    if (!prochain) return '<span class="fs-plus-res">📦 Plus de carton en réserve</span>';
+    const lib = 'Ouvrir le ' + prochain.label.toLowerCase() + ' (réserve)';
     const fort = !cartons.some(c => c.cours);
     return '<button class="fs-ouvrir' + (fort ? ' fort' : '') + '" type="button" data-ouvrir="' + esc(st.key) + '" data-lib="' + esc(lib) + '" title="Pièce épuisée dans le carton en cours ? Ouvre le suivant — il s\u2019ouvre aussi dans l\u2019onglet Pièces">📦 ' + esc(lib) + '</button>';
   }
