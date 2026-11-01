@@ -88,8 +88,14 @@
     --pp-dsv:#3b82f6;--pp-dsv-bg:rgba(59,130,246,.15);--pp-dpd:#ef4444;--pp-dpd-bg:rgba(239,68,68,.14);--pp-faint:#5f5f5f;--pp-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.45;}
   #sec-prepa button{font-family:'DM Sans',sans-serif;cursor:pointer;color:inherit;}
   #sec-prepa .pp-head{position:sticky;top:var(--topbar-h);z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 12px;}
-  #sec-prepa .pp-head-in{max-width:1040px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  #sec-prepa .pp-search{flex:1 1 240px;min-width:0;position:relative;}
+  #sec-prepa .pp-head-in{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
+  #sec-prepa .pp-l1{display:flex;gap:8px;align-items:stretch;}
+  #sec-prepa .pp-l2{display:flex;gap:8px;align-items:stretch;justify-content:space-between;flex-wrap:wrap;}
+  #sec-prepa .pp-actions{display:flex;gap:8px;}
+  #sec-prepa .pp-actions .pp-hbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+  #sec-prepa .pp-hbtn.icone{width:48px;padding:0;font-size:20px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  #sec-prepa .pp-hbtn.icone:disabled .tourne{display:inline-block;animation:spin .8s linear infinite;}
+  #sec-prepa .pp-search{flex:1 1 auto;min-width:0;position:relative;}
   #sec-prepa .pp-search input{width:100%;padding:12px 12px 12px 40px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;}
   #sec-prepa .pp-search input:focus{border-color:var(--orange);}
   #sec-prepa .pp-search::before{content:"🔍";position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.7;}
@@ -142,6 +148,7 @@
   /* Un encart propre par dossier */
   #sec-prepa .groupe .carte{background:#1c1c1c;border:1px solid #2c2c2c;border-radius:13px;}
   #sec-prepa .groupe .carte.prepare{border-color:var(--pp-ok-line);}
+  #sec-prepa .carte,#sec-prepa .c-entete,#sec-prepa .groupe{scroll-margin-top:200px;}
   #sec-prepa .c-entete{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;}
   #sec-prepa .c-entete:hover{background:#222;}
   #sec-prepa .ch{display:inline-block;width:8px;height:8px;border-right:2px solid var(--orange);border-bottom:2px solid var(--orange);transform:rotate(-45deg);transition:transform .15s;margin-left:2px;}
@@ -251,8 +258,8 @@
   #sec-prepa .chip-x.ok{color:var(--pp-ok);background:var(--pp-ok-bg);}
   #sec-prepa .chip-x.attente{color:var(--pp-piece);background:var(--pp-piece-bg);}
   #sec-prepa .chip-x.autre{color:#f87171;background:var(--pp-dpd-bg);}
-  #sec-prepa #pp-ecrire-x{margin-left:auto;}
-  #sec-prepa .pp-hbtn .nb{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:rgba(255,255,255,.25);font-size:11.5px;}
+  #sec-prepa .pp-hbtn .nb{display:inline-block;min-width:20px;padding:1px 6px;border-radius:9px;background:var(--orange);color:#fff;font-size:11.5px;text-align:center;}
+  #sec-prepa .pp-hbtn:disabled .nb{background:rgba(255,255,255,.18);}
   #sec-prepa .pp-hbtn:disabled{opacity:.45;cursor:default;}
   #sec-prepa .f-tete p{margin-top:3px;color:var(--muted);font-size:13px;}
   #sec-prepa .f-corps{padding:14px 20px;overflow-y:auto;}
@@ -301,8 +308,12 @@
 
   @media (max-width:640px){
     #sec-prepa .cles{grid-template-columns:1fr;gap:6px;}
-    #sec-prepa .pp-hbtn .lg{display:none;}
-    #sec-prepa .pp-hbtn{padding:10px 12px;}
+    #sec-prepa .pp-head{padding:10px 12px;}
+    #sec-prepa .pp-l2{flex-direction:column;}
+    #sec-prepa .pp-seg{display:flex;}
+    #sec-prepa .pp-seg button{flex:1;padding:9px 4px;}
+    #sec-prepa .pp-actions{display:grid;grid-template-columns:1fr 1fr;}
+    #sec-prepa .pp-actions .pp-hbtn{padding:11px 8px;font-size:13px;}
     #sec-prepa .cle{display:grid;grid-template-columns:112px 1fr;align-items:baseline;gap:8px;padding:8px 10px;min-height:0;}
     #sec-prepa .cle .v{margin-top:0;font-size:15.5px;}
     #sec-prepa .c-date .rl{display:none;}
@@ -384,15 +395,21 @@
   <div id="pp-app" hidden>
     <div class="pp-head">
       <div class="pp-head-in">
-        <div class="pp-search"><input id="pp-recherche" type="search" placeholder="USV, FLA, réf, EAN, ville, pièce…" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
-        <div class="pp-seg" id="pp-filtre">
-          <button data-f="afaire">À préparer<span class="n"></span></button>
-          <button data-f="prepares">Préparés<span class="n"></span></button>
-          <button data-f="tous">Tous<span class="n"></span></button>
+        <div class="pp-l1">
+          <div class="pp-search"><input id="pp-recherche" type="search" placeholder="USV, FLA, réf, EAN, ville, pièce…" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+          <button class="pp-hbtn icone" id="pp-refresh" title="Rafraîchir" aria-label="Rafraîchir"><span class="tourne">↻</span></button>
         </div>
-        <button class="pp-hbtn orange" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »">📋 <span class="lg">Pour SAV </span>Entrepôt</button>
-        <button class="pp-hbtn" id="pp-refresh" title="Rafraîchir">↻</button>
-        <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings">✍️ <span class="lg">Écrire les </span>x<span class="nb" id="pp-nb-x">0</span></button>
+        <div class="pp-l2">
+          <div class="pp-seg" id="pp-filtre">
+            <button data-f="afaire">À préparer<span class="n"></span></button>
+            <button data-f="prepares">Préparés<span class="n"></span></button>
+            <button data-f="tous">Tous<span class="n"></span></button>
+          </div>
+          <div class="pp-actions">
+            <button class="pp-hbtn orange" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »"><span class="ic">📋</span><span class="lib">Pour SAV Entrepôt</span></button>
+            <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings"><span class="ic">✍️</span><span class="lib">Écrire les x</span><span class="nb" id="pp-nb-x">0</span></button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="pp-etat"><span id="pp-info"></span><span id="pp-info-colis"></span></div>
@@ -1867,7 +1884,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-f';
+const ENTREPOT_VERSION = '2026-11-01-g';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -1988,7 +2005,9 @@ const ENTREPOT_VERSION = '2026-11-01-f';
   const fichierUrl = f => API + '/prepa-api/fichier/' + f.id + '?c=' + encodeURIComponent(CODE);
   const estImage = f => /^image\//.test(f.media);
   const flaCourt = v => String(v || '').replace(/^FLA[\s-]*/i, '');
-  const magKey = it => (String(it.enseigne || '') + '|' + String(it.ville || '')).toUpperCase().replace(/\s+/g, ' ').trim();
+  const magKey = it => it.mag_cle || (String(it.enseigne || '') + '|' + String(it.ville || '')).toUpperCase().replace(/\s+/g, ' ').trim();
+  // Sous-titre du magasin : nom exact Revers.io quand on l'a (indispensable s'il y a 2 magasins dans la ville)
+  const nomMag = it => it.magasin_nom ? esc(it.magasin_nom) + (it.mag_multi && it.magasin_tel ? ' · ' + esc(String(it.magasin_tel).replace(/^33/, '0').replace(/(\d{2})(?=\d)/g, '$1 ')) : '') : esc(it.enseigne);
   const deptTxt = it => it.dept && it.dept < 999 ? String(it.dept).padStart(2, '0') : '?';
   const villeSeule = it => String(it.ville || '').replace(/^(2A|2B|\d{2,3})\s+/i, '');
   function age(iso) {
@@ -2121,7 +2140,7 @@ const ENTREPOT_VERSION = '2026-11-01-f';
         const a = g.items[0];
         if (a.colis) {
           html += '<section class="groupe"><div class="g-tete"><span class="dept colis">📦</span>' +
-            '<div class="g-titre"><b>Colis ' + a.colis + ' · ' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
+            '<div class="g-titre"><b>Colis ' + a.colis + ' · ' + titreVille(a) + '</b><span>' + nomMag(a) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
             '<button class="pill-t dsv' + (a.transporteur === 'DSV' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DSV">DSV</button>' +
             '<button class="pill-t dpd' + (a.transporteur === 'DPD' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DPD">DPD</button>' +
             '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
@@ -2137,7 +2156,7 @@ const ENTREPOT_VERSION = '2026-11-01-f';
         const aFaire = g.items.filter(i => !i.prepare).length;
         const ouverts = [...new Set(ITEMS.filter(i => magKey(i) === g.k && i.prepare && i.colis).map(i => i.colis))];
         html += '<section class="groupe"><div class="g-tete">' +
-          '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
+          '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + (a.mag_multi ? '⚠️ ' : '') + nomMag(a) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
           (aFaire && ouverts.length ? '<span class="g-badge attente">📦 Colis ' + ouverts.join(', ') + ' prêt, pas encore expédié</span>' : '') +
           (aFaire >= 2 ? '<span class="g-badge">' + aFaire + ' dossiers → 1 colis possible</span><button class="g-act" data-groupe="' + esc(g.k) + '">📦 Préparer ensemble</button>' : '') +
           '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
@@ -2161,7 +2180,7 @@ const ENTREPOT_VERSION = '2026-11-01-f';
     const ids = Object.keys(existants);
     FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '' };
     $('pp-f-dept').innerHTML = titreVille(base);
-    $('pp-f-mag').textContent = base.enseigne + ' · préparer un colis';
+    $('pp-f-mag').innerHTML = nomMag(base) + ' · préparer un colis';
     $('pp-f-titre-dos').textContent = ids.length ? 'Dossiers à ajouter' : 'Dossiers dans ce colis';
     $('pp-f-dossiers').innerHTML = candidats.map(i =>
       '<label class="f-ligne on" data-cle="' + esc(i.cle) + '"><input type="checkbox" checked/>' +
