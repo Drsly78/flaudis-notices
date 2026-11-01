@@ -169,7 +169,10 @@
   /* Dossier replié : l'USV n'est pas un lien (le clic ouvre le dossier) */
   #sec-prepa .carte:not(.ouverte) .c-entete a.usv{pointer-events:none;text-decoration:none;}
   #sec-prepa .carte:not(.ouverte) .c-entete a.usv::after{content:none;}
-  #sec-prepa .c-entete .e-txt{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  #sec-prepa .c-entete .e-txt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;}
+  /* Le lien USV ne couvre QUE les caractères (sinon toute la ligne ouvre Revers.io par erreur) */
+  #sec-prepa .c-entete a.usv{display:inline-block;width:auto;max-width:100%;flex:0 0 auto;}
+  #sec-prepa .c-entete .e-ref{max-width:100%;}
   #sec-prepa .c-entete .usv{font-size:15.5px;}
   #sec-prepa .c-entete .e-ref{font-family:var(--pp-mono);font-size:13px;color:#b5b5b5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #sec-prepa .c-entete .e-ok{color:var(--pp-ok);background:var(--pp-ok-bg);font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:8px;white-space:nowrap;}
@@ -1892,7 +1895,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-i';
+const ENTREPOT_VERSION = '2026-11-01-j';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
