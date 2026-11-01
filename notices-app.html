@@ -306,6 +306,10 @@
   #sec-prepa .fs-ct{display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:12px;font-weight:700;color:var(--muted);}
   #sec-prepa .fs-carton.cours .fs-ct{color:var(--orange);background:rgba(232,97,26,.08);}
   #sec-prepa .fs-ct .tot{margin-left:auto;font-weight:600;color:var(--muted);}
+  #sec-prepa .fs-ct{cursor:pointer;user-select:none;-webkit-user-select:none;}
+  #sec-prepa .fs-ct .chv{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s;margin:0 2px 0 4px;flex:none;}
+  #sec-prepa .fs-carton.ouvert .fs-ct .chv{transform:rotate(45deg);}
+  #sec-prepa .fs-ct .pris{color:#f87171;font-weight:800;}
   #sec-prepa .fs-p{display:grid;grid-template-columns:minmax(0,1fr) 54px 58px auto;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid var(--border);}
   #sec-prepa .fs-p .nom{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #sec-prepa .fs-p .bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden;}
@@ -1948,7 +1952,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-q';
+const ENTREPOT_VERSION = '2026-11-01-r';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2245,10 +2249,25 @@ const ENTREPOT_VERSION = '2026-11-01-q';
     const cands = [r].concat(r.split(/[\s()\/,;]+/).filter(t => t.length >= 4 && /\d/.test(t)));
     const n = noticePour(ref);
     if (n) cands.push(n.ref);
+    const aStock = k => fbData[k] && fbData[k].pieces && Object.keys(fbData[k].pieces).length;
     for (const c of cands) {
       const k = getKey(c);
-      const pieces = fbData[k] && fbData[k].pieces;
-      if (pieces && Object.keys(pieces).length) return { key: k, ref: c, pieces };
+      if (aStock(k)) return { key: k, ref: c, pieces: fbData[k].pieces };
+    }
+    // Réf du Sheet écrite autrement que la fiche : « FLD-27001-CD2302-10 » ↔ fiche « FLD-27001-CD2302 »,
+    // « DZ25B0082-B01 » ↔ « RB-DZ25B0082-B01 », espaces insécables, tirets, casse…
+    const fiches = Object.keys(fbData).filter(aStock).map(k => ({ k, n: normB(k), n1: normB(k.split(/[\s\u00a0]+/)[0]) }));
+    const ns = [...new Set(cands.map(normB).filter(n => n.length >= 4))];
+    const trouve = f => f && { key: f.k, ref: f.k.replace(/\u00a0/g, ' '), pieces: fbData[f.k].pieces };
+    for (const n of ns) { const f = fiches.find(x => x.n === n || x.n1 === n); if (f) return trouve(f); }
+    for (const n of ns) {   // la réf du Sheet = la fiche + un suffixe → la plus longue fiche qui colle
+      const f = fiches.filter(x => x.n1.length >= 6 && n.startsWith(x.n1)).sort((a, b) => b.n1.length - a.n1.length)[0];
+      if (f) return trouve(f);
+    }
+    for (const n of ns) {   // la fiche = un préfixe + la réf du Sheet → la plus courte fiche qui colle
+      if (n.length < 6) continue;
+      const f = fiches.filter(x => x.n1.endsWith(n)).sort((a, b) => a.n1.length - b.n1.length)[0];
+      if (f) return trouve(f);
     }
     return null;
   }
@@ -2278,7 +2297,7 @@ const ENTREPOT_VERSION = '2026-11-01-q';
     if (!prochain) return '<span class="fs-plus-res">📦 Plus de carton en réserve</span>';
     const lib = 'Ouvrir le ' + prochain.label.toLowerCase() + ' (réserve)';
     const fort = !cartons.some(c => c.cours);
-    return '<button class="fs-ouvrir' + (fort ? ' fort' : '') + '" type="button" data-ouvrir="' + esc(st.key) + '" data-lib="' + esc(lib) + '" title="Pièce épuisée dans le carton en cours ? Ouvre le suivant — il s\u2019ouvre aussi dans l\u2019onglet Pièces">📦 ' + esc(lib) + '</button>';
+    return '<button class="fs-ouvrir' + (fort ? ' fort' : '') + '" type="button" data-ouvrir="' + esc(st.key) + '" data-cid="' + esc(prochain.cid) + '" data-lib="' + esc(lib) + '" title="Pièce épuisée dans le carton en cours ? Ouvre le suivant — il s\u2019ouvre aussi dans l\u2019onglet Pièces">📦 ' + esc(lib) + '</button>';
   }
   function stockHtml(it) {
     const st = stockPour(it.ref);
@@ -2295,8 +2314,16 @@ const ENTREPOT_VERSION = '2026-11-01-q';
         (c.scelle ? '<span class="fs-lect">scellé</span></div>' : '') +
         (c.scelle ? '' : '<span class="fs-pas"><button class="moins" data-k="' + esc(k) + '" data-d="1"' + (l.qte - n <= 0 ? ' disabled' : '') + ' title="Retirer 1 pièce">−</button><b class="' + (n ? 'actif' : '') + '">' + (n ? '−' + n : '0') + '</b><button class="plus" data-k="' + esc(k) + '" data-d="-1"' + (n <= 0 ? ' disabled' : '') + ' title="Annuler 1">+</button></span></div>');
     };
-    const bloc = (c) => '<div class="fs-carton' + (c.cours ? ' cours' : '') + (c.scelle ? ' scelle' : '') + '"><div class="fs-ct">' + esc(c.label) + (c.cours ? ' · en cours' : '') + (c.scelle ? ' · en réserve (scellé)' : '') + '<span class="tot">' + c.reste + ' pièce' + (c.reste > 1 ? 's' : '') + '</span></div>' +
-      c.lignes.map(l => ligne(c, l)).join('') + '</div>';
+    // chaque carton est un tiroir, replié par défaut
+    const bloc = (c) => {
+      const tk = it.cle + '|' + c.cid, ouvert = !!FEN.cartonsVus[tk];
+      const pris = c.scelle ? 0 : c.lignes.reduce((t, l) => t + (ret[st.key + '|' + l.pid + '|' + c.cid] || 0), 0);
+      return '<div class="fs-carton' + (c.cours ? ' cours' : '') + (c.scelle ? ' scelle' : '') + (ouvert ? ' ouvert' : '') + '">' +
+        '<div class="fs-ct" data-tiroir-carton="' + esc(tk) + '"><span class="chv"></span>' + esc(c.label) + (c.cours ? ' · en cours' : '') + (c.scelle ? ' · en réserve (scellé)' : '') +
+        (pris ? ' <span class="pris">−' + pris + '</span>' : '') +
+        '<span class="tot">' + c.reste + ' pièce' + (c.reste > 1 ? 's' : '') + '</span></div>' +
+        (ouvert ? c.lignes.map(l => ligne(c, l)).join('') : '') + '</div>';
+    };
     const total = Object.values(ret).reduce((t, x) => t + x, 0);
     const rien = !!FEN.sansRetrait[it.cle];
     const fait = total > 0 || rien;
@@ -2367,7 +2394,7 @@ const ENTREPOT_VERSION = '2026-11-01-q';
       if (i.prepare_le && (!e.le || i.prepare_le < e.le)) e.le = i.prepare_le;
     });
     const ids = Object.keys(existants);
-    FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '', retraits: {}, reserveVue: {}, sansRetrait: {} };
+    FEN = { mag, candidats, existants, cochees: new Set(candidats.map(i => i.cle)), colis: ids.length ? null : 'nouveau', t: '', retraits: {}, reserveVue: {}, sansRetrait: {}, cartonsVus: {} };
     $('pp-f-dept').innerHTML = titreVille(base);
     $('pp-f-mag').innerHTML = nomMag(base) + ' · préparer un colis';
     $('pp-f-titre-dos').textContent = ids.length ? 'Dossiers à ajouter' : 'Dossiers dans ce colis';
@@ -2422,6 +2449,8 @@ const ENTREPOT_VERSION = '2026-11-01-q';
   $('pp-f-dossiers').addEventListener('click', e => {
     const r = e.target.closest('[data-reserve]');
     if (r) { e.preventDefault(); FEN.reserveVue[r.dataset.reserve] = true; majStocks(); return; }
+    const tc = e.target.closest('[data-tiroir-carton]');
+    if (tc) { e.preventDefault(); FEN.cartonsVus[tc.dataset.tiroirCarton] = !FEN.cartonsVus[tc.dataset.tiroirCarton]; majStocks(); return; }
     const o = e.target.closest('[data-ouvrir]');
     if (o) {
       e.preventDefault();
@@ -2431,6 +2460,7 @@ const ENTREPOT_VERSION = '2026-11-01-q';
         return;
       }
       clearTimeout(o._t); o.disabled = true;
+      FEN.cartonsVus[o.closest('[data-stock]').dataset.stock + '|' + o.dataset.cid] = true;
       Promise.resolve(window.openCarton(o.dataset.ouvrir, { stopPropagation() {} }))
         .then(() => toast('📦 Carton ouvert — il apparaît aussi dans l\u2019onglet « Pièces »', 3000))
         .catch(err => { toast('⚠️ Ouverture impossible : ' + (err && err.message || err), 5000); o.disabled = false; });
