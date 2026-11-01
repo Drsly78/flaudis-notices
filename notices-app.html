@@ -178,7 +178,7 @@
   #sec-prepa .c-entete a.usv{display:inline-block;width:auto;max-width:100%;flex:0 0 auto;}
   #sec-prepa .c-entete .e-ref{max-width:100%;}
   #sec-prepa .c-entete .usv{font-size:15.5px;}
-  #sec-prepa .c-entete .e-ref{font-family:var(--pp-mono);font-size:13px;color:#b5b5b5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #sec-prepa .c-entete .e-ref{font-family:var(--pp-mono);font-size:13.5px;font-weight:700;color:#60a5fa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #sec-prepa .c-entete .e-ok{color:var(--pp-ok);background:var(--pp-ok-bg);font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:8px;white-space:nowrap;}
   #sec-prepa .c-corps{display:none;border-top:1px solid var(--border);}
   #sec-prepa .carte.ouverte .c-corps{display:block;}
@@ -1962,7 +1962,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-u';
+const ENTREPOT_VERSION = '2026-11-01-v';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2148,8 +2148,7 @@ const ENTREPOT_VERSION = '2026-11-01-u';
 
       '</div>' +
       (function () { const st = stockPour(it.ref); if (!st) return '';
-        if (st.propose && choixFiche(it.ref, st.key) === 'non') return '';
-        if (st.propose && !choixFiche(it.ref, st.key)) return '<div class="cle-stock"><span class="approx">🧰 Fiche stock proche : ' + esc(st.ref) + ' ?</span> — à confirmer en préparant · ' + noticeFiche(st) + '</div>'; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt' + (st.approx ? ' <span class="approx">≈ fiche ' + esc(st.ref) + '</span> ' + noticeFiche(st) : '') + ' · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
+        if (st.propose && choixFiche(it.ref, st.key) !== 'oui') return ''; const cs = cartonsDe(st), co = cs.find(c => c.cours); return '<div class="cle-stock">🧰 Suivi en entrepôt' + ' · ' + (co ? co.label + ' en cours — ' + co.reste + ' pièce' + (co.reste > 1 ? 's' : '') : 'aucun carton ouvert') + (cs.filter(c => c.scelle).length ? ' · ' + cs.filter(c => c.scelle).length + ' en réserve' : '') + '</div>'; })() +
       '<div class="cles">' + cle('piece', 'Pièce à envoyer', it.piece) + cle('ref', 'Réf', refAff, it.ref) + cle('empl', 'Emplacement', empl) + '</div>' +
       '<div class="photos">' + (imgs.length ? imgs.map(f =>
           '<button data-photo="' + f.id + '" title="' + esc(f.type_doc || f.nom) + '"><img loading="lazy" src="' + fichierUrl(f) + '" alt=""/>' +
