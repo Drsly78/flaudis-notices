@@ -319,6 +319,11 @@
   #sec-prepa .fs-pas button:disabled{opacity:.3;cursor:default;}
   #sec-prepa .fs-pas b{min-width:28px;text-align:center;font-size:13px;}
   #sec-prepa .fs-pas b.actif{color:#f87171;}
+  #sec-prepa .fs-bas{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:2px;}
+  #sec-prepa .fs-ouvrir{border:1px dashed var(--orange);background:rgba(232,97,26,.08);color:var(--orange);font-size:12.5px;font-weight:700;border-radius:8px;padding:6px 10px;}
+  #sec-prepa .fs-ouvrir.fort{border-style:solid;background:rgba(232,97,26,.16);}
+  #sec-prepa .fs-ouvrir.arme{border-style:solid;background:var(--orange);color:#fff;}
+  #sec-prepa .fs-p .fs-lect{font-size:11px;color:var(--muted);text-align:right;}
   #sec-prepa .fs-reserve{border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:2px 0;}
   #sec-prepa .fs-carton.scelle{opacity:.75;border-style:dashed;}
   #sec-prepa .fs-recap{font-size:12px;color:#fbbf24;margin-top:4px;min-height:16px;}
@@ -365,6 +370,7 @@
     #sec-prepa .fs-p .bar{grid-area:bar;align-self:center;max-width:150px;}
     #sec-prepa .fs-p .q{grid-area:bar;justify-self:end;margin-right:4px;}
     #sec-prepa .fs-p .fs-pas{grid-area:pas;}
+    #sec-prepa .fs-p .fs-lect{grid-area:pas;}
     #sec-prepa .pp-head{padding:10px 12px;}
     #sec-prepa .pp-l2{flex-direction:column;}
     #sec-prepa .pp-seg{display:flex;}
@@ -1941,7 +1947,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-n';
+const ENTREPOT_VERSION = '2026-11-01-o';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2264,6 +2270,15 @@ const ENTREPOT_VERSION = '2026-11-01-n';
     if (cours) cours.cours = true;
     return liste;
   }
+  // 📦 Ouvrir un carton — même action que le bouton de l'onglet « Pièces » (premier carton scellé, sinon un neuf)
+  function boutonOuvrir(st, cartons, cle) {
+    const prochain = cartons.find(c => c.scelle && /^c\d+$/.test(c.cid));
+    const neuf = !prochain && sortPids(st.pieces).some(pid => (st.pieces[pid].initial || 0) > 0);
+    if (!prochain && !neuf) return '';
+    const lib = prochain ? 'Ouvrir le ' + prochain.label.toLowerCase() + ' (réserve)' : 'Ouvrir un nouveau carton';
+    const fort = !cartons.some(c => c.cours);
+    return '<button class="fs-ouvrir' + (fort ? ' fort' : '') + '" type="button" data-ouvrir="' + esc(st.key) + '" data-lib="' + esc(lib) + '" title="Pièce épuisée dans le carton en cours ? Ouvre le suivant — il s\u2019ouvre aussi dans l\u2019onglet Pièces">📦 ' + esc(lib) + '</button>';
+  }
   function stockHtml(it) {
     const st = stockPour(it.ref);
     if (!st) return '';
@@ -2271,12 +2286,13 @@ const ENTREPOT_VERSION = '2026-11-01-n';
     const ouverts = cartons.filter(c => !c.scelle), reserve = cartons.filter(c => c.scelle);
     const ret = (FEN.retraits[it.cle] = FEN.retraits[it.cle] || {});
     const ligne = (c, l) => {
-      const k = st.key + '|' + l.pid + '|' + c.cid, n = ret[k] || 0, pct = l.init ? l.qte / l.init : 0;
+      const k = st.key + '|' + l.pid + '|' + c.cid, n = c.scelle ? 0 : (ret[k] || 0), pct = l.init ? l.qte / l.init : 0;
       const col = l.qte === 0 ? '#f87171' : pct < 0.3 ? '#fbbf24' : '#4ade80';
       return '<div class="fs-p"><span class="nom" title="' + esc(l.nom) + '">' + esc(l.nom) + '</span>' +
         '<div class="bar"><i style="width:' + Math.round(pct * 100) + '%;background:' + col + '"></i></div>' +
         '<span class="q" style="color:' + col + '">' + (n ? l.qte + ' → <span class="apres">' + (l.qte - n) + '</span>' : l.qte + '/' + l.init) + '</span>' +
-        '<span class="fs-pas"><button class="moins" data-k="' + esc(k) + '" data-d="1"' + (l.qte - n <= 0 ? ' disabled' : '') + ' title="Retirer 1 pièce">−</button><b class="' + (n ? 'actif' : '') + '">' + (n ? '−' + n : '0') + '</b><button class="plus" data-k="' + esc(k) + '" data-d="-1"' + (n <= 0 ? ' disabled' : '') + ' title="Annuler 1">+</button></span></div>';
+        (c.scelle ? '<span class="fs-lect">scellé</span></div>' : '') +
+        (c.scelle ? '' : '<span class="fs-pas"><button class="moins" data-k="' + esc(k) + '" data-d="1"' + (l.qte - n <= 0 ? ' disabled' : '') + ' title="Retirer 1 pièce">−</button><b class="' + (n ? 'actif' : '') + '">' + (n ? '−' + n : '0') + '</b><button class="plus" data-k="' + esc(k) + '" data-d="-1"' + (n <= 0 ? ' disabled' : '') + ' title="Annuler 1">+</button></span></div>');
     };
     const bloc = (c) => '<div class="fs-carton' + (c.cours ? ' cours' : '') + (c.scelle ? ' scelle' : '') + '"><div class="fs-ct">' + esc(c.label) + (c.cours ? ' · en cours' : '') + (c.scelle ? ' · en réserve (scellé)' : '') + '<span class="tot">' + c.reste + ' pièce' + (c.reste > 1 ? 's' : '') + '</span></div>' +
       c.lignes.map(l => ligne(c, l)).join('') + '</div>';
@@ -2287,7 +2303,11 @@ const ENTREPOT_VERSION = '2026-11-01-n';
       '<div class="fs-tete">🧰 Stock entrepôt · ' + esc(st.ref) + ' <small>— retire ce que tu as pris du carton</small>' +
         '<span class="fs-etat ' + (fait ? 'fait' : 'a-faire') + '">' + (total ? '✅ −' + total : rien ? '✅ rien pris' : 'À indiquer') + '</span></div>' +
       (ouverts.length ? ouverts.map(bloc).join('') : '<div class="fs-recap" style="color:var(--muted)">Aucun carton ouvert.</div>') +
-      (reserve.length ? (FEN.reserveVue[it.cle] ? reserve.map(bloc).join('') : '<button class="fs-reserve" data-reserve="' + esc(it.cle) + '">＋ ' + reserve.length + ' carton' + (reserve.length > 1 ? 's' : '') + ' en réserve</button>') : '') +
+      (reserve.length && FEN.reserveVue[it.cle] ? reserve.map(bloc).join('') : '') +
+      '<div class="fs-bas">' +
+        (reserve.length && !FEN.reserveVue[it.cle] ? '<button class="fs-reserve" data-reserve="' + esc(it.cle) + '">＋ ' + reserve.length + ' carton' + (reserve.length > 1 ? 's' : '') + ' en réserve</button>' : '') +
+        boutonOuvrir(st, cartons, it.cle) +
+      '</div>' +
       '<div class="fs-recap">' + (total ? '🧰 ' + total + (total > 1 ? ' pièces seront déduites' : ' pièce sera déduite') + ' du stock à la validation' : '') + '</div>' +
       (total ? '' : '<label class="fs-rien"><input type="checkbox" data-rien="' + esc(it.cle) + '"' + (rien ? ' checked' : '') + '/>Je n\u2019ai rien pris dans ce stock (pièce venue d\u2019ailleurs)</label>') +
       '<div class="fs-sync">⟳ synchronisé en direct avec l\u2019onglet « Pièces » des notices</div>' +
@@ -2303,6 +2323,22 @@ const ENTREPOT_VERSION = '2026-11-01-n';
   const stockAIndiquer = () => FEN ? FEN.candidats.filter(i => FEN.cochees.has(i.cle) && stockPour(i.ref) &&
     !FEN.sansRetrait[i.cle] && !Object.values(FEN.retraits[i.cle] || {}).some(n => n > 0)) : [];
   const nbRetraits = () => FEN ? Object.entries(FEN.retraits).filter(([c]) => FEN.cochees.has(c)).reduce((t, [, r]) => t + Object.values(r).reduce((a, b) => a + b, 0), 0) : 0;
+
+  // Remet dans leur carton d'origine les pièces retirées à la préparation (annulation)
+  async function remettreEnStock(retraits) {
+    const out = { ok: 0, perdu: 0 };
+    for (const [k, nb0] of Object.entries(retraits || {})) {
+      const nb = parseInt(nb0, 10) || 0; if (nb <= 0) continue;
+      const [key, pid, cid] = k.split('|');
+      const carton = ((((fbData[key] || {}).pieces || {})[pid] || {}).cartons || {})[cid];
+      if (!carton) { out.perdu += nb; continue; }
+      try {
+        await db.ref('produits/' + key + '/pieces/' + pid + '/cartons/' + cid + '/qte').transaction(q => (parseInt(q, 10) || 0) + nb);
+        out.ok += nb;
+      } catch (e) { out.perdu += nb; }
+    }
+    return out;
+  }
 
   // ── Fenêtre « Préparer » ──
   let FEN = null;
@@ -2385,6 +2421,20 @@ const ENTREPOT_VERSION = '2026-11-01-n';
   $('pp-f-dossiers').addEventListener('click', e => {
     const r = e.target.closest('[data-reserve]');
     if (r) { e.preventDefault(); FEN.reserveVue[r.dataset.reserve] = true; majStocks(); return; }
+    const o = e.target.closest('[data-ouvrir]');
+    if (o) {
+      e.preventDefault();
+      if (!o.classList.contains('arme')) {   // 1er appui : on demande confirmation sur le bouton lui-même
+        o.classList.add('arme'); o.textContent = '📦 Confirmer : ' + o.dataset.lib.charAt(0).toLowerCase() + o.dataset.lib.slice(1) + ' ?';
+        clearTimeout(o._t); o._t = setTimeout(() => { if (o.isConnected) { o.classList.remove('arme'); o.textContent = '📦 ' + o.dataset.lib; } }, 4000);
+        return;
+      }
+      clearTimeout(o._t); o.disabled = true;
+      Promise.resolve(window.openCarton(o.dataset.ouvrir, { stopPropagation() {} }))
+        .then(() => toast('📦 Carton ouvert — il apparaît aussi dans l\u2019onglet « Pièces »', 3000))
+        .catch(err => { toast('⚠️ Ouverture impossible : ' + (err && err.message || err), 5000); o.disabled = false; });
+      return;
+    }
     const b = e.target.closest('.fs-pas button[data-k]');
     if (!b || b.disabled) return;
     e.preventDefault();
@@ -2436,7 +2486,9 @@ const ENTREPOT_VERSION = '2026-11-01-n';
     const btn = $('pp-f-valider');
     btn.disabled = true;
     try {
-      const d = await api('preparer', { cles, lignes, transporteur: FEN.t, colis: FEN.colis });
+      const retraits = {};
+      cles.forEach(c => { const r = FEN.retraits[c] || {}; if (Object.values(r).some(n => n > 0)) retraits[c] = r; });
+      const d = await api('preparer', { cles, lignes, transporteur: FEN.t, colis: FEN.colis, retraits });
       let deduites = 0;
       for (const c of cles) {
         for (const [k, nb] of Object.entries(FEN.retraits[c] || {})) {
@@ -2448,7 +2500,7 @@ const ENTREPOT_VERSION = '2026-11-01-n';
         }
       }
       const maintenant = new Date().toISOString();
-      cles.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) { it.prepare = true; it.colis = d.colis; it.transporteur = d.transporteur; if (!it.prepare_le) it.prepare_le = maintenant; } });
+      cles.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) { it.prepare = true; it.colis = d.colis; it.transporteur = d.transporteur; it.stock_retraits = retraits[c] || null; if (!it.prepare_le) it.prepare_le = maintenant; } });
       fermerFen();
       rendre();
       toast('📦 Colis ' + d.colis + ' · ' + d.transporteur + ' — ' + cles.length + ' dossier' + (cles.length > 1 ? 's' : '') + ' préparé' + (cles.length > 1 ? 's' : '') + (deduites ? ' · 🧰 ' + deduites + ' pièce' + (deduites > 1 ? 's' : '') + ' déduite' + (deduites > 1 ? 's' : '') + ' du stock' : '') + ' — pense à « ✍️ Écrire les x »', 4500);
@@ -2499,13 +2551,18 @@ const ENTREPOT_VERSION = '2026-11-01-n';
       if (!it) return;
       if (b.dataset.act === 'prep') { ouvrirPreparer([cle]); return; }
       if (b.dataset.act === 'annuler') {
-        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + (it.x ? '\nLe « x » sera enlevé du Sheet.' : ''))) return;
+        const aRendre = Object.values(it.stock_retraits || {}).reduce((t, n) => t + (parseInt(n, 10) || 0), 0);
+        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + (it.x ? '\nLe « x » sera enlevé du Sheet.' : '') +
+          (aRendre ? '\n🧰 ' + aRendre + (aRendre > 1 ? ' pièces seront remises' : ' pièce sera remise') + ' dans le stock (carton d\u2019origine).' : ''))) return;
         b.disabled = true;
         try {
-          await api('annuler', { cle, ligne: it.ligne });
-          it.prepare = false; it.colis = null; it.prepare_le = null; it.x = false;
+          const d = await api('annuler', { cle, ligne: it.ligne });
+          const rendues = await remettreEnStock(d.stock_retraits);
+          it.prepare = false; it.colis = null; it.prepare_le = null; it.x = false; it.stock_retraits = null;
           rendre();
-          toast('↩︎ ' + (it.cnb || it.fla) + ' remis « à préparer »');
+          toast('↩︎ ' + (it.cnb || it.fla) + ' remis « à préparer »' +
+            (rendues.ok ? ' · 🧰 ' + rendues.ok + (rendues.ok > 1 ? ' pièces remises' : ' pièce remise') + ' en stock' : '') +
+            (rendues.perdu ? ' · ⚠️ ' + rendues.perdu + ' non remise(s) : carton supprimé entre-temps, corrige dans l\u2019onglet Pièces' : ''), rendues.perdu ? 7000 : 4000);
         } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 4500); b.disabled = false; }
       }
       return;
