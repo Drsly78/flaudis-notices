@@ -42,6 +42,19 @@
   .mb-novis{background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.3);}
   .detail-panel{display:none;border-top:1px solid var(--border);}
   .tabs{display:flex;border-bottom:1px solid var(--border);background:#0d0d0d;}
+  .smp-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:12px;}
+  .smp-ph{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface2);padding:0;cursor:pointer;}
+  .smp-ph img{width:100%;height:100%;object-fit:cover;display:block;}
+  .smp-ph.charge{background:linear-gradient(90deg,#1c1c1c,#262626,#1c1c1c);background-size:200% 100%;animation:smpCharge 1.2s infinite;}
+  @keyframes smpCharge{to{background-position:-200% 0}}
+  .smp-ph-vide{grid-column:1/-1;color:var(--muted);font-size:12.5px;text-align:center;padding:14px 0;}
+  .smp-ajout-ph{display:block;text-align:center;padding:12px;border-radius:10px;border:1.5px dashed var(--orange);color:var(--orange);font-weight:700;font-size:13px;cursor:pointer;background:rgba(232,97,26,0.06);}
+  .smp-ph-etat{font-size:12px;color:var(--muted);text-align:center;min-height:16px;margin-top:6px;}
+  #smp-lb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:none;align-items:center;justify-content:center;}
+  #smp-lb img{max-width:96vw;max-height:84vh;border-radius:8px;}
+  #smp-lb .x{position:absolute;top:14px;right:14px;width:42px;height:42px;border-radius:50%;border:1px solid #444;background:#1c1c1c;color:#fff;font-size:18px;cursor:pointer;}
+  #smp-lb .sup{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:10px;border:1px solid rgba(239,68,68,.5);background:rgba(239,68,68,.15);color:#f87171;font-weight:700;cursor:pointer;}
+
   .tab-btn{flex:1;padding:10px 6px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;transition:all 0.15s;}
   .tab-btn.active{color:var(--orange);border-bottom-color:var(--orange);}
   .tab-content{display:none;padding:16px;background:#111;}
@@ -1393,11 +1406,12 @@ window.togglePanel=function(key){
   if(p) p.style.display=p.style.display==='block'?'none':'block';
 };
 window.showTab=function(key,tab,btn){
-  ['loc','pieces','inf','boxc'].forEach(t=>{
+  ['loc','pieces','inf','boxc','pho'].forEach(t=>{
     document.getElementById('tab-'+t+'-'+key)?.classList.toggle('active',t===tab);
   });
   btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  if(tab==='pho' && key.startsWith(SMP_PREFIX)) smpPhotosCharger(key);
 };
 window.toggleCarton=function(id){
   const el=document.getElementById(id),arr=document.getElementById('arr-'+id);
@@ -1735,7 +1749,7 @@ function renderSamples() {
     return;
   }
   zone.innerHTML = liste.map(({ id, d, n }, i) => {
-    const key = 'smp-' + id, ls = smpLocLabel(d), qte = parseInt(d.qte) || 0;
+    const key = 'smp-' + id, ls = smpLocLabel(d), qte = parseInt(d.qte) || 0, nbPh = Object.keys(d.photos || {}).length;
     const ong = onglets[key] || 'loc';
     return '<div class="notice-card" style="animation-delay:' + Math.min(i * 30, 300) + 'ms" id="card-' + key + '">' +
       '<div class="notice-main" onclick="togglePanel(\'' + key + '\')">' +
@@ -1746,13 +1760,20 @@ function renderSamples() {
           (ls ? '<span class="mini-badge mb-loc">📍 ' + escB(ls) + '</span>' : '') +
           '<span class="mini-badge" style="background:rgba(14,165,233,0.18);color:#7dd3fc;border:1px solid rgba(14,165,233,0.35)">🏷 ×' + qte + '</span>' +
           (d.note ? '<span class="mini-badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)" title="' + escB(d.note) + '">📝</span>' : '') +
+          (nbPh ? '<span class="mini-badge" style="background:rgba(167,139,250,0.15);color:#c4b5fd;border:1px solid rgba(167,139,250,0.35)">📷 ' + nbPh + '</span>' : '') +
         '</div></div>' +
         (n ? '<a href="' + escB(n.githubUrl) + '" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0">Notice</a>' : '') +
       '</div>' +
       '<div class="detail-panel" id="panel-' + key + '"' + (SMP_OUVERTS[key] ? ' style="display:block"' : '') + '>' +
         '<div class="tabs">' +
           '<button class="tab-btn' + (ong === 'loc' ? ' active' : '') + '" data-t="loc" onclick="showTab(\'' + key + '\',\'loc\',this)">📍 Emplacement</button>' +
+          '<button class="tab-btn' + (ong === 'pho' ? ' active' : '') + '" data-t="pho" onclick="showTab(\'' + key + '\',\'pho\',this)">📷 Photos' + (nbPh ? ' (' + nbPh + ')' : '') + '</button>' +
           '<button class="tab-btn' + (ong === 'inf' ? ' active' : '') + '" data-t="inf" onclick="showTab(\'' + key + '\',\'inf\',this)">ℹ️ Info</button>' +
+        '</div>' +
+        '<div class="tab-content' + (ong === 'pho' ? ' active' : '') + '" id="tab-pho-' + key + '">' +
+          '<div class="smp-grille" id="smp-ph-' + key + '">' + smpGrille(key) + '</div>' +
+          '<label class="smp-ajout-ph"><input type="file" accept="image/*" multiple data-k="' + key + '" onchange="smpPhotosAjouter(this)" hidden/>📷 Ajouter des photos</label>' +
+          '<div class="smp-ph-etat" id="smp-ph-etat-' + key + '"></div>' +
         '</div>' +
         '<div class="tab-content' + (ong === 'loc' ? ' active' : '') + '" id="tab-loc-' + key + '">' + buildLocTab(key) + '</div>' +
         '<div class="tab-content' + (ong === 'inf' ? ' active' : '') + '" id="tab-inf-' + key + '">' +
@@ -1776,7 +1797,88 @@ function renderSamples() {
     '</div>';
   }).join('');
   Object.keys(tiroirs).forEach(id => { const b = document.getElementById(id); if (b && tiroirs[id]) { b.style.display = ''; const ar = document.getElementById(id.replace('locbody-', 'arrloc-')); if (ar) ar.textContent = '▼'; } });
+  zone.querySelectorAll('.tab-content.active[id^="tab-pho-"]').forEach(t => smpPhotosCharger(t.id.replace('tab-pho-', '')));
 }
+// ── Photos des samples : stockées à part (samples_photos/{id}/{pid}), index léger dans samples/{id}/photos ──
+const SMP_PHOTOS = {};   // cache : id → { pid: dataURL }
+function smpGrille(key) {
+  const id = key.slice(SMP_PREFIX.length), idx = (smpData[id] && smpData[id].photos) || {}, cache = SMP_PHOTOS[id];
+  const pids = Object.keys(idx).sort((a, b) => (idx[a] || 0) - (idx[b] || 0));
+  if (!pids.length) return '<div class="smp-ph-vide">Aucune photo — ajoute-en depuis ton téléphone 📷</div>';
+  return pids.map(pid => cache && cache[pid]
+    ? '<button class="smp-ph" data-k="' + key + '" data-pid="' + pid + '" onclick="smpPhotoVoir(this.dataset.k,this.dataset.pid)"><img src="' + cache[pid] + '" alt=""/></button>'
+    : '<div class="smp-ph charge"></div>').join('');
+}
+window.smpPhotosCharger = function(key, force) {
+  const id = key.slice(SMP_PREFIX.length);
+  const idx = (smpData[id] && smpData[id].photos) || {};
+  const manque = !SMP_PHOTOS[id] || Object.keys(idx).some(pid => !SMP_PHOTOS[id][pid]);
+  const g = document.getElementById('smp-ph-' + key);
+  if (!manque && !force) { if (g) g.innerHTML = smpGrille(key); return; }
+  db.ref('samples_photos/' + id).once('value').then(snap => {
+    const v = snap.val() || {};
+    SMP_PHOTOS[id] = {}; Object.keys(v).forEach(pid => { if (v[pid] && v[pid].data) SMP_PHOTOS[id][pid] = v[pid].data; });
+    const g2 = document.getElementById('smp-ph-' + key); if (g2) g2.innerHTML = smpGrille(key);
+  }).catch(fbErr);
+};
+// réduite à 1600 px max en JPEG avant l'envoi (photos de téléphone : plusieurs Mo → ~200 Ko)
+function smpReduire(file) {
+  return new Promise((ok, ko) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const m = 1600, r = Math.min(1, m / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL('image/jpeg', 0.78));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('image illisible')); };
+    img.src = url;
+  });
+}
+window.smpPhotosAjouter = async function(inp) {
+  const key = inp.dataset.k, id = key.slice(SMP_PREFIX.length);
+  const files = [...(inp.files || [])]; inp.value = '';
+  if (!files.length) return;
+  const etat = document.getElementById('smp-ph-etat-' + key);
+  let ok = 0;
+  for (const f of files) {
+    if (etat) etat.textContent = '⏳ Envoi ' + (ok + 1) + '/' + files.length + '…';
+    try {
+      const data = await smpReduire(f);
+      const r = db.ref('samples_photos/' + id).push();
+      await r.set({ data, ts: Date.now() });
+      (SMP_PHOTOS[id] = SMP_PHOTOS[id] || {})[r.key] = data;
+      await db.ref('samples/' + id + '/photos/' + r.key).set(Date.now());
+      ok++;
+    } catch (e) { if (etat) etat.textContent = '⚠️ ' + (e.message || e); }
+  }
+  if (etat && ok) { etat.textContent = '✓ ' + ok + ' photo' + (ok > 1 ? 's' : '') + ' ajoutée' + (ok > 1 ? 's' : ''); setTimeout(() => { etat.textContent = ''; }, 2500); }
+  const g = document.getElementById('smp-ph-' + key); if (g) g.innerHTML = smpGrille(key);
+};
+window.smpPhotoVoir = function(key, pid) {
+  const id = key.slice(SMP_PREFIX.length), src = (SMP_PHOTOS[id] || {})[pid];
+  if (!src) return;
+  let lb = document.getElementById('smp-lb');
+  if (!lb) {
+    lb = document.createElement('div'); lb.id = 'smp-lb';
+    lb.innerHTML = '<img alt=""/><button class="x" title="Fermer">✕</button><button class="sup" title="Supprimer la photo">🗑 Supprimer</button>';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', e => { if (e.target === lb || e.target.classList.contains('x')) lb.style.display = 'none'; });
+    lb.querySelector('.sup').addEventListener('click', () => {
+      if (!confirm('Supprimer cette photo ?')) return;
+      const i2 = lb.dataset.id, p2 = lb.dataset.pid, k2 = lb.dataset.key;
+      db.ref('samples_photos/' + i2 + '/' + p2).remove().catch(fbErr);
+      db.ref('samples/' + i2 + '/photos/' + p2).remove().catch(fbErr);
+      if (SMP_PHOTOS[i2]) delete SMP_PHOTOS[i2][p2];
+      lb.style.display = 'none';
+      const g = document.getElementById('smp-ph-' + k2); if (g) g.innerHTML = smpGrille(k2);
+    });
+  }
+  lb.dataset.id = id; lb.dataset.pid = pid; lb.dataset.key = key;
+  lb.querySelector('img').src = src;
+  lb.style.display = 'flex';
+};
 window.smpAdj = function(key, d) { const i = document.getElementById('smp-q-' + key); if (i) i.value = Math.max(0, (parseInt(i.value) || 0) + d); };
 const smpOk = btn => { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => { btn.textContent = t; }, 1500); };
 window.smpSaveQte = function(btn) {
@@ -1794,6 +1896,8 @@ window.smpSupprimer = function(btn) {
   const id = btn.dataset.k.slice(SMP_PREFIX.length);
   delete SMP_OUVERTS[btn.dataset.k];
   db.ref('samples/' + id).remove().catch(fbErr);
+  db.ref('samples_photos/' + id).remove().catch(() => {});
+  delete SMP_PHOTOS[id];
 };
 
 // ── Plan entrepôt ─────────────────────────────────────────
@@ -2012,7 +2116,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-02-b';
+const ENTREPOT_VERSION = '2026-11-02-c';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
