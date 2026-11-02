@@ -53,6 +53,8 @@
   #smp-lb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:none;align-items:center;justify-content:center;}
   #smp-lb img{max-width:96vw;max-height:84vh;border-radius:8px;}
   #smp-lb .x{position:absolute;top:14px;right:14px;width:42px;height:42px;border-radius:50%;border:1px solid #444;background:#1c1c1c;color:#fff;font-size:18px;cursor:pointer;}
+  #smp-lb .aide{position:absolute;top:24px;left:16px;color:#aaa;font-size:12px;}
+  #smp-lb{overflow:hidden;}
   #smp-lb .sup{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:10px;border:1px solid rgba(239,68,68,.5);background:rgba(239,68,68,.15);color:#f87171;font-weight:700;cursor:pointer;}
 
   .tab-btn{flex:1;padding:10px 6px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;transition:all 0.15s;}
@@ -1856,14 +1858,66 @@ window.smpPhotosAjouter = async function(inp) {
   if (etat && ok) { etat.textContent = '✓ ' + ok + ' photo' + (ok > 1 ? 's' : '') + ' ajoutée' + (ok > 1 ? 's' : ''); setTimeout(() => { etat.textContent = ''; }, 2500); }
   const g = document.getElementById('smp-ph-' + key); if (g) g.innerHTML = smpGrille(key);
 };
+// Zoom sur une photo agrandie : molette, double-clic / double-tap, pincement à deux doigts, glisser pour se déplacer
+function zoomPhoto(img, conteneur) {
+  const z = { s: 1, x: 0, y: 0, pts: new Map(), d0: 0, s0: 1, glisse: null, dernierTap: 0, bouge: false };
+  const appliquer = () => {
+    if (z.s <= 1.01) { z.s = 1; z.x = 0; z.y = 0; }
+    const r = img.getBoundingClientRect(), lw = r.width / z.s, lh = r.height / z.s;
+    const mx = Math.max(0, (lw * z.s - lw) / 2), my = Math.max(0, (lh * z.s - lh) / 2);
+    z.x = Math.max(-mx, Math.min(mx, z.x)); z.y = Math.max(-my, Math.min(my, z.y));
+    img.style.transform = 'translate(' + z.x + 'px,' + z.y + 'px) scale(' + z.s + ')';
+    img.style.cursor = z.s > 1 ? 'grab' : 'zoom-in';
+  };
+  const zoomer = (f, cx, cy) => {
+    const r = img.getBoundingClientRect();
+    const ox = cx - (r.left + r.width / 2), oy = cy - (r.top + r.height / 2);
+    const ns = Math.max(1, Math.min(6, z.s * f)), k = ns / z.s;
+    z.x = z.x - ox * (k - 1); z.y = z.y - oy * (k - 1); z.s = ns; appliquer();
+  };
+  img.style.transition = 'transform .08s ease-out';
+  img.style.touchAction = 'none';
+  img.draggable = false;
+  img.addEventListener('wheel', e => { e.preventDefault(); zoomer(e.deltaY < 0 ? 1.25 : 0.8, e.clientX, e.clientY); }, { passive: false });
+  img.addEventListener('dblclick', e => { e.stopPropagation(); if (z.s > 1) { z.s = 1; appliquer(); } else zoomer(2.5, e.clientX, e.clientY); });
+  img.addEventListener('click', e => e.stopPropagation());   // un clic sur la photo ne ferme pas l'aperçu
+  img.addEventListener('pointerdown', e => {
+    img.setPointerCapture(e.pointerId);
+    z.pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); z.bouge = false;
+    if (z.pts.size === 2) { const [a, b] = [...z.pts.values()]; z.d0 = Math.hypot(a.x - b.x, a.y - b.y); z.s0 = z.s; z.glisse = null; }
+    else if (z.s > 1) z.glisse = { x: e.clientX - z.x, y: e.clientY - z.y };
+  });
+  img.addEventListener('pointermove', e => {
+    if (!z.pts.has(e.pointerId)) return;
+    z.pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); z.bouge = true;
+    if (z.pts.size === 2) {
+      const [a, b] = [...z.pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (z.d0) { const cible = Math.max(1, Math.min(6, z.s0 * d / z.d0)); zoomer(cible / z.s, (a.x + b.x) / 2, (a.y + b.y) / 2); }
+    } else if (z.glisse) { z.x = e.clientX - z.glisse.x; z.y = e.clientY - z.glisse.y; img.style.transition = 'none'; appliquer(); }
+  });
+  const fin = e => {
+    z.pts.delete(e.pointerId); img.style.transition = 'transform .08s ease-out';
+    if (z.pts.size < 2) z.d0 = 0;
+    if (!z.pts.size) z.glisse = null;
+    if (e.type === 'pointerup' && e.pointerType === 'touch' && !z.bouge) {   // double-tap au doigt
+      const t = Date.now();
+      if (t - z.dernierTap < 300) { if (z.s > 1) { z.s = 1; appliquer(); } else zoomer(2.5, e.clientX, e.clientY); z.dernierTap = 0; }
+      else z.dernierTap = t;
+    }
+  };
+  img.addEventListener('pointerup', fin); img.addEventListener('pointercancel', fin);
+  return { reset: () => { z.s = 1; z.x = 0; z.y = 0; z.pts.clear(); img.style.transform = ''; img.style.cursor = 'zoom-in'; } };
+}
+let smpZoom = null;
 window.smpPhotoVoir = function(key, pid) {
   const id = key.slice(SMP_PREFIX.length), src = (SMP_PHOTOS[id] || {})[pid];
   if (!src) return;
   let lb = document.getElementById('smp-lb');
   if (!lb) {
     lb = document.createElement('div'); lb.id = 'smp-lb';
-    lb.innerHTML = '<img alt=""/><button class="x" title="Fermer">✕</button><button class="sup" title="Supprimer la photo">🗑 Supprimer</button>';
+    lb.innerHTML = '<img alt=""/><button class="x" title="Fermer">✕</button><div class="aide">Pince ou double-tape pour zoomer</div><button class="sup" title="Supprimer la photo">🗑 Supprimer</button>';
     document.body.appendChild(lb);
+    smpZoom = zoomPhoto(lb.querySelector('img'));
     lb.addEventListener('click', e => { if (e.target === lb || e.target.classList.contains('x')) lb.style.display = 'none'; });
     lb.querySelector('.sup').addEventListener('click', () => {
       if (!confirm('Supprimer cette photo ?')) return;
@@ -1876,6 +1930,7 @@ window.smpPhotoVoir = function(key, pid) {
     });
   }
   lb.dataset.id = id; lb.dataset.pid = pid; lb.dataset.key = key;
+  if (smpZoom) smpZoom.reset();
   lb.querySelector('img').src = src;
   lb.style.display = 'flex';
 };
@@ -2116,7 +2171,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-02-c';
+const ENTREPOT_VERSION = '2026-11-03-a';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
