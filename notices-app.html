@@ -851,6 +851,7 @@ function locLabel(d) {
   const parts = slots.map(s=>{
     const l=d[s]||{}; if(!l.allee) return null;
     if(l.allee==='SOL') return 'SOL';
+    if(l.allee==='HAM') return 'HAM C'+(l.conteneur!=null?l.conteneur:'?');
     let r='A'+l.allee;
     if(l.cote) r+=' '+l.cote;
     if(l.rack!=null) r+=' R'+l.rack;
@@ -1029,14 +1030,19 @@ function buildLocTab(key) {
 
 function buildLocBloc(key, slotId, idx, loc) {
   const ls=((window._ls||{})[key]||{})[slotId]||{};
-  const al=ls.allee!==undefined?ls.allee:(loc.allee||null);
+  // Lieu : MAGNY (allées/racks, données historiques) ou HAM (conteneurs) — dérivé de l'emplacement enregistré
+  const lieu=ls.lieu!==undefined?ls.lieu:(loc.allee==='HAM'?'HAM':(loc.allee?'MAGNY':null));
+  const isHam=lieu==='HAM';
+  let al=ls.allee!==undefined?ls.allee:(loc.allee||null);
+  if(al==='HAM') al=null;
   const co=ls.cote !==undefined?ls.cote :(loc.cote ||null);
   const ra=ls.rack !==undefined?ls.rack :(loc.rack ||null);
   const ha=ls.haut !==undefined?ls.haut :(loc.hauteur??null);
+  const ct=ls.cont !==undefined?ls.cont :(loc.allee==='HAM'?(loc.conteneur??null):null);
   const isArea = al==='AREA';
   const coteSol = co==='SOL';
   const rackMax = al==='1'?(coteSol?0:co==='G'?4:6):al==='2'?(coteSol?0:4):al==='3'?(coteSol?0:co==='G'?3:4):7;
-  const sum = isArea?'Zone AREA':(al?(coteSol?'Allée '+al+' · SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')):'' );
+  const sum = isHam?(ct!=null?'HAM · Conteneur '+ct:'HAM'):(isArea?'Zone AREA':(al?(coteSol?'Allée '+al+' · SOL':'Allée '+al+(co?' · '+co:'')+(ra?' · Rack '+ra:'')+(ha!=null?' · H'+ha:'')):'' ));
   const label=sum||('Emplacement '+(idx+1));
   function b(f,v,cur){
     const sel=cur===v||(typeof cur==='number'&&cur===Number(v));
@@ -1044,14 +1050,18 @@ function buildLocBloc(key, slotId, idx, loc) {
   }
   const body=
     '<div class="loc-summary">'+(sum?'<b>'+sum+'</b>':'Sélectionnez un emplacement')+'</div>'+
-    '<div class="loc-step on"><div class="loc-step-title active-step">Allée</div><div class="loc-btns">'+['1','2','3','AREA'].map(v=>b('allee',v,al)).join('')+'</div></div>'+
+    '<div class="loc-step on"><div class="loc-step-title active-step">Lieu</div><div class="loc-btns">'+['MAGNY','HAM'].map(v=>b('lieu',v,lieu)).join('')+'</div></div>'+
+    (isHam?
+      '<div class="loc-step on"><div class="loc-step-title">Conteneur</div><div class="loc-btns">'+[1,2].map(v=>b('cont',v,ct)).join('')+'</div></div>'
+    :
+    '<div class="loc-step on"><div class="loc-step-title">Allée</div><div class="loc-btns">'+['1','2','3','AREA'].map(v=>b('allee',v,al)).join('')+'</div></div>'+
     (isArea?'':
       '<div class="loc-step'+(al?' on':'')+'"><div class="loc-step-title">Côté</div><div class="loc-btns">'+['G','SOL','D'].map(v=>b('cote',v,co)).join('')+'</div></div>'+
       (coteSol?'':
         '<div class="loc-step'+(co?' on':'')+'"><div class="loc-step-title">Rack</div><div class="loc-btns">'+(rackMax>0?Array.from({length:rackMax},(_,i)=>i+1).map(v=>b('rack',v,ra)).join(''):'')+'</div></div>'+
         '<div class="loc-step'+(ra!=null?' on':'')+'"><div class="loc-step-title">Hauteur</div><div class="loc-btns">'+[0,1,2,3].map(v=>b('haut',v,ha)).join('')+'</div></div>'
       )
-    )+
+    ))+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locSave(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--orange);color:white;font-size:13px;font-weight:700;cursor:pointer">&#x1F4BE; Enregistrer</button>'+
       '<button data-key="'+key+'" data-slot="'+slotId+'" onclick="locDel(this)" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-size:13px">&#x1F5D1;</button>'+
@@ -1074,13 +1084,15 @@ window.locToggle=function(id){
 };
 window.locPick=function(btn){
   const key=btn.dataset.key,slotId=btn.dataset.slot,field=btn.dataset.field;
-  const val=['rack','haut'].includes(field)?Number(btn.dataset.val):btn.dataset.val;
+  const val=['rack','haut','cont'].includes(field)?Number(btn.dataset.val):btn.dataset.val;
   if(!window._ls)window._ls={};
   if(!window._ls[key])window._ls[key]={};
   if(!window._ls[key][slotId])window._ls[key][slotId]={};
   const ls=window._ls[key][slotId];
   ls[field]=ls[field]===val?null:val;
-  if(field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;}
+  // changer de lieu repart d'une sélection vide (les étapes de l'autre lieu ne s'appliquent pas)
+  if(field==='lieu'){ls.allee=null;ls.cote=null;ls.rack=null;ls.haut=null;ls.cont=null;}
+  if(field==='allee'){delete ls.cote;delete ls.rack;delete ls.haut;if(ls.lieu===undefined||ls.lieu===null)ls.lieu=ls.allee?'MAGNY':ls.lieu;}
   if(field==='cote'){delete ls.rack;delete ls.haut;}
   if(field==='rack'){delete ls.haut;}
   const bodyEl=document.getElementById('locbody-'+key+'-'+slotId);
@@ -1096,16 +1108,23 @@ window.locSave=function(btn){
   const key=btn.dataset.key,slotId=btn.dataset.slot;
   const d=fbData[key]||{},loc=d[slotId]||{};
   const ls=((window._ls||{})[key]||{})[slotId]||{};
-  const al=ls.allee!==undefined?ls.allee:(loc.allee||null);
+  const lieu=ls.lieu!==undefined?ls.lieu:(loc.allee==='HAM'?'HAM':(loc.allee?'MAGNY':null));
+  let al=ls.allee!==undefined?ls.allee:(loc.allee||null);
+  if(al==='HAM') al=null;
   const co=ls.cote !==undefined?ls.cote :(loc.cote ||null);
   const ra=ls.rack !==undefined?ls.rack :(loc.rack ||null);
   const ha=ls.haut !==undefined?ls.haut :(loc.hauteur??null);
+  const ct=ls.cont !==undefined?ls.cont :(loc.allee==='HAM'?(loc.conteneur??null):null);
+  if(lieu==='HAM'&&ct==null){alert('Choisis le conteneur (1 ou 2).');return;}
   btn.textContent='⏳…';btn.disabled=true;
   const nl={};
+  if(lieu==='HAM'){nl.allee='HAM';nl.conteneur=ct;}
+  else {
   if(al)nl.allee=al;
   if(al!=='AREA'&&co)nl.cote=co;
   if(al!=='AREA'&&co!=='SOL'&&ra!=null)nl.rack=ra;
   if(al!=='AREA'&&co!=='SOL'&&ha!=null)nl.hauteur=ha;
+  }
   db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
     if(window._ls?.[key])delete window._ls[key][slotId];
     btn.textContent='✓';
@@ -1801,7 +1820,8 @@ function getPlanData() {
       if(!loc||!loc.allee) return;
       const al = loc.allee, co = loc.cote||'', ra = loc.rack, ha = loc.hauteur;
       let k;
-      if(al==='AREA') k = 'AREA';
+      if(al==='HAM') { if(loc.conteneur==null) return; k = 'HAM'+loc.conteneur; }
+      else if(al==='AREA') k = 'AREA';
       else if(co==='SOL') k = 'A'+al+'SOL';
       else if(co&&ra!=null&&ha!=null) k = 'A'+al+co+'R'+ra+'H'+ha;
       else return;
@@ -1834,11 +1854,30 @@ function renderPlan() {
   const panel = document.getElementById('plan-panel');
   const planData = getPlanData();
   const curPH = panel.dataset.h !== undefined ? panel.dataset.h : 'all';
+  const site = panel.dataset.site || 'MAGNY';
+  const bascule = '<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden">'+
+    [['MAGNY','🏭 MAGNY'],['HAM','📦 HAM']].map(([v,l])=>'<button data-site="'+v+'" onclick="setPlanSite(this.dataset.site)" style="padding:8px 18px;border:0;'+(v==='HAM'?'border-left:1px solid var(--border);':'')+'background:'+(site===v?'var(--orange)':'var(--surface2)')+';color:'+(site===v?'white':'var(--muted)')+';font-size:12px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">'+l+'</button>').join('')+'</div></div>';
+  if(site==='HAM'){
+    let h='<div style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:3px;color:var(--orange);text-align:center;margin-bottom:10px">STOCKAGE HAM</div>'+bascule;
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+    [1,2].forEach(n=>{
+      const pr=planData['HAM'+n]||[],oc=pr.length>0;
+      h+='<div data-pa="HAM" data-ps="CONT" data-pr="'+n+'" onclick="openPlanDetail(this.dataset.pa,this.dataset.ps,this.dataset.pr)" style="height:120px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px solid '+(oc?'rgba(52,211,153,0.5)':'#242424')+';background:'+(oc?'rgba(52,211,153,0.08)':'#181818')+'">'+
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:'+(oc?'#34d399':'var(--muted)')+'">CONTENEUR '+n+'</div>'+
+        (oc?'<div style="font-size:12px;font-weight:700;color:#34d399">'+pr.length+' produit'+(pr.length>1?'s':'')+'</div>':'<div style="font-size:11px;color:var(--muted)">Vide</div>')+
+      '</div>';
+    });
+    h+='</div>';
+    panel.innerHTML=h;
+    panel.dataset.h=curPH;
+    ensurePlanOverlay();
+    return;
+  }
 
   function rackOcc(a,s,r){const hs=curPH==='all'?[0,1,2,3]:[+curPH];return hs.some(h=>planData['A'+a+s+'R'+r+'H'+h]?.length>0);}
   function rackCnt(a,s,r){const hs=curPH==='all'?[0,1,2,3]:[+curPH];let n=0;hs.forEach(h=>{n+=(planData['A'+a+s+'R'+r+'H'+h]?.length||0);});return n;}
 
-  let html='<div style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:3px;color:var(--orange);text-align:center;margin-bottom:10px">PLAN DE L&#39;ENTREPÔT</div>';
+  let html='<div style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:3px;color:var(--orange);text-align:center;margin-bottom:10px">PLAN DE L&#39;ENTREPÔT</div>'+bascule;
   html+='<div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;justify-content:center">';
   [{v:"all",l:"Tout"},{v:"0",l:"H0 Sol"},{v:"1",l:"H1"},{v:"2",l:"H2"},{v:"3",l:"H3 Haut"}].forEach(h=>{
     const a=curPH===h.v;
@@ -1880,17 +1919,31 @@ function renderPlan() {
   panel.innerHTML=html;
   panel.dataset.h=curPH;
 
+  ensurePlanOverlay();
+
+}
+
+function ensurePlanOverlay(){
   if(!document.getElementById('plan-overlay')){
     const ov=document.createElement('div');ov.id='plan-overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:199;display:none';ov.onclick=closePlanDetail;document.body.appendChild(ov);
     const dt=document.createElement('div');dt.id='plan-detail';dt.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1c1c1c;border-top:2px solid var(--orange);padding:16px 16px 32px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(.32,.72,0,1);z-index:200;max-height:70vh;overflow-y:auto;border-radius:20px 20px 0 0';dt.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="width:40px;height:4px;border-radius:2px;background:var(--border)"></div><button onclick="closePlanDetail()" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:14px">✕</button></div><div id="plan-detail-content"></div>';document.body.appendChild(dt);
-  }
-}
+  }}
 
 window.setPlanH=function(h){document.getElementById('plan-panel').dataset.h=h;renderPlan();};
+window.setPlanSite=function(v){document.getElementById('plan-panel').dataset.site=v;renderPlan();};
 
 
 window.openPlanDetail = function(aisle, side, rack) {
   const planData = getPlanData();
+  if(aisle==='HAM'){
+    const prods=planData['HAM'+rack]||[];
+    let h='<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:var(--orange);margin-bottom:4px">HAM — Conteneur '+rack+'</div>';
+    h+=prods.length?prods.map(prodRow).join(''):'<div style="color:var(--muted);text-align:center;padding:24px 0;font-size:13px">Vide</div>';
+    document.getElementById('plan-detail-content').innerHTML=h;
+    document.getElementById('plan-overlay').style.display='block';
+    document.getElementById('plan-detail').style.transform='translateY(0)';
+    return;
+  }
   const hs = (side==='SOL'||aisle==='AREA') ? ['SOL'] : [0,1,2,3];
   let html = '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:var(--orange);margin-bottom:4px">'+
     'Allée '+aisle+(side==='SOL'?' — SOL':' — Côté '+(side==='G'?'Gauche':'Droite')+' — Rack '+rack)+'</div>';
@@ -1965,7 +2018,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-01-w';
+const ENTREPOT_VERSION = '2026-11-02-a';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
