@@ -432,7 +432,7 @@
   </div>
   <div style="display:flex;gap:0;margin-top:4px">
     <button id="nav-notices" onclick="switchView('notices')" style="flex:1;padding:9px;background:var(--orange);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">📄 Notices</button>
-    <button id="nav-reassort" onclick="switchView('reassort')" style="flex:1;padding:9px;background:var(--surface);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">🛒 Réassort</button>
+    <button id="nav-samples" onclick="switchView('samples')" style="flex:1;padding:9px;background:var(--surface);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:0">🏷 Samples</button>
   </div>
 </header>
 <div id="newref-form" style="display:none;padding:14px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -450,14 +450,24 @@
 <datalist id="box-refs"></datalist>
 <div id="results"><div class="loader"><div class="spinner"></div></div></div>
 <div id="plan-panel" style="display:none;padding:12px 10px 40px"></div>
-<div id="reassort-panel" style="display:none;padding:16px 16px 40px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <div style="font-size:14px;font-weight:700;color:var(--orange)">🛒 Liste de réassort</div>
-    <button onclick="exportReassort()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📥 Exporter</button>
+<div id="samples-panel" style="display:none;padding:12px 16px 40px">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+    <div><div style="font-size:14px;font-weight:700;color:var(--orange)">🏷 Samples</div><div style="font-size:11px;color:var(--muted)">Produits gardés pour l'exposition</div></div>
+    <button id="smp-add-btn" onclick="smpFormToggle()" style="padding:9px 14px;border:none;border-radius:9px;background:var(--orange);color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">➕ Ajouter un sample</button>
   </div>
-  <div id="reassort-items" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-    <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Aucun article — ajoutez depuis l'onglet Info des notices</div>
+  <div id="smp-form" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+    <input id="smp-ref" placeholder="Référence (ex : TLE014-T2)" oninput="smpRefCheck()" onkeydown="if(event.key==='Enter')smpCreer()" autocomplete="off" spellcheck="false" style="width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;margin-bottom:6px;text-transform:uppercase"/>
+    <div id="smp-ref-info" style="min-height:18px;font-size:12px;margin:0 2px 8px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="width:110px"><div class="stock-label" style="margin-bottom:4px">Quantité</div><input id="smp-qte" type="number" min="1" value="1" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;text-align:center;outline:none"/></div>
+      <div style="flex:1"><div class="stock-label" style="margin-bottom:4px">Note</div><input id="smp-note" placeholder="Facultatif" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"/></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="smpCreer()" style="flex:1;padding:12px;border:none;border-radius:9px;background:var(--green);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Créer le sample</button>
+      <button onclick="smpFormToggle()" style="padding:12px 18px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuler</button>
+    </div>
   </div>
+  <div id="smp-liste"></div>
 </div>
 </div><!-- /sec-notices -->
 
@@ -570,11 +580,17 @@ const CACHE_TTL  = 3600000;
 
 let allNotices   = [];
 let fbData       = {};
+let smpData      = {};   // samples/{id} : produits d'exposition {ref, qte, note, loc…}
 let searchQuery  = '';
 let noticesReady = false;
 let searchTimer;
 
 // ── Firebase ──────────────────────────────────────────────
+// Samples (exposition) : base à part, n'apparaît ni dans les notices, ni dans le stock, ni sur le plan
+db.ref('samples').on('value', snap => {
+  smpData = snap.val() || {};
+  try { if (currentView === 'samples') renderSamples(); } catch (e) {}   // currentView est déclaré plus bas
+}, () => {});
 db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
   if (noticesReady) renderAllSoft();
@@ -1020,8 +1036,16 @@ function renderAllSoft() {
 }
 
 // ── Emplacement ───────────────────────────────────────────
+// clé « smp-<id> » = un sample (samples/<id>), sinon une fiche produit (produits/<clé>)
+const SMP_PREFIX='smp-';
+function locData(key){ return key.startsWith(SMP_PREFIX) ? (smpData[key.slice(SMP_PREFIX.length)]||{}) : (fbData[key]||{}); }
+function locObj(key){
+  if(key.startsWith(SMP_PREFIX)){ const id=key.slice(SMP_PREFIX.length); if(!smpData[id]) smpData[id]={}; return smpData[id]; }
+  if(!fbData[key]) fbData[key]={}; return fbData[key];
+}
+function locPath(key){ return key.startsWith(SMP_PREFIX) ? 'samples/'+key.slice(SMP_PREFIX.length) : 'produits/'+key; }
 function buildLocTab(key) {
-  const d=fbData[key]||{};
+  const d=locData(key);
   const slots=['loc']; let i=2; while(d['loc'+i]!==undefined){slots.push('loc'+i);i++;}
   let html=slots.map((s,idx)=>buildLocBloc(key,s,idx,d[s]||{})).join('');
   html+='<button id="addbtn-'+key+'" data-key="'+key+'" onclick="locAdd(this.dataset.key)" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:4px">+ Ajouter un emplacement</button>';
@@ -1097,7 +1121,7 @@ window.locPick=function(btn){
   if(field==='rack'){delete ls.haut;}
   const bodyEl=document.getElementById('locbody-'+key+'-'+slotId);
   if(!bodyEl)return;
-  const d=fbData[key]||{};
+  const d=locData(key);
   const slots=['loc'];let i=2;while(d['loc'+i]!==undefined){slots.push('loc'+i);i++;}
   const tmp=document.createElement('div');
   tmp.innerHTML=buildLocBloc(key,slotId,slots.indexOf(slotId),d[slotId]||{});
@@ -1106,7 +1130,7 @@ window.locPick=function(btn){
 };
 window.locSave=function(btn){
   const key=btn.dataset.key,slotId=btn.dataset.slot;
-  const d=fbData[key]||{},loc=d[slotId]||{};
+  const d=locData(key),loc=d[slotId]||{};
   const ls=((window._ls||{})[key]||{})[slotId]||{};
   const lieu=ls.lieu!==undefined?ls.lieu:(loc.allee==='HAM'?'HAM':(loc.allee?'MAGNY':null));
   let al=ls.allee!==undefined?ls.allee:(loc.allee||null);
@@ -1125,7 +1149,7 @@ window.locSave=function(btn){
   if(al!=='AREA'&&co!=='SOL'&&ra!=null)nl.rack=ra;
   if(al!=='AREA'&&co!=='SOL'&&ha!=null)nl.hauteur=ha;
   }
-  db.ref('produits/'+key+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
+  db.ref(locPath(key)+'/'+slotId).set(Object.keys(nl).length?nl:null).then(()=>{
     if(window._ls?.[key])delete window._ls[key][slotId];
     btn.textContent='✓';
     setTimeout(()=>{btn.textContent='💾 Enregistrer';btn.disabled=false;},2000);
@@ -1134,9 +1158,9 @@ window.locSave=function(btn){
 window.locDel=function(btn){
   if(!confirm('Supprimer cet emplacement ?'))return;
   const key=btn.dataset.key,slotId=btn.dataset.slot;
-  if(fbData[key]) delete fbData[key][slotId];
+  delete locObj(key)[slotId];
   document.getElementById('locbloc-'+key+'-'+slotId)?.remove();
-  db.ref('produits/'+key+'/'+slotId).remove();
+  db.ref(locPath(key)+'/'+slotId).remove();
   // Si c'était le slot principal (loc) et qu'il n'en reste plus, garder le bouton ajouter visible
   const tabEl=document.getElementById('tab-loc-'+key);
   if(tabEl && !tabEl.querySelector('[id^="locbloc-"]')) {
@@ -1151,18 +1175,17 @@ window.locDel=function(btn){
   }
 };
 window.locAdd=function(key){
-  const d=fbData[key]||{};
+  const d=locObj(key);
   let i=2;while(d['loc'+i]!==undefined)i++;
   const newSlot='loc'+i;
-  if(!fbData[key])fbData[key]={};
-  fbData[key][newSlot]={};
+  d[newSlot]={};
   const tabEl=document.getElementById('tab-loc-'+key);
   const addBtn=document.getElementById('addbtn-'+key);
   if(!tabEl||!addBtn)return;
   const div=document.createElement('div');
   div.innerHTML=buildLocBloc(key,newSlot,i-1,{});
   tabEl.insertBefore(div.firstElementChild,addBtn);
-  db.ref('produits/'+key+'/'+newSlot).set({});
+  db.ref(locPath(key)+'/'+newSlot).set({});
 };
 
 // ── Pièces ────────────────────────────────────────────────
@@ -1250,22 +1273,6 @@ function renderPiecesTab(key, pieces) {
 }
 
 // ── Info ──────────────────────────────────────────────────
-function buildPieceReassortBlock(key, pids, pieces) {
-  const opts = pids.map(pid=>'<option value="'+pid+'">'+(pieces[pid]?.nom||pid)+'</option>').join('');
-  return '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">'+
-    '<div class="stock-label" style="margin-bottom:8px;color:#60a5fa">🔩 Réassort de pièces</div>'+
-    '<select id="rpiece-'+key+'" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:DM Sans,sans-serif;font-size:13px;padding:8px;outline:none;margin-bottom:8px">'+
-      '<option value="">— Sélectionner une pièce —</option>'+opts+
-    '</select>'+
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
-      '<button data-key="'+key+'" onclick="adjPieceQty(this.dataset.key,-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:16px;font-weight:700;cursor:pointer">−</button>'+
-      '<input id="rpiece-qty-'+key+'" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-weight:700;padding:6px;outline:none"/>'+
-      '<button data-key="'+key+'" onclick="adjPieceQty(this.dataset.key,1)" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:16px;font-weight:700;cursor:pointer">+</button>'+
-    '</div>'+
-    '<button data-key="'+key+'" onclick="addPieceToReassort(this.dataset.key)" style="width:100%;padding:9px;border-radius:10px;background:none;border:1.5px solid #3b82f6;color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer">+ Ajouter la pièce au réassort</button>'+
-  '</div>';
-}
-
 function renderInfTab(key, vis) {
   const d=fbData[key]||{}, pieces=d.pieces||{};
   const pids=sortPids(pieces);
@@ -1376,16 +1383,6 @@ function renderInfTab(key, vis) {
       <div class="stock-label" style="margin-bottom:8px">Note</div>
       <textarea id="note-${key}" rows="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">${d.note||''}</textarea>
       <button class="save-btn orange" style="margin-top:8px" onclick="saveNote('${key}')">💾 Enregistrer la note</button>
-    </div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
-      <div class="stock-label" style="margin-bottom:10px">📦 Réassort — cartons complets</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,-1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>
-        <input id="rq-${key}" type="number" value="1" min="1" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;padding:8px;outline:none"/>
-        <button data-key="${key}" onclick="adjReassortQty(this.dataset.key,1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>
-      </div>
-      <button data-key="${key}" onclick="addToReassort(this.dataset.key)" style="width:100%;padding:11px;border-radius:10px;background:none;border:1.5px solid var(--orange);color:var(--orange);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">+ Ajouter au réassort</button>
-      ${pids.length ? buildPieceReassortBlock(key, pids, pieces) : ''}
     </div>
   </div>`;
 }
@@ -1651,156 +1648,153 @@ window.removeLastCarton=async function(key){
 document.getElementById('search').addEventListener('input',function(e){
   clearTimeout(searchTimer);
   searchQuery=e.target.value;
-  searchTimer=setTimeout(renderAll,100);
+  searchTimer=setTimeout(()=>{ if(currentView==='samples') renderSamples(); else renderAll(); },100);
 });
 
-// ── Réassort ──────────────────────────────────────────────
-let reassortItems = {}; // { key: { ref, qty } }
 let currentView = 'notices';
 
 window.switchView = function(view) {
   currentView = view;
   document.getElementById('results').style.display = view==='notices' ? '' : 'none';
-  document.getElementById('reassort-panel').style.display = view==='reassort' ? '' : 'none';
-  document.getElementById('nav-notices').style.background = view==='notices' ? 'var(--orange)' : 'var(--surface)';
-  document.getElementById('nav-notices').style.color = view==='notices' ? 'white' : 'var(--muted)';
-  document.getElementById('nav-reassort').style.background = view==='reassort' ? 'var(--orange)' : 'var(--surface)';
-  document.getElementById('nav-reassort').style.color = view==='reassort' ? 'white' : 'var(--muted)';
-  if(view==='reassort') renderReassortList();
-};
-
-
-window.adjReassort = function(key, ref, delta) {
-  const inp = document.getElementById('rqty-'+key);
-  const cur = parseInt(inp?.value)||0;
-  const newVal = Math.max(0, cur+delta);
-  if(inp) inp.value = newVal;
-  setReassort(key, ref, newVal);
-};
-window.setReassort = function(key, ref, val) {
-  const q = Math.max(0, parseInt(val)||0);
-  if(q > 0) reassortItems[key] = {ref, qty:q, type: reassortItems[key]?.type || 'carton', piece: reassortItems[key]?.piece};
-  else delete reassortItems[key];
-  renderReassortSelected();
-};
-
-
-window.exportReassort = function() {
-  const keys = Object.keys(reassortItems);
-  if(!keys.length){alert('Aucun article sélectionné');return;}
-  const rows = keys.map(k=>{
-    const it = reassortItems[k];
-    const type = it.type === 'piece' ? 'Pièce' : 'Carton';
-    const piece = it.piece || '';
-    return [it.ref, piece, type, it.qty].join(';');
-  });
-    const csv = 'Référence;Pièce;Type;Quantité\n' + rows.join('\n')
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'reassort_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  // Vider le réassort après export
-  keys.forEach(k => delete reassortItems[k]);
-  renderReassortPanel();
-};
-
-document.getElementById('reassort-search')?.addEventListener('input', ()=>renderReassortList());
-
-// ── Réassort ──────────────────────────────────────────────
-
-window.switchView = function(view) {
-  currentView = view;
-  document.getElementById('results').style.display = view==='notices' ? '' : 'none';
-  document.getElementById('reassort-panel').style.display = view==='reassort' ? '' : 'none';
+  document.getElementById('samples-panel').style.display = view==='samples' ? '' : 'none';
   document.getElementById('plan-panel').style.display = view==='plan' ? '' : 'none';
   document.getElementById('nav-notices').style.background = view==='notices' ? 'var(--orange)' : 'var(--surface)';
   document.getElementById('nav-notices').style.color = view==='notices' ? 'white' : 'var(--muted)';
-  document.getElementById('nav-reassort').style.background = view==='reassort' ? 'var(--orange)' : 'var(--surface)';
-  document.getElementById('nav-reassort').style.color = view==='reassort' ? 'white' : 'var(--muted)';
+  document.getElementById('nav-samples').style.background = view==='samples' ? 'var(--orange)' : 'var(--surface)';
+  document.getElementById('nav-samples').style.color = view==='samples' ? 'white' : 'var(--muted)';
   document.getElementById('nav-plan').style.background = view==='plan' ? 'var(--orange)' : 'var(--surface2)';
   document.getElementById('nav-plan').style.color = view==='plan' ? 'white' : 'var(--muted)';
   document.getElementById('nav-plan').textContent = view==='plan' ? '✕' : '🗺️';
-  if(view==='reassort') renderReassortPanel();
-  if(view==='notices' && noticesReady) renderAllSoft();
+  if(view==='samples') renderSamples();
+  if(view==='notices' && noticesReady) { renderAllSoft(); }
   if(view==='plan') renderPlan();
 };
 
-function renderReassortPanel() {
-  const keys = Object.keys(reassortItems);
-  const el = document.getElementById('reassort-items');
-  if(!el) return;
-  if(!keys.length) {
-    el.innerHTML = "<div style='padding:20px;text-align:center;color:var(--muted);font-size:13px'>Aucun article — ajoutez depuis l'onglet Info</div>";
+// ── Samples : produits gardés pour l'exposition ─────────────
+// La notice est liée si la réf existe côté entrepôt (même réf, à la ponctuation près) ; sinon sample sans notice
+function smpNotice(ref) {
+  const n = normB(ref); if (!n) return null;
+  const n1 = normB(String(ref||'').trim().split(/\s+/)[0]);
+  return allNotices.find(x => normB(x.ref) === n) || (n1.length >= 4 ? allNotices.find(x => normB(x.ref) === n1) : null) || null;
+}
+window.smpFormToggle = function() {
+  const f = document.getElementById('smp-form');
+  const ouvrir = f.style.display === 'none';
+  f.style.display = ouvrir ? '' : 'none';
+  if (ouvrir) { document.getElementById('smp-ref').value = ''; document.getElementById('smp-qte').value = 1; document.getElementById('smp-note').value = ''; smpRefCheck(); setTimeout(() => document.getElementById('smp-ref').focus(), 30); }
+};
+window.smpRefCheck = function() {
+  const v = document.getElementById('smp-ref').value.trim();
+  const el = document.getElementById('smp-ref-info');
+  if (!v) { el.innerHTML = ''; return; }
+  const n = smpNotice(v);
+  const deja = Object.values(smpData).filter(x => x && normB(x.ref) === normB(v));
+  el.innerHTML = (n
+    ? '<span style="color:#4ade80">📄 Notice trouvée : <b>' + escB(n.ref) + '</b>' + (n.label && n.label !== n.ref ? ' — ' + escB(n.label) : '') + '</span>'
+    : '<span style="color:var(--muted)">Pas de notice pour cette réf — le sample sera créé sans notice</span>') +
+    (deja.length ? '<br><span style="color:#fbbf24">⚠ Déjà ' + deja.length + ' sample' + (deja.length > 1 ? 's' : '') + ' pour cette réf (' + deja.reduce((t, x) => t + (parseInt(x.qte) || 0), 0) + ' ex.)</span>' : '');
+};
+window.smpCreer = function() {
+  const ref = document.getElementById('smp-ref').value.trim().toUpperCase();
+  if (!ref) { document.getElementById('smp-ref').focus(); return; }
+  const qte = Math.max(1, parseInt(document.getElementById('smp-qte').value) || 1);
+  const note = document.getElementById('smp-note').value.trim();
+  const r = db.ref('samples').push();
+  r.set({ ref, qte, note, cree: Date.now() }).then(() => {
+    document.getElementById('smp-form').style.display = 'none';
+    renderSamples();
+    const pn = document.getElementById('panel-smp-' + r.key);   // le nouveau sample s'ouvre sur son emplacement
+    if (pn) { pn.style.display = 'block'; SMP_OUVERTS['smp-' + r.key] = true; pn.closest('.notice-card')?.scrollIntoView({ block: 'nearest' }); }
+  }).catch(fbErr);
+};
+const SMP_OUVERTS = {};
+function smpLocLabel(d) { return locLabel(d || {}); }
+function renderSamples() {
+  const zone = document.getElementById('smp-liste');
+  if (!zone) return;
+  // ne jamais redessiner pendant une saisie dans les samples (note, quantité…)
+  const actif = document.activeElement;
+  if (actif && zone.contains(actif) && /INPUT|TEXTAREA|SELECT/.test(actif.tagName)) { clearTimeout(renderSamples._t); renderSamples._t = setTimeout(renderSamples, 1500); return; }
+  // état à conserver : panneaux ouverts, onglet actif, tiroirs d'emplacement ouverts
+  const onglets = {}, tiroirs = {};
+  zone.querySelectorAll('.detail-panel').forEach(p => {
+    const key = p.id.replace('panel-', '');
+    if (p.style.display === 'block') SMP_OUVERTS[key] = true; else delete SMP_OUVERTS[key];
+    const ab = p.querySelector('.tab-btn.active'); if (ab) onglets[key] = ab.dataset.t;
+  });
+  zone.querySelectorAll('[id^="locbody-smp-"]').forEach(b => { tiroirs[b.id] = b.style.display !== 'none'; });
+  const q = (searchQuery || '').trim();
+  const qn = q.toUpperCase();
+  const liste = Object.entries(smpData).filter(([, d]) => d && d.ref).map(([id, d]) => ({ id, d, n: smpNotice(d.ref) }))
+    .filter(x => !qn || [x.d.ref, x.n && x.n.label, x.d.note, smpLocLabel(x.d)].some(v => String(v || '').toUpperCase().includes(qn)))
+    .sort((a, b) => String(a.d.ref).localeCompare(String(b.d.ref)));
+  const total = Object.values(smpData).filter(d => d && d.ref).length;
+  document.getElementById('search-hint').textContent = q ? liste.length + ' sample(s) trouvé(s)' : total + ' sample' + (total > 1 ? 's' : '') + ' en exposition';
+  if (!liste.length) {
+    zone.innerHTML = '<div class="state"><div class="state-icon">🏷</div><div class="state-title">' + (total ? 'Aucun sample ne correspond' : 'Aucun sample pour l’instant') + '</div>' + (total ? '' : '<div style="color:var(--muted);font-size:13px;margin-top:6px">Ajoute le premier avec ➕ Ajouter un sample</div>') + '</div>';
     return;
   }
-  el.innerHTML = keys.map(k=>{
-    const it = reassortItems[k];
-    const label = it.type==='piece'
-      ? "<span style='color:#60a5fa;font-size:11px'>🔩 PIÈCE</span> <span style='font-family:Bebas Neue,sans-serif;font-size:13px;letter-spacing:1px'>"+it.ref+"</span> <span style='font-size:12px;color:var(--muted)'>"+it.piece+"</span>"
-      : "<span style='font-family:Bebas Neue,sans-serif;font-size:15px;letter-spacing:1px'>"+it.ref+"</span>";
-    return "<div style='display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)'>"+
-      "<div style='flex:1;line-height:1.4'>"+label+"</div>"+
-      "<button data-k='"+k+"' data-d='-1' onclick='adjReassortInList(this.dataset.k,Number(this.dataset.d))' style='width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:15px;font-weight:700;cursor:pointer'>−</button>"+
-      "<span style='min-width:36px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)'>"+it.qty+"</span>"+
-      "<button data-k='"+k+"' data-d='1' onclick='adjReassortInList(this.dataset.k,Number(this.dataset.d))' style='width:28px;height:28px;border-radius:6px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:15px;font-weight:700;cursor:pointer'>+</button>"+
-      "<button data-k='"+k+"' onclick='removeReassort(this.dataset.k)' style='width:28px;height:28px;border-radius:6px;border:none;background:none;color:#f87171;font-size:12px;cursor:pointer'>✕</button>"+
-    "</div>";
+  zone.innerHTML = liste.map(({ id, d, n }, i) => {
+    const key = 'smp-' + id, ls = smpLocLabel(d), qte = parseInt(d.qte) || 0;
+    const ong = onglets[key] || 'loc';
+    return '<div class="notice-card" style="animation-delay:' + Math.min(i * 30, 300) + 'ms" id="card-' + key + '">' +
+      '<div class="notice-main" onclick="togglePanel(\'' + key + '\')">' +
+        '<div class="notice-icon" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8)">🏷</div>' +
+        '<div class="notice-info"><div class="notice-ref">' + highlight(escB(d.ref), q) + '</div>' +
+          '<div class="notice-name">' + (n ? (n.label && n.label !== n.ref ? highlight(escB(n.label), q) : 'Notice ' + escB(n.ref)) : '<span style="opacity:.7">sans notice</span>') + '</div>' +
+        '<div class="card-badges" style="justify-content:flex-start;margin:5px 0 0;max-width:none">' +
+          (ls ? '<span class="mini-badge mb-loc">📍 ' + escB(ls) + '</span>' : '') +
+          '<span class="mini-badge" style="background:rgba(14,165,233,0.18);color:#7dd3fc;border:1px solid rgba(14,165,233,0.35)">🏷 ×' + qte + '</span>' +
+          (d.note ? '<span class="mini-badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)" title="' + escB(d.note) + '">📝</span>' : '') +
+        '</div></div>' +
+        (n ? '<a href="' + escB(n.githubUrl) + '" target="_blank" onclick="event.stopPropagation()" style="background:var(--orange);color:white;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;flex-shrink:0">Notice</a>' : '') +
+      '</div>' +
+      '<div class="detail-panel" id="panel-' + key + '"' + (SMP_OUVERTS[key] ? ' style="display:block"' : '') + '>' +
+        '<div class="tabs">' +
+          '<button class="tab-btn' + (ong === 'loc' ? ' active' : '') + '" data-t="loc" onclick="showTab(\'' + key + '\',\'loc\',this)">📍 Emplacement</button>' +
+          '<button class="tab-btn' + (ong === 'inf' ? ' active' : '') + '" data-t="inf" onclick="showTab(\'' + key + '\',\'inf\',this)">ℹ️ Info</button>' +
+        '</div>' +
+        '<div class="tab-content' + (ong === 'loc' ? ' active' : '') + '" id="tab-loc-' + key + '">' + buildLocTab(key) + '</div>' +
+        '<div class="tab-content' + (ong === 'inf' ? ' active' : '') + '" id="tab-inf-' + key + '">' +
+          '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">' +
+            '<div class="stock-label" style="margin-bottom:10px">Quantité en exposition</div>' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
+              '<button data-k="' + key + '" data-d="-1" onclick="smpAdj(this.dataset.k,-1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:18px;font-weight:700;cursor:pointer">−</button>' +
+              '<input id="smp-q-' + key + '" type="number" min="0" value="' + qte + '" style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:\'DM Sans\',sans-serif;font-size:18px;font-weight:700;padding:8px;outline:none"/>' +
+              '<button data-k="' + key + '" onclick="smpAdj(this.dataset.k,1)" style="width:36px;height:36px;border-radius:8px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ade80;font-size:18px;font-weight:700;cursor:pointer">+</button>' +
+            '</div>' +
+            '<button class="save-btn orange" data-k="' + key + '" onclick="smpSaveQte(this)">💾 Enregistrer la quantité</button>' +
+          '</div>' +
+          '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">' +
+            '<div class="stock-label" style="margin-bottom:8px">Note</div>' +
+            '<textarea id="smp-n-' + key + '" rows="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:\'DM Sans\',sans-serif;font-size:13px;padding:10px;outline:none;resize:vertical">' + escB(d.note || '') + '</textarea>' +
+            '<button class="save-btn orange" style="margin-top:8px" data-k="' + key + '" onclick="smpSaveNote(this)">💾 Enregistrer la note</button>' +
+          '</div>' +
+          '<div style="text-align:center;padding-top:6px;border-top:1px dashed var(--border)"><button data-k="' + key + '" data-ref="' + escB(d.ref) + '" onclick="smpSupprimer(this)" style="background:none;border:none;color:#f87171;opacity:.75;font-size:12px;text-decoration:underline dotted;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:6px">🗑 Supprimer ce sample…</button></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }).join('');
+  Object.keys(tiroirs).forEach(id => { const b = document.getElementById(id); if (b && tiroirs[id]) { b.style.display = ''; const ar = document.getElementById(id.replace('locbody-', 'arrloc-')); if (ar) ar.textContent = '▼'; } });
 }
-
-window.adjReassortQty = function(key, delta) {
-  const inp = document.getElementById('rq-'+key);
-  if(inp) inp.value = Math.max(1, (parseInt(inp.value)||1)+delta);
+window.smpAdj = function(key, d) { const i = document.getElementById('smp-q-' + key); if (i) i.value = Math.max(0, (parseInt(i.value) || 0) + d); };
+const smpOk = btn => { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => { btn.textContent = t; }, 1500); };
+window.smpSaveQte = function(btn) {
+  const key = btn.dataset.k, id = key.slice(SMP_PREFIX.length);
+  const v = Math.max(0, parseInt(document.getElementById('smp-q-' + key)?.value) || 0);
+  db.ref('samples/' + id + '/qte').set(v).then(() => smpOk(btn)).catch(fbErr);
 };
-window.addToReassort = function(key) {
-  const inp = document.getElementById('rq-'+key);
-  const qty = Math.max(1, parseInt(inp?.value)||1);
-  const notice = allNotices.find(n=>getKey(n.ref)===key);
-  if(!notice) return;
-  if(reassortItems[key]) { reassortItems[key].qty += qty; if(!reassortItems[key].type) reassortItems[key].type='carton'; }
-  else reassortItems[key] = {ref:notice.ref, qty, type:'carton'};
-  if(inp) inp.value = 1;
-  const btn = document.querySelector('[data-key="'+key+'"][onclick*="addToReassort"]');
-  if(btn){const o=btn.textContent;btn.textContent='✓ ('+reassortItems[key].qty+' total)';setTimeout(()=>{btn.textContent=o;},2000);}
-  if(currentView==='reassort') renderReassortPanel();
+window.smpSaveNote = function(btn) {
+  const key = btn.dataset.k, id = key.slice(SMP_PREFIX.length);
+  const v = (document.getElementById('smp-n-' + key)?.value || '').trim();
+  db.ref('samples/' + id + '/note').set(v).then(() => smpOk(btn)).catch(fbErr);
 };
-
-window.adjPieceQty = function(key, delta) {
-  const inp = document.getElementById('rpiece-qty-'+key);
-  if(inp) inp.value = Math.max(1, (parseInt(inp.value)||1)+delta);
+window.smpSupprimer = function(btn) {
+  if (!confirm('Supprimer le sample ' + btn.dataset.ref + ' ?\n\nSon emplacement, sa quantité et sa note seront effacés (la notice et l’entrepôt ne sont pas touchés).')) return;
+  const id = btn.dataset.k.slice(SMP_PREFIX.length);
+  delete SMP_OUVERTS[btn.dataset.k];
+  db.ref('samples/' + id).remove().catch(fbErr);
 };
-
-window.addPieceToReassort = function(key) {
-  const sel = document.getElementById('rpiece-'+key);
-  const inp = document.getElementById('rpiece-qty-'+key);
-  const pid = sel?.value;
-  const qty = Math.max(1, parseInt(inp?.value)||1);
-  if(!pid) { alert('Sélectionnez une pièce'); return; }
-  const notice = allNotices.find(n=>getKey(n.ref)===key);
-  const d = fbData[key]||{};
-  const nomPiece = d.pieces?.[pid]?.nom || pid;
-  const itemKey = key+'__piece__'+pid;
-  if(reassortItems[itemKey]) reassortItems[itemKey].qty += qty;
-  else reassortItems[itemKey] = {ref: notice?.ref||key, piece: nomPiece, qty, type:'piece'};
-  if(sel) sel.value = '';
-  if(inp) inp.value = 1;
-  const btn = document.querySelector('[data-key="'+key+'"][onclick*="addPieceToReassort"]');
-  if(btn){const o=btn.textContent;btn.textContent='✓ Ajouté !';setTimeout(()=>{btn.textContent=o;},2000);}
-  if(currentView==='reassort') renderReassortPanel();
-};
-window.adjReassortInList = function(key, delta) {
-  if(!reassortItems[key]) return;
-  reassortItems[key].qty = Math.max(1, reassortItems[key].qty+delta);
-  renderReassortPanel();
-};
-window.removeReassort = function(key) {
-  delete reassortItems[key];
-  renderReassortPanel();
-};
-
 
 // ── Plan entrepôt ─────────────────────────────────────────
 const PLAN_AISLES = [{id:'1',G:4,D:6},{id:'2',G:4,D:4},{id:'3',G:3,D:4}];
@@ -2018,7 +2012,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-02-a';
+const ENTREPOT_VERSION = '2026-11-02-b';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
