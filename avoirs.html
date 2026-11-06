@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avoirs SU</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--txt:#1c2533;--muted:#6b7686;--border:#dde3ec;--accent:#2563eb;--ok:#15803d;--warn:#b45309;--err:#b91c1c;--fob:#7c3aed;--ddp:#0891b2;--hl:#fef3c7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141c;--card:#18202b;--txt:#e6ebf2;--muted:#8b97a8;--border:#2a3442;--accent:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--err:#f87171;--fob:#a78bfa;--ddp:#22d3ee;--hl:#3a2f12}}
+:root[data-theme="dark"]{--bg:#0f141c;--card:#18202b;--txt:#e6ebf2;--muted:#8b97a8;--border:#2a3442;--accent:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--err:#f87171;--fob:#a78bfa;--ddp:#22d3ee;--hl:#3a2f12}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700}
+.drop{border:1.5px dashed var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);cursor:pointer;font-weight:600;transition:.15s}
+.drop:hover,.drop.on{border-color:var(--accent);color:var(--accent)}
+.drop small{display:block;font-weight:400;margin-top:4px}
+input[type=file]{display:none}
+.btn{border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sec{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn.mini{padding:4px 9px;font-size:12px}
+.btn.danger{background:var(--err)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px}
+.tag{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;color:#fff}
+.tag.FOB{background:var(--fob)}.tag.DDP{background:var(--ddp)}.tag.X{background:var(--warn)}
+.log{margin-top:10px;font-size:13px}
+.log div{padding:3px 0}
+.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.muted{color:var(--muted)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.stat{border:1px solid var(--border);border-radius:9px;padding:8px 12px;min-width:110px}
+.stat b{display:block;font-size:20px}
+.stat span{color:var(--muted);font-size:12px}
+.scroll{overflow-x:auto}
+tr.verif td{background:var(--hl)}
+#gate{max-width:360px;margin:12vh auto 0}
+#gate input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:18px;letter-spacing:4px;text-transform:uppercase;background:var(--bg);color:var(--txt);margin:10px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:6px}
+</style>
+</head>
+<body>
+<main>
+  <div id="gate" hidden>
+    <div class="card">
+      <h1>🧾 Avoirs SU</h1>
+      <p class="sub">Entre le code d'accès de l'outil.</p>
+      <input id="gate-code" maxlength="8" autocomplete="off" placeholder="CODE">
+      <button class="btn" id="gate-ok" style="width:100%">Entrer</button>
+      <div id="gate-err" class="err" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h1>🧾 Avoirs SU</h1>
+        <p class="sub">Tableau d'avoir à partir de l'export du tableau de remboursements, rempli par EAN.</p>
+      </div>
+      <button class="btn sec mini" id="deco">Se déconnecter</button>
+    </div>
+
+    <section class="card">
+      <h2><span class="num">1</span>Fichiers sources <span class="muted" style="font-weight:400;font-size:13px" id="src-resume"></span></h2>
+      <div class="drop" id="src-drop">Glisse ici les nouvelles sélections FOB ou les classeurs de factures
+        <small>Le type est détecté tout seul. Un fichier du même nom remplace l'ancien. Partagé pour tout le monde.</small>
+      </div>
+      <input type="file" id="src-file" accept=".xlsx,.xls,.xlsm" multiple>
+      <div class="log" id="src-log"></div>
+      <div class="scroll" style="margin-top:10px"><table id="src-table"></table></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">2</span>Export du tableau de remboursements</h2>
+      <div class="drop" id="exp-drop">Glisse ici l'export (ex. « Remboursement SU 04-11-26.xlsx »)
+        <small>Le fichier d'avoir se télécharge aussitôt.</small>
+      </div>
+      <input type="file" id="exp-file" accept=".xlsx,.xls,.xlsm">
+      <div id="res"></div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+const API = 'https://flaudis-server-production.up.railway.app/avoirs-api/';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+let CODE = LS.get('avoirsCode') || '';
+let INDEX = null;           // { fob: Map(ean → [{annee, ref, sec, over, com, net, src}]), ddp: Map(ean → [{num, n, date, centrale, annee, src}]), anneeFobMax }
+let SOURCES = [];
+
+// ─── API ─────────────────────────────────────────────────
+async function api(route, body) {
+  const r = await fetch(API + route, {
+    method: body ? 'POST' : 'GET',
+    headers: Object.assign({ 'x-avoirs-code': CODE }, body ? { 'Content-Type': 'application/json' } : {}),
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { const e = new Error('code'); e.code = 401; throw e; }
+  if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+// ─── Utilitaires de lecture ──────────────────────────────
+const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+const ean13 = v => { if (v == null) return null; const s = String(typeof v === 'number' ? Math.round(v) : v).replace(/\D/g, ''); return s.length === 13 ? s : null; };
+const nombre = v => { if (v == null || v === '') return null; if (typeof v === 'number') return isFinite(v) ? v : null; const s = String(v).replace(/\s/g, '').replace(',', '.').replace(/[^\d.\-]/g, ''); const n = parseFloat(s); return isFinite(n) ? n : null; };
+const anneeDe = nom => { const m = String(nom).match(/20\d\d/g); return m ? parseInt(m[m.length - 1], 10) : null; };
+// Dates Excel lues en numéro de série (évite le décalage de fuseau de SheetJS) → Date UTC à minuit
+const dateXL = v => typeof v === 'number' && v > 20000 && v < 80000 ? new Date(Math.round((v - 25569) * 86400) * 1000) : (v instanceof Date && !isNaN(v) ? v : null);
+const isoDate = d => d ? d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0') : '';
+const lignes = ws => XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: true });
+
+function lireClasseur(file) {
+  return file.arrayBuffer().then(buf => XLSX.read(buf, { type: 'array', cellDates: false, cellStyles: false, cellHTML: false, cellFormula: false }));
+}
+
+const RE_DOC = /^\s*((?:FC|AC)\s?\d{3,6})\s*$/i;
+function typeDe(wb) {
+  for (const n of wb.SheetNames.slice(0, 40)) {
+    if (/^\s*(FC|AC)\s?\d{3,6}/i.test(n)) return 'DDP';
+    const r = lignes(wb.Sheets[n]).slice(0, 6);
+    if (r.some(l => l.some(x => RE_DOC.test(String(x ?? ''))))) return 'DDP';
+  }
+  for (const n of wb.SheetNames) {
+    const r = lignes(wb.Sheets[n]).slice(0, 12);
+    if (r.some(l => l.some(x => /^(BARCODE|EAN)/.test(norm(x)))) && r.some(l => l.some(x => /FOB/.test(norm(x))))) return 'FOB';
+  }
+  return null;
+}
+
+// Sélection FOB → [[ean, ref, section, overcom, withcom, net]]
+function extraireFOB(wb) {
+  const out = [];
+  for (const n of wb.SheetNames) {
+    if (/CANCEL|ANNUL/i.test(n)) continue;
+    const L = lignes(wb.Sheets[n]);
+    const h = L.slice(0, 12).findIndex(l => l.some(x => /^BARCODE/.test(norm(x))));
+    if (h < 0) continue;
+    const H = L[h].map(norm);
+    const col = f => H.findIndex(f);
+    const cEan = col(x => /^BARCODE/.test(x));
+    let cRef = col(x => /^(ITEM|REFERENCE|REF\b)/.test(x)); if (cRef < 0) cRef = 0;
+    const cOver = col(x => /FOB/.test(x) && /OVERCOM/.test(x));
+    const cCom = col(x => /FOB/.test(x) && /(WITH|AVEC) (COM|\d)/.test(x) && !/OVERCOM/.test(x));
+    const cNet = col(x => /^FOB USD( NET)?$/.test(x));
+    let sec = '';
+    for (let i = h + 1; i < L.length; i++) {
+      const l = L[i] || [];
+      const e = ean13(l[cEan]);
+      if (!e) {
+        const t = norm(l[0]);
+        if (t === 'FLAUDIS') sec = 'F'; else if (t === 'WISEN') sec = 'W';
+        continue;
+      }
+      out.push([e, String(l[cRef] ?? '').replace(/\s+/g, ' ').trim().slice(0, 60), sec,
+        cOver >= 0 ? nombre(l[cOver]) : null, cCom >= 0 ? nombre(l[cCom]) : null, cNet >= 0 ? nombre(l[cNet]) : null]);
+    }
+  }
+  return out;
+}
+
+// Classeur de factures → [[ean, n° doc, date ISO, centrale]] (feuilles sans n° = brouillons, ignorées)
+function extraireDDP(wb) {
+  const vu = new Set(), out = []; let sansNum = 0;
+  for (const n of wb.SheetNames) {
+    const L = lignes(wb.Sheets[n]);
+    let num = null, dt = '';
+    for (const l of L.slice(0, 6)) {
+      for (let j = 0; j < l.length && !num; j++) {
+        const m = String(l[j] ?? '').match(RE_DOC);
+        if (m) { num = m[1].replace(/\s/g, '').toUpperCase(); for (const y of l.slice(j + 1, j + 4)) { const d = dateXL(y); if (d) { dt = isoDate(d); break; } } }
+      }
+      if (num) break;
+    }
+    if (!num) { const m = n.match(/^\s*((?:FC|AC)\s?\d{3,6})/i); if (m) num = m[1].replace(/\s/g, '').toUpperCase(); }
+    if (!num) { sansNum++; continue; }
+    const tete = L.slice(0, 9).map(l => l.filter(x => x != null).join(' ')).join(' ');
+    const c = (norm(tete).match(/SU (OUEST|EST|SUD|NORD[ -]OUEST)/) || [])[1] || '';
+    for (const l of L.slice(12)) for (const x of l) {
+      const e = ean13(x);
+      if (e && /^3/.test(e) && !vu.has(e + num)) { vu.add(e + num); out.push([e, num, dt, c]); }
+    }
+  }
+  return { data: out, sansNum };
+}
+
+// ─── Index ───────────────────────────────────────────────
+function construireIndex(sources) {
+  const fob = new Map(), ddp = new Map(); let anneeFobMax = 0;
+  for (const s of sources) {
+    const an = s.annee || 0;
+    if (s.type === 'FOB') {
+      anneeFobMax = Math.max(anneeFobMax, an);
+      for (const [e, ref, sec, over, com, net] of s.data) {
+        if (!fob.has(e)) fob.set(e, []);
+        fob.get(e).push({ annee: an, ref, sec, over, com, net, src: s.nom });
+      }
+    } else {
+      for (const [e, num, date, centrale] of s.data) {
+        if (!ddp.has(e)) ddp.set(e, []);
+        ddp.get(e).push({ num, n: parseInt(num.replace(/\D/g, ''), 10) || 0, date, centrale, annee: an, src: s.nom });
+      }
+    }
+  }
+  // Même modèle = même début de référence (« QD021-2,5-2,5/8 GRIS » → « QD021-2,5-2,5/8 »)
+  const modele = new Map();
+  for (const l of fob.values()) for (const x of l) { const b = baseRef(x.ref); if (!b) continue; if (!modele.has(b)) modele.set(b, []); modele.get(b).push(x); }
+  return { fob, ddp, anneeFobMax, modele };
+}
+const baseRef = r => norm(r).split(/[ (]/)[0];
+const prixDe = x => x.over != null ? x.over : x.com != null ? x.com : x.net;
+
+async function chargerIndex() {
+  const j = await api('index');
+  SOURCES = j.sources.map(s => ({ nom: s.nom, type: s.type, annee: s.annee, maj: s.maj, nb: (s.data || []).length }));
+  INDEX = construireIndex(j.sources);
+  afficherSources();
+}
+
+function afficherSources() {
+  const t = $('src-table');
+  const nF = SOURCES.filter(s => s.type === 'FOB').length, nD = SOURCES.filter(s => s.type === 'DDP').length;
+  $('src-resume').textContent = SOURCES.length ? `— ${nF} sélection(s) FOB · ${nD} classeur(s) de factures` : '— aucun fichier';
+  if (!SOURCES.length) { t.innerHTML = '<tr><td class="muted">Dépose les sélections FOB et les classeurs de factures pour commencer.</td></tr>'; return; }
+  const tri = SOURCES.slice().sort((a, b) => a.type.localeCompare(b.type) || (b.annee || 0) - (a.annee || 0) || a.nom.localeCompare(b.nom));
+  t.innerHTML = '<tr><th>Type</th><th>Fichier</th><th>Année</th><th>Lignes</th><th>Déposé le</th><th></th></tr>' + tri.map(s =>
+    `<tr><td><span class="tag ${s.type}">${s.type}</span></td><td>${esc(s.nom)}</td><td>${s.annee || '<span class="warn">?</span>'}</td><td>${s.nb.toLocaleString('fr-FR')}</td>` +
+    `<td class="muted">${s.maj ? new Date(s.maj).toLocaleDateString('fr-FR') : ''}</td>` +
+    `<td><button class="btn sec mini" data-suppr="${esc(s.nom)}">Retirer</button></td></tr>`).join('');
+}
+
+$('src-table').addEventListener('click', async e => {
+  const b = e.target.closest('[data-suppr]'); if (!b) return;
+  if (!b.dataset.arme) { b.dataset.arme = '1'; b.textContent = 'Confirmer ?'; b.classList.add('danger'); b.classList.remove('sec'); setTimeout(() => { if (b.isConnected) { delete b.dataset.arme; b.textContent = 'Retirer'; b.classList.remove('danger'); b.classList.add('sec'); } }, 3000); return; }
+  b.disabled = true;
+  try { await api('supprimer', { nom: b.dataset.suppr }); await chargerIndex(); } catch (er) { alerteLog('src-log', '⚠️ ' + er.message, 'err'); }
+});
+
+function alerteLog(id, txt, cls) { const d = document.createElement('div'); d.className = cls || ''; d.textContent = txt; $(id).appendChild(d); return d; }
+
+async function deposerSources(files) {
+  const liste = [...files];
+  $('src-log').innerHTML = '';
+  for (const f of liste) {
+    const ligne = alerteLog('src-log', '⏳ ' + f.name + ' — lecture…', 'muted');
+    try {
+      const wb = await lireClasseur(f);
+      const type = typeDe(wb);
+      if (!type) { ligne.className = 'err'; ligne.textContent = '⚠️ ' + f.name + ' — ni sélection FOB ni factures reconnues, ignoré.'; continue; }
+      let data, info = '';
+      if (type === 'FOB') data = extraireFOB(wb);
+      else { const r = extraireDDP(wb); data = r.data; if (r.sansNum) info = ` (${r.sansNum} feuille(s) sans numéro ignorée(s))`; }
+      const annee = anneeDe(f.name);
+      ligne.textContent = '⏳ ' + f.name + ' — envoi…';
+      await api('deposer', { nom: f.name, type, annee, data });
+      ligne.className = 'ok';
+      ligne.textContent = `✓ ${f.name} — ${type}, ${data.length.toLocaleString('fr-FR')} lignes${annee ? '' : ' · ⚠️ année introuvable dans le nom'}${info}`;
+    } catch (er) {
+      if (er.code === 401) return verrouiller();
+      ligne.className = 'err'; ligne.textContent = '⚠️ ' + f.name + ' — ' + er.message;
+    }
+  }
+  await chargerIndex().catch(() => {});
+}
+
+// ─── Lecture de l'export ─────────────────────────────────
+const CHAMPS = [
+  ['date', x => /^DATE DE RECEPTION/.test(x)],
+  ['recepFact', x => /^RECEPTION DE LA FACTURE/.test(x)],
+  ['ref', x => /^REF\.?$/.test(x) || /^REFERENCE$/.test(x)],
+  ['ean', x => x === 'EAN' || x === 'EAN 13'],
+  ['qte', x => /^QTE/.test(x) || /^QUANTITE/.test(x)],
+  ['enseigne', x => /ENSEIGNE/.test(x)],
+  ['ville', x => /^DEPARTEMENT/.test(x)],
+  ['comm', x => /^COMMENTAIRE/.test(x)],
+  ['cnb', x => /CNB/.test(x)],
+  ['accord', x => /ACCORD/.test(x)],
+  ['wisen', x => /WISEN/.test(x)],
+  ['ddpfob', x => /DDP\s*\/\s*FOB/.test(x)]
+];
+function lireExport(wb) {
+  const L = lignes(wb.Sheets[wb.SheetNames[0]]);
+  const h = L.slice(0, 15).findIndex(l => l.some(x => norm(x) === 'EAN'));
+  if (h < 0) throw new Error("colonne EAN introuvable dans l'export");
+  const H = L[h].map(norm), col = {};
+  for (const [k, f] of CHAMPS) col[k] = H.findIndex(f);
+  const out = [];
+  for (let i = h + 1; i < L.length; i++) {
+    const l = L[i] || [], g = k => col[k] >= 0 ? l[col[k]] : null;
+    if (g('ref') == null && g('ean') == null && g('cnb') == null) continue;
+    out.push({ ligne: i + 1, date: dateXL(g('date')) || g('date'), ref: g('ref') == null ? null : String(g('ref')).replace(/\s+/g, ' ').trim(), eanBrut: g('ean'), ean: ean13(g('ean')), qte: g('qte'), enseigne: g('enseigne'), ville: g('ville'), comm: g('comm'), cnb: g('cnb'), accord: g('accord'), wisen: g('wisen'), ddpfob: g('ddpfob') });
+  }
+  return out;
+}
+
+// Geste commercial : « GESTE CO 150€ », « Geste co 50€ », « Geste Co 30€ ACCEPTÉ »
+function gesteDe(c) {
+  const s = String(c ?? '');
+  if (!/geste/i.test(s)) return null;
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(?:€|eur|euros?)/i) || s.match(/(\d+(?:[.,]\d+)?)/);
+  return m ? nombre(m[1]) : null;
+}
+const fr2 = n => n.toFixed(2).replace('.', ',');
+
+// ─── Règles ──────────────────────────────────────────────
+// 1. L'EAN figure dans une facture/un avoir → DDP, n° le plus récent (le plus grand).
+//    Colonne D = « DDP » si ce document est de l'année en cours, sinon son année.
+// 2. Sinon l'EAN figure dans une sélection → FOB, prix de la sélection la plus récente
+//    (FOB avec overcom, à défaut avec com, à défaut net).
+// 3. Geste commercial → son montant remplace le prix (FOB) ou s'ajoute au n° (DDP).
+function traiter(lignesExp) {
+  const anneeCour = new Date().getFullYear();
+  return lignesExp.map(r => {
+    const o = Object.assign({}, r, { statut: '', valeur: '', verif: [] });
+    const geste = gesteDe(r.comm);
+    if (!r.ean) { o.verif.push('EAN absent ou invalide'); return o; }
+    const docs = INDEX.ddp.get(r.ean);
+    if (docs && docs.length) {
+      const tri = docs.slice().sort((a, b) => b.n - a.n);
+      const d = tri[0];
+      const an = d.date ? parseInt(d.date.slice(0, 4), 10) : d.annee;
+      o.type = 'DDP';
+      o.statut = an && an !== anneeCour ? String(an) : 'DDP';
+      o.valeur = geste != null ? d.num + ' / ' + fr2(geste) : d.num;
+      o.detail = tri.slice(0, 5).map(x => x.num + (x.date ? ' du ' + x.date.split('-').reverse().join('/') : '')).join(', ');
+      return o;
+    }
+    const fobs = INDEX.fob.get(r.ean);
+    if (fobs && fobs.length) {
+      const tri = fobs.slice().sort((a, b) => b.annee - a.annee);
+      const f = tri.find(x => x.over != null || x.com != null || x.net != null) || tri[0];
+      const prix = prixDe(f);
+      o.type = 'FOB';
+      o.statut = 'FOB';
+      o.valeur = geste != null ? geste : (prix != null ? Math.round(prix * 100) / 100 : '');
+      o.detail = tri.map(x => `${x.annee || '?'} : ${x.over ?? x.com ?? x.net ?? '—'}`).join(' · ');
+      if (prix == null && geste == null) o.verif.push('aucun prix FOB dans la sélection');
+      else if (geste == null && f.annee) {
+        // Ancienne sélection : le même modèle a-t-il un prix plus récent (autre coloris) ?
+        const rec = (INDEX.modele.get(baseRef(f.ref)) || []).filter(x => x.annee > f.annee && prixDe(x) != null).sort((a, b) => b.annee - a.annee)[0];
+        if (rec && Math.abs(prixDe(rec) - prix) > 0.001) o.verif.push(`prix de la sélection ${f.annee} ; même modèle dans la sélection ${rec.annee} à ${prixDe(rec)} (${rec.ref})`);
+      }
+      if (f.sec === 'F') o.verif.push('rangé côté FLAUDIS dans la sélection mais aucune facture trouvée');
+      return o;
+    }
+    o.verif.push('EAN introuvable dans les sélections et les factures');
+    return o;
+  });
+}
+
+// ─── Fichier de sortie ───────────────────────────────────
+async function construireSortie(res, nomExport) {
+  const ordre = r => r.type === 'FOB' ? 0 : r.type === 'DDP' ? 1 : 2;
+  const tri = res.slice().sort((a, b) => ordre(a) - ordre(b) || a.ligne - b.ligne);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Feuil1');
+  ws.addRow(['Date de réception', 'REF.', 'EAN', '', '', 'Qté', "NOM DE L'ENSEIGNE", 'DEPARTEMENT \nET VILLE', 'COMMENTAIRE', 'Numéro \nCNB', "Numéro d'accord", 'Numéro \nWisen', 'DDP/FOB']);
+  ws.getRow(1).font = { bold: true, name: 'Arial', size: 10 };
+  ws.getRow(1).alignment = { vertical: 'middle', wrapText: true };
+  for (const r of tri) {
+    const date = r.date instanceof Date ? r.date : (r.date ? r.date : null);
+    const row = ws.addRow([date, r.ref ?? '', r.ean ? Number(r.ean) : (r.eanBrut ?? ''), /^\d{4}$/.test(r.statut) ? Number(r.statut) : r.statut || null, r.valeur === '' ? null : r.valeur, nombre(r.qte) ?? r.qte ?? null, r.enseigne ?? null, r.ville ?? null, r.comm ?? null, r.cnb ?? null, r.accord ?? null, r.wisen ?? null, r.ddpfob ?? null]);
+    row.font = { name: 'Arial', size: 10 };
+    if (r.verif.length) row.eachCell({ includeEmpty: true }, (c, n) => { if (n <= 13) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } }; });
+  }
+  ws.getColumn(1).numFmt = 'dd/mm/yyyy';
+  ws.getColumn(3).numFmt = '0';
+  [13, 30, 16, 7, 14, 6, 18, 26, 24, 18, 13, 12, 9].forEach((w, i) => ws.getColumn(i + 1).width = w);
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+  const aV = tri.filter(r => r.verif.length);
+  if (aV.length) {
+    const v = wb.addWorksheet('À vérifier');
+    v.addRow(['Ligne export', 'REF.', 'EAN', 'Statut', 'Valeur', 'À vérifier', 'Ce que contiennent les sources']);
+    v.getRow(1).font = { bold: true, name: 'Arial', size: 10 };
+    for (const r of aV) v.addRow([r.ligne, r.ref ?? '', r.ean || (r.eanBrut ?? ''), r.statut, r.valeur, r.verif.join(' ; '), r.detail || '']).font = { name: 'Arial', size: 10 };
+    [10, 30, 16, 8, 14, 52, 60].forEach((w, i) => v.getColumn(i + 1).width = w);
+  }
+  const buf = await wb.xlsx.writeBuffer();
+  const base = String(nomExport || 'export').replace(/\.[^.]+$/, '').replace(/^Remboursement[_ ]?/i, '');
+  const nom = 'DOC TRAVAIL AVOIR ' + base + '.xlsx';
+  const url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  const a = document.createElement('a'); a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return { nom, url, tri, aV };
+}
+
+async function traiterExport(file) {
+  const z = $('res');
+  z.innerHTML = '<p class="muted">⏳ Lecture de l\'export…</p>';
+  try {
+    if (!INDEX) await chargerIndex();
+    if (!SOURCES.length) { z.innerHTML = '<p class="err">Aucun fichier source déposé : commence par l\'étape 1.</p>'; return; }
+    const wb = await lireClasseur(file);
+    const res = traiter(lireExport(wb));
+    const s = await construireSortie(res, file.name);
+    const nF = res.filter(r => r.type === 'FOB').length, nD = res.filter(r => r.type === 'DDP').length, nX = res.filter(r => !r.type).length;
+    z.innerHTML = `<div class="stats">
+        <div class="stat"><b>${res.length}</b><span>lignes</span></div>
+        <div class="stat"><b style="color:var(--fob)">${nF}</b><span>FOB (prix)</span></div>
+        <div class="stat"><b style="color:var(--ddp)">${nD}</b><span>DDP (n° facture)</span></div>
+        <div class="stat"><b style="color:var(--warn)">${s.aV.length}</b><span>à vérifier${nX ? ` dont ${nX} introuvable(s)` : ''}</span></div>
+      </div>
+      <div class="row"><a class="btn" href="${s.url}" download="${esc(s.nom)}">⬇ Retélécharger ${esc(s.nom)}</a></div>
+      ${s.aV.length ? `<p class="warn" style="margin:12px 0 6px">Ces lignes sont surlignées en jaune dans le fichier, et listées dans l'onglet « À vérifier » :</p>
+      <div class="scroll"><table><tr><th>Ligne</th><th>REF.</th><th>EAN</th><th></th><th>Valeur</th><th>Pourquoi</th></tr>${s.aV.map(r =>
+        `<tr class="verif"><td>${r.ligne}</td><td>${esc(r.ref)}</td><td>${esc(r.ean || r.eanBrut)}</td><td>${r.type ? `<span class="tag ${r.type}">${esc(r.statut)}</span>` : '<span class="tag X">?</span>'}</td><td>${esc(r.valeur)}</td><td>${esc(r.verif.join(' ; '))}${r.detail ? `<div class="muted">${esc(r.detail)}</div>` : ''}</td></tr>`).join('')}</table></div>` : '<p class="ok">✓ Toutes les lignes ont trouvé leur prix ou leur facture.</p>'}
+      <details><summary>Voir toutes les lignes</summary><div class="scroll"><table><tr><th>REF.</th><th>EAN</th><th></th><th>Valeur</th><th>Qté</th><th>CNB</th></tr>${s.tri.map(r =>
+        `<tr${r.verif.length ? ' class="verif"' : ''}><td>${esc(r.ref)}</td><td>${esc(r.ean || r.eanBrut)}</td><td>${r.type ? `<span class="tag ${r.type}">${esc(r.statut)}</span>` : '<span class="tag X">?</span>'}</td><td>${esc(r.valeur)}</td><td>${esc(r.qte)}</td><td>${esc(r.cnb)}</td></tr>`).join('')}</table></div></details>`;
+  } catch (er) {
+    if (er.code === 401) return verrouiller();
+    z.innerHTML = '<p class="err">⚠️ ' + esc(er.message) + '</p>';
+  }
+}
+
+// ─── Zones de dépôt ──────────────────────────────────────
+function zone(dropId, inputId, cb) {
+  const d = $(dropId), inp = $(inputId);
+  d.addEventListener('click', () => inp.click());
+  inp.addEventListener('change', () => { const f = [...inp.files]; inp.value = ''; if (f.length) cb(f); });
+  d.addEventListener('dragover', e => { e.preventDefault(); d.classList.add('on'); });
+  d.addEventListener('dragleave', () => d.classList.remove('on'));
+  d.addEventListener('drop', e => { e.preventDefault(); d.classList.remove('on'); const f = [...e.dataTransfer.files]; if (f.length) cb(f); });
+}
+zone('src-drop', 'src-file', deposerSources);
+zone('exp-drop', 'exp-file', f => traiterExport(f[0]));
+
+// ─── Accès ───────────────────────────────────────────────
+function verrouiller(msg) {
+  LS.del('avoirsCode'); CODE = '';
+  $('app').hidden = true; $('gate').hidden = false;
+  $('gate-err').textContent = msg || '';
+  $('gate-code').focus();
+}
+async function entrer() {
+  CODE = $('gate-code').value.trim().toUpperCase();
+  if (!CODE) return;
+  $('gate-ok').disabled = true; $('gate-err').textContent = '';
+  try { await demarrer(); LS.set('avoirsCode', CODE); }
+  catch (er) { verrouiller(er.code === 401 ? 'Code incorrect.' : '⚠️ ' + er.message); }
+  $('gate-ok').disabled = false;
+}
+async function demarrer() {
+  await chargerIndex();
+  $('gate').hidden = true; $('app').hidden = false;
+}
+$('gate-ok').addEventListener('click', entrer);
+$('gate-code').addEventListener('keydown', e => { if (e.key === 'Enter') entrer(); });
+$('deco').addEventListener('click', () => verrouiller());
+if (CODE) demarrer().catch(er => verrouiller(er.code === 401 ? '' : '⚠️ ' + er.message)); else verrouiller();
+</script>
+</body>
+</html>
