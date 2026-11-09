@@ -418,16 +418,19 @@
     #sec-prepa .voile{padding:0;align-items:flex-end;}
     #sec-prepa .fen{border-radius:18px 18px 0 0;max-height:92vh;}
   }
-  /* 🤖 Robot de lecture (création maison) : apparaît pendant le scan, les yeux rougissent */
-  #robot-scan{position:fixed;inset:0;z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,5,7,.9);backdrop-filter:blur(3px)}
+  /* 🤖 Robot de lecture : image fixe, seuls les yeux s'allument pendant le scan */
+  #robot-scan{position:fixed;inset:0;z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#000}
   #robot-scan.on{display:flex}
-  #robot-scan svg{width:min(62vw,250px);height:auto;opacity:0;transition:opacity .4s;filter:drop-shadow(0 0 14px rgba(0,0,0,.8))}
-  #robot-scan .rs-txt{font-family:'Bebas Neue',sans-serif;letter-spacing:3px;font-size:22px;color:#9ca3af;text-align:center;padding:0 16px}
-  #robot-scan .rs-bar{width:min(62vw,250px);height:4px;border-radius:4px;background:#222;overflow:hidden}
-  #robot-scan .rs-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7f1d1d,#ef4444);transition:width .3s}
-  #robot-scan.fini .rs-txt{color:#ef4444}
-  #robot-scan.fini .oeil{animation:rs-pulse .35s ease-in-out 3 alternate}
-  @keyframes rs-pulse{to{filter:brightness(1.8)}}
+  #robot-scan svg{width:min(86vw,380px);height:auto;opacity:0;transition:opacity .5s}
+  #robot-scan .rs-txt{font-family:'Bebas Neue',sans-serif;letter-spacing:3px;font-size:22px;color:#9ca3af;text-align:center;padding:0 16px;position:relative}
+  #robot-scan .rs-bar{width:min(70vw,280px);height:3px;background:#1a1a1a;overflow:hidden;position:relative}
+  #robot-scan .rs-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#450a0a,#ff2020);box-shadow:0 0 8px #ff2020;transition:width .3s}
+  #robot-scan .rs-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 38%,rgba(255,30,30,.5),rgba(120,0,0,.22) 45%,transparent 75%)}
+  #robot-scan.fini .rs-flash{animation:rs-flash 1.3s ease-out forwards}
+  #robot-scan.fini .rs-txt{color:#ff2a2a;text-shadow:0 0 10px rgba(255,0,0,.6)}
+  #robot-scan.fini .oeil,#robot-scan.fini .halo{animation:rs-pulse .18s steps(2) 3}
+  @keyframes rs-flash{0%{opacity:0}15%{opacity:1}100%{opacity:.4}}
+  @keyframes rs-pulse{50%{opacity:.25}}
 </style>
 </head>
 <body>
@@ -451,27 +454,18 @@
 </div>
 
 <div id="robot-scan" aria-hidden="true">
-  <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+  <div class="rs-flash"></div>
+  <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="rs-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b7280"/><stop offset=".5" stop-color="#374151"/><stop offset="1" stop-color="#1f2937"/></linearGradient>
-      <radialGradient id="rs-halo"><stop offset="0" stop-color="#ef4444" stop-opacity=".9"/><stop offset="1" stop-color="#ef4444" stop-opacity="0"/></radialGradient>
+      <filter id="rs-lueur" x="-100%" y="-300%" width="300%" height="700%"><feGaussianBlur stdDeviation="14"/></filter>
+      <filter id="rs-douce" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="2.2"/></filter>
+      <radialGradient id="rs-fond" cx="50%" cy="50%" r="50%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset=".97" stop-color="#000"/></radialGradient>
     </defs>
-    <line x1="100" y1="34" x2="100" y2="10" stroke="#4b5563" stroke-width="5"/>
-    <circle cx="100" cy="9" r="7" fill="#9ca3af" class="oeil-led"/>
-    <rect x="22" y="78" width="16" height="44" rx="6" fill="#374151"/>
-    <rect x="162" y="78" width="16" height="44" rx="6" fill="#374151"/>
-    <rect x="34" y="34" width="132" height="132" rx="26" fill="url(#rs-metal)" stroke="#111827" stroke-width="4"/>
-    <circle cx="50" cy="50" r="4" fill="#1f2937"/><circle cx="150" cy="50" r="4" fill="#1f2937"/>
-    <circle cx="50" cy="150" r="4" fill="#1f2937"/><circle cx="150" cy="150" r="4" fill="#1f2937"/>
-    <rect x="50" y="66" width="100" height="44" rx="22" fill="#0b0b0f" stroke="#111827" stroke-width="3"/>
-    <circle class="halo" cx="76" cy="88" r="22" fill="url(#rs-halo)" opacity="0"/>
-    <circle class="halo" cx="124" cy="88" r="22" fill="url(#rs-halo)" opacity="0"/>
-    <circle class="oeil" cx="76" cy="88" r="11" fill="#4b5563"/>
-    <circle class="oeil" cx="124" cy="88" r="11" fill="#4b5563"/>
-    <rect x="66" y="126" width="68" height="22" rx="6" fill="#111827"/>
-    <g stroke="#4b5563" stroke-width="3"><line x1="80" y1="129" x2="80" y2="145"/><line x1="93" y1="129" x2="93" y2="145"/><line x1="107" y1="129" x2="107" y2="145"/><line x1="120" y1="129" x2="120" y2="145"/></g>
-    <rect x="78" y="166" width="44" height="16" fill="#374151"/>
-    <rect x="52" y="182" width="96" height="30" rx="10" fill="#1f2937" stroke="#111827" stroke-width="3"/>
+    <image href="robot-skynet.jpg" x="0" y="0" width="1024" height="1024"/>
+    <rect width="1024" height="1024" fill="url(#rs-fond)"/>
+    <g class="halo" opacity="0" filter="url(#rs-lueur)"><polygon points="345.7,374.3 374,373.7 454,401.7 451.7,412.7 376.7,404 346.7,383.3" fill="#ff1010"/><polygon points="677.7,374 650,373.7 570.7,401.7 572.7,412.7 646.7,404 676.7,383.3" fill="#ff1010"/></g>
+    <g class="oeil" opacity="0" filter="url(#rs-douce)"><polygon points="345.7,374.3 374,373.7 454,401.7 451.7,412.7 376.7,404 346.7,383.3" fill="#ff2a1a"/><polygon points="677.7,374 650,373.7 570.7,401.7 572.7,412.7 646.7,404 676.7,383.3" fill="#ff2a1a"/></g>
+    <g class="coeur" opacity="0"><polygon points="345.7,374.3 374,373.7 454,401.7 451.7,412.7 376.7,404 346.7,383.3" fill="#ffb4a0" transform="translate(400 393) scale(.55 .3) translate(-400 -393)"/><polygon points="677.7,374 650,373.7 570.7,401.7 572.7,412.7 646.7,404 676.7,383.3" fill="#ffb4a0" transform="translate(624 393) scale(.55 .3) translate(-624 -393)"/></g>
   </svg>
   <div class="rs-txt">ANALYSE DU DOSSIER…</div>
   <div class="rs-bar"><i></i></div>
@@ -1665,11 +1659,12 @@ const robotScan=(()=>{
   const mix=(a,b,k)=>Math.round(a+(b-a)*k);
   function peindre(k){
     const r=el();if(!r)return;
-    r.querySelector('svg').style.opacity=String(0.15+0.85*Math.min(1,k*1.6));
-    const c='rgb('+mix(75,255,k)+','+mix(85,40,k)+','+mix(99,40,k)+')';
-    r.querySelectorAll('.oeil').forEach(o=>o.setAttribute('fill',c));
-    r.querySelector('.oeil-led').setAttribute('fill',c);
-    r.querySelectorAll('.halo').forEach(h=>h.setAttribute('opacity',String(k*k)));
+    r.querySelector('svg').style.opacity='1';
+    // Les yeux restent éteints au début puis montent de plus en plus vite vers le rouge
+    const e=Math.pow(k,1.7);
+    r.querySelector('.oeil').setAttribute('opacity',String(e));
+    r.querySelector('.halo').setAttribute('opacity',String(Math.min(1,e*1.1)));
+    r.querySelector('.coeur').setAttribute('opacity',String(Math.max(0,(k-0.6)/0.4)*0.85));
     r.querySelector('.rs-bar i').style.width=Math.round(k*100)+'%';
   }
   return{
@@ -2279,7 +2274,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-e';
+const ENTREPOT_VERSION = '2026-11-09-f';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
