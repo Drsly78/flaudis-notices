@@ -1654,11 +1654,7 @@ window.openCartonCustom=async function(key,e){
 };
 // 🤖 Robot de lecture : apparaît petit à petit, les yeux passent du gris au rouge
 const robotScan=(()=>{
-  let t=null,p=0,t0=0;
-  // Durée habituelle d'un scan sur cet appareil (moyenne des derniers scans réussis), 15 s par défaut
-  const DUREE_CLE='robotScanDuree';
-  const dureeHabituelle=()=>{try{const v=parseFloat(localStorage.getItem(DUREE_CLE));return v>3000&&v<120000?v:15000;}catch(e){return 15000;}};
-  const retenirDuree=ms=>{try{const a=dureeHabituelle();localStorage.setItem(DUREE_CLE,String(Math.round(a*0.6+ms*0.4)));}catch(e){}};
+  let t=null,p=0;
   const el=()=>document.getElementById('robot-scan');
   const mix=(a,b,k)=>Math.round(a+(b-a)*k);
   function peindre(k){
@@ -1674,10 +1670,8 @@ const robotScan=(()=>{
   return{
     debut(){const r=el();if(!r)return;clearInterval(t);p=0;r.classList.remove('fini');r.querySelector('.rs-txt').textContent='ANALYSE DU DOSSIER…';r.classList.add('on');peindre(0);
       // Progression : rapide au début, ralentit vers 92 % jusqu'à la fin réelle
-      // Les yeux atteignent ~90 % à la durée habituelle du scan, puis plafonnent jusqu'à la vraie réponse
-      t0=Date.now();const T=dureeHabituelle();
-      t=setInterval(()=>{p=0.96*(1-Math.exp(-2.6*(Date.now()-t0)/T));peindre(p);},100);},
-    fin(ok,msg){const r=el();if(!r)return;clearInterval(t);if(ok&&t0)retenirDuree(Date.now()-t0);peindre(1);r.querySelector('.rs-txt').textContent=msg||(ok?'DOSSIER ANALYSÉ':'ÉCHEC DE L\u2019ANALYSE');r.classList.add('fini');
+      t=setInterval(()=>{p+=(0.92-p)*0.06;peindre(p);},250);},
+    fin(ok,msg){const r=el();if(!r)return;clearInterval(t);peindre(1);r.querySelector('.rs-txt').textContent=msg||(ok?'DOSSIER ANALYSÉ':'ÉCHEC DE L\u2019ANALYSE');r.classList.add('fini');
       return new Promise(res=>setTimeout(()=>{r.classList.remove('on','fini');res();},ok?1300:1600));}
   };
 })();
@@ -2280,7 +2274,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-g';
+const ENTREPOT_VERSION = '2026-11-09-f';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
