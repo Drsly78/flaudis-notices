@@ -96,7 +96,7 @@
   #entrepot-bar .eb-tabs button.on{background:var(--orange);color:#fff;}
   #sec-notices header{top:var(--topbar-h);}
   #sec-notices[hidden],#sec-prepa[hidden],#sec-prepa [hidden]{display:none !important;}
-  @media (max-width:520px){ #entrepot-bar .eb-logo span{display:none;} #entrepot-bar .eb-tabs button{padding:8px 10px;} }
+  @media (max-width:520px){ #entrepot-bar .eb-logo span{font-size:11px;letter-spacing:1px;} #entrepot-bar .eb-tabs button{padding:8px 10px;} }
 
   /* ══ Section Prépa SAV (tout est préfixé #sec-prepa : rien ne touche aux notices) ══ */
   #sec-prepa{--pp-piece:#ff9a5c;--pp-piece-bg:rgba(232,97,26,.12);--pp-piece-line:rgba(232,97,26,.38);--pp-ok:#22c55e;--pp-ok-bg:rgba(34,197,94,.12);--pp-ok-line:rgba(34,197,94,.4);
@@ -446,7 +446,7 @@
 </div>
 
 <div id="entrepot-bar">
-  <div class="eb-logo">FLAUDIS <span>ENTREPÔT</span></div>
+  <div class="eb-logo">SKYNET <span>ARTIFICIAL INTELLIGENCE</span></div>
   <div class="eb-tabs">
     <button data-sec="notices" class="on">📄 Notices</button>
     <button data-sec="prepa">📦 Prépa SAV</button>
@@ -473,7 +473,7 @@
 <div id="sec-notices">
 <header>
   <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
-    <div class="logo" style="margin-bottom:0;font-size:22px">SKYNET <span>ARTIFICIAL INTELLIGENCE</span></div>
+    <div class="logo" style="margin-bottom:0;font-size:22px">NOTICES <span>PRODUITS</span></div>
     <button onclick="newRefToggle()" id="nav-add" title="Créer une réf sans notice ou un box" style="position:absolute;left:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">➕</button>
     <button onclick="currentView==='plan'?switchView('notices'):switchView('plan')" id="nav-plan" style="position:absolute;right:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">🗺️</button>
   </div>
@@ -2280,7 +2280,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-g';
+const ENTREPOT_VERSION = '2026-11-09-h';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
