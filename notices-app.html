@@ -100,7 +100,7 @@
 
   /* ══ Section Prépa SAV (tout est préfixé #sec-prepa : rien ne touche aux notices) ══ */
   #sec-prepa{--pp-piece:#ff9a5c;--pp-piece-bg:rgba(232,97,26,.12);--pp-piece-line:rgba(232,97,26,.38);--pp-ok:#22c55e;--pp-ok-bg:rgba(34,197,94,.12);--pp-ok-line:rgba(34,197,94,.4);
-    --pp-dsv:#3b82f6;--pp-dsv-bg:rgba(59,130,246,.15);--pp-dpd:#ef4444;--pp-dpd-bg:rgba(239,68,68,.14);--pp-faint:#5f5f5f;--pp-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.45;}
+    --pp-dsv:#3b82f6;--pp-dsv-bg:rgba(59,130,246,.15);--pp-gls:#facc15;--pp-gls-bg:rgba(250,204,21,.15);--pp-dpd:#ef4444;--pp-dpd-bg:rgba(239,68,68,.14);--pp-faint:#5f5f5f;--pp-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.45;}
   #sec-prepa button{font-family:'DM Sans',sans-serif;cursor:pointer;color:inherit;}
   #sec-prepa .pp-head{position:sticky;top:var(--topbar-h);z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 12px;}
   #sec-prepa .pp-head-in{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
@@ -155,9 +155,9 @@
   #sec-prepa .g-act{padding:9px 13px;border-radius:10px;border:0;background:var(--orange);color:#fff;font-weight:700;font-size:13px;white-space:nowrap;}
   #sec-prepa .pill-t{font-weight:800;font-size:12px;letter-spacing:.6px;padding:7px 11px;border-radius:9px;border:1.5px solid;background:var(--surface);}
   #sec-prepa .pill-t.dsv{color:#60a5fa;border-color:var(--pp-dsv);}
-  #sec-prepa .pill-t.dpd{color:#f87171;border-color:var(--pp-dpd);}
+  #sec-prepa .pill-t.gls{color:#facc15;border-color:var(--pp-gls);}
   #sec-prepa .pill-t.on.dsv{background:var(--pp-dsv);color:#fff;}
-  #sec-prepa .pill-t.on.dpd{background:var(--pp-dpd);color:#fff;}
+  #sec-prepa .pill-t.on.gls{background:var(--pp-gls);color:#1a1a1a;}
   #sec-prepa .cartes{display:grid;gap:10px;}
 
   /* Carte : chaque info a TOUJOURS la même place */
@@ -270,7 +270,7 @@
   #sec-prepa .statut-ok{display:inline-flex;align-items:center;gap:8px;color:var(--pp-ok);font-weight:700;font-size:13.5px;flex-wrap:wrap;}
   #sec-prepa .statut-ok .t{font-weight:800;font-size:12px;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;}
   #sec-prepa .statut-ok .t.DSV{background:var(--pp-dsv);}
-  #sec-prepa .statut-ok .t.DPD{background:var(--pp-dpd);}
+  #sec-prepa .statut-ok .t.GLS{background:var(--pp-gls);color:#1a1a1a;}
   #sec-prepa .b-lien{margin-left:auto;border:0;background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;text-underline-offset:2px;padding:6px 2px;}
   #sec-prepa button:disabled{opacity:.5;cursor:wait;}
 
@@ -371,9 +371,9 @@
   #sec-prepa .transp-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   #sec-prepa .transp-choix button{padding:16px 10px;border-radius:12px;font-weight:800;font-size:18px;letter-spacing:1px;background:var(--surface);border:2px solid;}
   #sec-prepa .transp-choix .dsv{color:#60a5fa;border-color:var(--pp-dsv);}
-  #sec-prepa .transp-choix .dpd{color:#f87171;border-color:var(--pp-dpd);}
+  #sec-prepa .transp-choix .gls{color:#facc15;border-color:var(--pp-gls);}
   #sec-prepa .transp-choix .dsv.on{background:var(--pp-dsv);color:#fff;}
-  #sec-prepa .transp-choix .dpd.on{background:var(--pp-dpd);color:#fff;}
+  #sec-prepa .transp-choix .gls.on{background:var(--pp-gls);color:#1a1a1a;}
   #sec-prepa .transp-choix button:disabled{cursor:not-allowed;opacity:.35;}
   #sec-prepa .transp-choix.manque button{animation:ppSecoue .35s;}
   @keyframes ppSecoue{25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
@@ -522,7 +522,7 @@
           </div>
           <div class="pp-actions">
             <button class="pp-hbtn" id="pp-export" title="Remplir le tableau de l'onglet « Pour SAV Entrepôt »"><span class="ic">📋</span><span class="lib">Pour SAV Entrepôt</span></button>
-            <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire les « x » dans SYSTEME U pour l'import des trackings"><span class="ic">✍️</span><span class="lib">Écrire les x</span><span class="nb" id="pp-nb-x">0</span></button>
+            <button class="pp-hbtn" id="pp-ecrire-x" title="Écrire la lettre du transporteur (G = GLS, D = DSV) dans SYSTEME U pour l'import des trackings"><span class="ic">✍️</span><span class="lib">Écrire les lettres</span><span class="nb" id="pp-nb-x">0</span></button>
           </div>
         </div>
       </div>
@@ -552,7 +552,7 @@
           <h3>Transporteur <small>— obligatoire</small></h3>
           <div class="transp-choix" id="pp-f-transp">
             <button class="dsv" data-t="DSV" type="button">DSV</button>
-            <button class="dpd" data-t="DPD" type="button">DPD</button>
+            <button class="gls" data-t="GLS" type="button">GLS</button>
           </div>
           <div class="f-aide" id="pp-f-aide-t"></div>
         </div>
@@ -2219,7 +2219,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-b';
+const ENTREPOT_VERSION = '2026-11-09-c';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2451,10 +2451,12 @@ const ENTREPOT_VERSION = '2026-11-09-b';
     return u.replace(/\/+$/, '').replace(/\/(summary|product|documents|messaging|details|history)$/, '') + '/summary';
   };
   const titreVille = it => '<span class="dp">' + esc(deptTxt(it)) + '</span> ' + esc(villeSeule(it));
+  // Lettre écrite en colonne B selon le transporteur du colis (lue par l'import des trackings)
+  const LETTRE_T = { GLS: 'G', DSV: 'D' };
   function chipX(it) {
-    if (it.x) return '<span class="chip-x ok" title="« x » présent en colonne B : sera lu à l\u2019import des trackings">✍️ x écrit</span>';
+    if (it.x) return '<span class="chip-x ok" title="Lettre présente en colonne B : sera lue à l\u2019import des trackings">✍️ ' + esc(it.marque || 'x') + ' écrit</span>';
     if (it.b_autre) return '<span class="chip-x autre" title="Colonne B de SYSTEME U">B : ' + esc(it.b_autre) + '</span>';
-    return '<span class="chip-x attente" title="Le « x » n\u2019est pas encore écrit dans SYSTEME U">x à écrire</span>';
+    return '<span class="chip-x attente" title="La lettre du transporteur n\u2019est pas encore écrite dans SYSTEME U">' + (LETTRE_T[it.transporteur] || 'Lettre') + ' à écrire</span>';
   }
 
   function grouper(liste, cleDe) {
@@ -2487,11 +2489,11 @@ const ENTREPOT_VERSION = '2026-11-09-b';
           html += '<section class="groupe"><div class="g-tete"><span class="dept colis">📦</span>' +
             '<div class="g-titre"><b>Colis ' + a.colis + ' · ' + titreVille(a) + '</b><span>' + nomMag(a) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
             '<button class="pill-t dsv' + (a.transporteur === 'DSV' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DSV">DSV</button>' +
-            '<button class="pill-t dpd' + (a.transporteur === 'DPD' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="DPD">DPD</button>' +
+            '<button class="pill-t gls' + (a.transporteur === 'GLS' ? ' on' : '') + '" data-colis="' + a.colis + '" data-t="GLS">GLS</button>' +
             '</div><div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
         } else {
           html += '<section class="groupe"><div class="g-tete">' +
-            '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · « x » posé à la main dans le Sheet, sans colis</span></div></div>' +
+            '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + esc(a.enseigne) + ' · marque posée à la main dans le Sheet, sans colis</span></div></div>' +
             '<div class="cartes">' + g.items.map(carte).join('') + '</div></section>';
         }
       });
@@ -2831,7 +2833,7 @@ const ENTREPOT_VERSION = '2026-11-09-b';
       return;
     }
     if (!FEN.t) {
-      $('pp-f-aide-t').textContent = '⚠️ Choisis DSV ou DPD avant de valider.'; $('pp-f-aide-t').className = 'f-aide err';
+      $('pp-f-aide-t').textContent = '⚠️ Choisis DSV ou GLS avant de valider.'; $('pp-f-aide-t').className = 'f-aide err';
       const tc = $('pp-f-transp'); tc.classList.remove('manque'); void tc.offsetWidth; tc.classList.add('manque');
       return;
     }
@@ -2907,7 +2909,7 @@ const ENTREPOT_VERSION = '2026-11-09-b';
       if (b.dataset.act === 'prep') { ouvrirPreparer([cle]); return; }
       if (b.dataset.act === 'annuler') {
         const aRendre = Object.values(it.stock_retraits || {}).reduce((t, n) => t + (parseInt(n, 10) || 0), 0);
-        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + (it.x ? '\nLe « x » sera enlevé du Sheet.' : '') +
+        if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + (it.x ? '\nLa lettre « ' + (it.marque || 'x') + ' » sera enlevée du Sheet.' : '') +
           (aRendre ? '\n🧰 ' + aRendre + (aRendre > 1 ? ' pièces seront remises' : ' pièce sera remise') + ' dans le stock (carton d\u2019origine).' : ''))) return;
         b.disabled = true;
         try {
@@ -2991,17 +2993,17 @@ const ENTREPOT_VERSION = '2026-11-09-b';
   $('pp-ecrire-x').onclick = async () => {
     const cibles = ITEMS.filter(i => i.prepare && !i.x && !i.b_autre);
     if (!cibles.length) return;
-    const ok = await confirmer('Écrire les x ?', cibles.length + ' dossier' + (cibles.length > 1 ? 's' : '') + ' préparé' + (cibles.length > 1 ? 's' : '') + ' · colonne B de SYSTEME U',
+    const ok = await confirmer('Écrire les lettres ?', cibles.length + ' dossier' + (cibles.length > 1 ? 's' : '') + ' préparé' + (cibles.length > 1 ? 's' : '') + ' · colonne B de SYSTEME U',
       '<div class="conf-liste">' + cibles.map(ligneConf).join('') + '</div>' +
-      '<div class="conf-note">Un « x » sera écrit en face de chacun de ces USV : ils seront pris en compte au prochain import des trackings.<br>Tant qu’un colis n’est pas expédié, tu peux encore y ajouter des dossiers : il suffira de réécrire les x pour les nouveaux.</div>',
-      '✍️ Écrire ' + cibles.length + ' x');
+      '<div class="conf-note">La lettre du transporteur (G = GLS, D = DSV) sera écrite en face de chacun de ces USV : ils seront pris en compte au prochain import des trackings.<br>Tant qu’un colis n’est pas expédié, tu peux encore y ajouter des dossiers : il suffira de réécrire les x pour les nouveaux.</div>',
+      '✍️ Écrire ' + cibles.length + ' lettre' + (cibles.length > 1 ? 's' : ''));
     if (!ok) return;
     const b = $('pp-ecrire-x'); b.disabled = true;
     try {
       const d = await api('ecrire-x', { cles: cibles.map(i => i.cle) });
-      d.ecrits.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) it.x = true; });
+      d.ecrits.forEach(c => { const it = ITEMS.find(i => i.cle === c); if (it) { it.x = true; it.marque = LETTRE_T[it.transporteur] || 'x'; } });
       rendre();
-      toast('✍️ ' + d.ecrits.length + ' x écrit' + (d.ecrits.length > 1 ? 's' : '') + ' dans SYSTEME U' + (d.refuses.length ? ' — ⚠️ ' + d.refuses.length + ' non écrit(s) : ' + d.refuses.map(r => r.cle + ' (' + r.raison + ')').join(', ') : ''), d.refuses.length ? 7000 : 3500);
+      toast('✍️ ' + d.ecrits.length + ' lettre' + (d.ecrits.length > 1 ? 's' : '') + ' écrite' + (d.ecrits.length > 1 ? 's' : '') + ' dans SYSTEME U' + (d.refuses.length ? ' — ⚠️ ' + d.refuses.length + ' non écrit(s) : ' + d.refuses.map(r => r.cle + ' (' + r.raison + ')').join(', ') : ''), d.refuses.length ? 7000 : 3500);
     } catch (err) { if (err.message !== 'code') toast('⚠️ ' + err.message, 5000); }
     finally { rendre(); }
   };
