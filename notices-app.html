@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#0f0f0f"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Entrepôt Flaudis</title>
+<title>SKYNET</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
   :root {
@@ -418,13 +418,23 @@
     #sec-prepa .voile{padding:0;align-items:flex-end;}
     #sec-prepa .fen{border-radius:18px 18px 0 0;max-height:92vh;}
   }
+  /* 🤖 Robot de lecture (création maison) : apparaît pendant le scan, les yeux rougissent */
+  #robot-scan{position:fixed;inset:0;z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,5,7,.9);backdrop-filter:blur(3px)}
+  #robot-scan.on{display:flex}
+  #robot-scan svg{width:min(62vw,250px);height:auto;opacity:0;transition:opacity .4s;filter:drop-shadow(0 0 14px rgba(0,0,0,.8))}
+  #robot-scan .rs-txt{font-family:'Bebas Neue',sans-serif;letter-spacing:3px;font-size:22px;color:#9ca3af;text-align:center;padding:0 16px}
+  #robot-scan .rs-bar{width:min(62vw,250px);height:4px;border-radius:4px;background:#222;overflow:hidden}
+  #robot-scan .rs-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7f1d1d,#ef4444);transition:width .3s}
+  #robot-scan.fini .rs-txt{color:#ef4444}
+  #robot-scan.fini .oeil{animation:rs-pulse .35s ease-in-out 3 alternate}
+  @keyframes rs-pulse{to{filter:brightness(1.8)}}
 </style>
 </head>
 <body>
 <!-- 🔒 Connexion : les données ne sont lisibles qu'une fois connecté (règles Firebase) -->
 <div id="fb-login" style="position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;background:#0f0f0f">
   <div style="width:100%;max-width:340px;background:rgba(26,26,26,.94);border:1px solid #333;border-radius:16px;padding:26px;color:#eee;font-family:inherit;box-shadow:0 20px 50px rgba(0,0,0,.5)">
-    <div style="font-size:20px;font-weight:800;margin-bottom:4px">Flaudis — Entrepôt</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:4px;letter-spacing:2px">SKYNET</div>
     <div style="font-size:13px;color:#aaa;margin-bottom:16px">Entre le mot de passe de l'app. Il n'est demandé qu'une fois sur cet appareil.</div>
     <input id="fb-login-pwd" type="password" autocomplete="current-password" placeholder="Mot de passe" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #444;background:#111;color:#fff;font-size:16px;box-sizing:border-box;margin-bottom:12px">
     <button id="fb-login-ok" style="width:100%;padding:12px;border:0;border-radius:10px;background:#E8611A;color:#fff;font-weight:800;font-size:15px;cursor:pointer">Se connecter</button>
@@ -440,10 +450,36 @@
   </div>
 </div>
 
+<div id="robot-scan" aria-hidden="true">
+  <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="rs-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b7280"/><stop offset=".5" stop-color="#374151"/><stop offset="1" stop-color="#1f2937"/></linearGradient>
+      <radialGradient id="rs-halo"><stop offset="0" stop-color="#ef4444" stop-opacity=".9"/><stop offset="1" stop-color="#ef4444" stop-opacity="0"/></radialGradient>
+    </defs>
+    <line x1="100" y1="34" x2="100" y2="10" stroke="#4b5563" stroke-width="5"/>
+    <circle cx="100" cy="9" r="7" fill="#9ca3af" class="oeil-led"/>
+    <rect x="22" y="78" width="16" height="44" rx="6" fill="#374151"/>
+    <rect x="162" y="78" width="16" height="44" rx="6" fill="#374151"/>
+    <rect x="34" y="34" width="132" height="132" rx="26" fill="url(#rs-metal)" stroke="#111827" stroke-width="4"/>
+    <circle cx="50" cy="50" r="4" fill="#1f2937"/><circle cx="150" cy="50" r="4" fill="#1f2937"/>
+    <circle cx="50" cy="150" r="4" fill="#1f2937"/><circle cx="150" cy="150" r="4" fill="#1f2937"/>
+    <rect x="50" y="66" width="100" height="44" rx="22" fill="#0b0b0f" stroke="#111827" stroke-width="3"/>
+    <circle class="halo" cx="76" cy="88" r="22" fill="url(#rs-halo)" opacity="0"/>
+    <circle class="halo" cx="124" cy="88" r="22" fill="url(#rs-halo)" opacity="0"/>
+    <circle class="oeil" cx="76" cy="88" r="11" fill="#4b5563"/>
+    <circle class="oeil" cx="124" cy="88" r="11" fill="#4b5563"/>
+    <rect x="66" y="126" width="68" height="22" rx="6" fill="#111827"/>
+    <g stroke="#4b5563" stroke-width="3"><line x1="80" y1="129" x2="80" y2="145"/><line x1="93" y1="129" x2="93" y2="145"/><line x1="107" y1="129" x2="107" y2="145"/><line x1="120" y1="129" x2="120" y2="145"/></g>
+    <rect x="78" y="166" width="44" height="16" fill="#374151"/>
+    <rect x="52" y="182" width="96" height="30" rx="10" fill="#1f2937" stroke="#111827" stroke-width="3"/>
+  </svg>
+  <div class="rs-txt">ANALYSE DU DOSSIER…</div>
+  <div class="rs-bar"><i></i></div>
+</div>
 <div id="sec-notices">
 <header>
   <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:14px">
-    <div class="logo" style="margin-bottom:0;font-size:22px">NOTICES <span>PRODUITS</span></div>
+    <div class="logo" style="margin-bottom:0;font-size:22px">SKYNET <span>ENTREPÔT</span></div>
     <button onclick="newRefToggle()" id="nav-add" title="Créer une réf sans notice ou un box" style="position:absolute;left:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">➕</button>
     <button onclick="currentView==='plan'?switchView('notices'):switchView('plan')" id="nav-plan" style="position:absolute;right:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer">🗺️</button>
   </div>
@@ -1622,11 +1658,34 @@ window.openCartonCustom=async function(key,e){
     };
   });
 };
+// 🤖 Robot de lecture : apparaît petit à petit, les yeux passent du gris au rouge
+const robotScan=(()=>{
+  let t=null,p=0;
+  const el=()=>document.getElementById('robot-scan');
+  const mix=(a,b,k)=>Math.round(a+(b-a)*k);
+  function peindre(k){
+    const r=el();if(!r)return;
+    r.querySelector('svg').style.opacity=String(0.15+0.85*Math.min(1,k*1.6));
+    const c='rgb('+mix(75,255,k)+','+mix(85,40,k)+','+mix(99,40,k)+')';
+    r.querySelectorAll('.oeil').forEach(o=>o.setAttribute('fill',c));
+    r.querySelector('.oeil-led').setAttribute('fill',c);
+    r.querySelectorAll('.halo').forEach(h=>h.setAttribute('opacity',String(k*k)));
+    r.querySelector('.rs-bar i').style.width=Math.round(k*100)+'%';
+  }
+  return{
+    debut(){const r=el();if(!r)return;clearInterval(t);p=0;r.classList.remove('fini');r.querySelector('.rs-txt').textContent='ANALYSE DU DOSSIER…';r.classList.add('on');peindre(0);
+      // Progression : rapide au début, ralentit vers 92 % jusqu'à la fin réelle
+      t=setInterval(()=>{p+=(0.92-p)*0.06;peindre(p);},250);},
+    fin(ok,msg){const r=el();if(!r)return;clearInterval(t);peindre(1);r.querySelector('.rs-txt').textContent=msg||(ok?'DOSSIER ANALYSÉ':'ÉCHEC DE L\u2019ANALYSE');r.classList.add('fini');
+      return new Promise(res=>setTimeout(()=>{r.classList.remove('on','fini');res();},ok?1300:1600));}
+  };
+})();
 window.scanNotice=async function(key){
   const notice=allNotices.find(n=>getKey(n.ref)===key);
   if(!notice)return;
   const btn=document.querySelector('#tab-pieces-'+key+' button[onclick*="scanNotice"]');
   if(btn){btn.textContent='⏳ Analyse…';btn.disabled=true;btn.style.transform='scale(0.95)';}
+  robotScan.debut();
   try{
     const res=await fetch('https://flaudis-server-production.up.railway.app/scan-notice',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(await fbJeton())},
@@ -1634,6 +1693,7 @@ window.scanNotice=async function(key){
     });
     const data=await res.json();
     if(!data.pieces?.length)throw new Error('Aucune pièce trouvée');
+    await robotScan.fin(true,'CIBLE IDENTIFIÉE · '+data.pieces.length+' PIÈCE'+(data.pieces.length>1?'S':''));
     const nb=parseInt(prompt('Combien de cartons au total ?','1'))||1;
     data.pieces.sort((a,b)=>{
       const pa=(a.nom||'').match(/^([A-Za-z]+|\d+)/)?.[1]||(a.nom||'');
@@ -1669,7 +1729,7 @@ window.scanNotice=async function(key){
     await db.ref().update(upd);
     if(btn){btn.textContent='✓ '+data.pieces.length+' pièces';btn.style.transform='';}
     setTimeout(()=>{if(btn){btn.textContent='🤖 Scanner IA';btn.disabled=false;}},3000);
-  }catch(e){alert('Erreur: '+e.message);if(btn){btn.textContent='🤖 Scanner IA';btn.style.transform='';btn.disabled=false;}}
+  }catch(e){if(document.getElementById('robot-scan')?.classList.contains('on'))await robotScan.fin(false);alert('Erreur: '+e.message);if(btn){btn.textContent='🤖 Scanner IA';btn.style.transform='';btn.disabled=false;}}
 };
 window.resetScan=async function(key){
   if(!confirm('Supprimer toutes les pièces ?'))return;
@@ -2219,7 +2279,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-c';
+const ENTREPOT_VERSION = '2026-11-09-d';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
