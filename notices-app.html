@@ -421,6 +421,16 @@
 </style>
 </head>
 <body>
+<!-- 🔒 Connexion : les données ne sont lisibles qu'une fois connecté (règles Firebase) -->
+<div id="fb-login" style="position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;background:#0f0f0f url(login.png) center/cover no-repeat">
+  <div style="width:100%;max-width:340px;background:rgba(26,26,26,.94);border:1px solid #333;border-radius:16px;padding:26px;color:#eee;font-family:inherit;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+    <div style="font-size:20px;font-weight:800;margin-bottom:4px">Flaudis — Entrepôt</div>
+    <div style="font-size:13px;color:#aaa;margin-bottom:16px">Entre le mot de passe de l'app. Il n'est demandé qu'une fois sur cet appareil.</div>
+    <input id="fb-login-pwd" type="password" autocomplete="current-password" placeholder="Mot de passe" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #444;background:#111;color:#fff;font-size:16px;box-sizing:border-box;margin-bottom:12px">
+    <button id="fb-login-ok" style="width:100%;padding:12px;border:0;border-radius:10px;background:#E8611A;color:#fff;font-weight:800;font-size:15px;cursor:pointer">Se connecter</button>
+    <div id="fb-login-err" style="color:#f87171;font-size:13px;margin-top:10px;min-height:1.4em"></div>
+  </div>
+</div>
 
 <div id="entrepot-bar">
   <div class="eb-logo">FLAUDIS <span>ENTREPÔT</span></div>
@@ -577,6 +587,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyDJETAsWIL3AAiQwb_hCys3OILqBPA_IcE",
@@ -588,6 +599,43 @@ firebase.initializeApp({
   appId:"1:774760567820:web:f0c2c3c6bfaab746e54a29"
 });
 const db = firebase.database();
+
+// ── 🔒 Connexion Firebase ─────────────────────────────────
+// Les abonnements aux données ne partent qu'une fois connecté : partis avant, Firebase les
+// refuserait (permission_denied) et les annulerait définitivement.
+const FB_COMPTE = 'sav@flaudis.fr';
+let FB_USER = null;
+const _fbAttente = [];
+function onReady(fn) { if (FB_USER) fn(); else _fbAttente.push(fn); }
+firebase.auth().onAuthStateChanged(user => {
+  FB_USER = user || null;
+  const ecran = document.getElementById('fb-login');
+  if (user) {
+    if (ecran) ecran.style.display = 'none';
+    while (_fbAttente.length) { try { _fbAttente.shift()(); } catch (e) { console.error(e); } }
+  } else if (ecran) {
+    ecran.style.display = 'flex';
+    setTimeout(() => document.getElementById('fb-login-pwd')?.focus(), 50);
+  }
+});
+async function fbConnexion() {
+  const champ = document.getElementById('fb-login-pwd'), err = document.getElementById('fb-login-err'), btn = document.getElementById('fb-login-ok');
+  const mdp = champ.value;
+  if (!mdp) return;
+  btn.disabled = true; err.textContent = '';
+  try { await firebase.auth().signInWithEmailAndPassword(FB_COMPTE, mdp); champ.value = ''; }
+  catch (e) {
+    const c = e && e.code || '';
+    err.textContent = /wrong-password|invalid-credential|invalid-login/.test(c) ? 'Mot de passe incorrect.'
+      : /too-many-requests/.test(c) ? 'Trop d\u2019essais : réessaie dans quelques minutes.'
+      : /network/.test(c) ? 'Pas de connexion internet.' : 'Connexion impossible (' + c + ').';
+  }
+  btn.disabled = false;
+}
+document.addEventListener('click', e => { if (e.target && e.target.id === 'fb-login-ok') fbConnexion(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'fb-login-pwd') fbConnexion(); });
+// Jeton à présenter au serveur SAV (remplace l'ancienne clé écrite dans la page)
+async function fbJeton() { return FB_USER ? FB_USER.getIdToken() : ''; }
 
 const GITHUB_API = 'https://api.github.com/repos/Drsly78/flaudis-notices/contents/notices';
 const CACHE_KEY  = 'flaudis_notices_v5';
@@ -602,14 +650,14 @@ let searchTimer;
 
 // ── Firebase ──────────────────────────────────────────────
 // Samples (exposition) : base à part, n'apparaît ni dans les notices, ni dans le stock, ni sur le plan
-db.ref('samples').on('value', snap => {
+onReady(() => db.ref('samples').on('value', snap => {
   smpData = snap.val() || {};
   try { if (currentView === 'samples') renderSamples(); } catch (e) {}   // currentView est déclaré plus bas
-}, () => {});
-db.ref('produits').on('value', snap => {
+}, () => {}));
+onReady(() => db.ref('produits').on('value', snap => {
   fbData = snap.val() || {};
   if (noticesReady) renderAllSoft();
-});
+}));
 
 function getKey(ref) { return ref.replace(/[.#$\/\[\]]/g,'_'); }
 
@@ -624,10 +672,10 @@ const fbErr = e => alert('⚠️ Écriture refusée par Firebase : ' + (e && e.m
 // Les box/réfs manuelles vivent DANS la fiche produit (produits/{key}/manuel),
 // le chemin que l'app écrit déjà pour les emplacements. On lit aussi l'ancien
 // chemin manuels/ si des entrées y existent (créées par le serveur).
-db.ref('manuels').on('value', snap => {
+onReady(() => db.ref('manuels').on('value', snap => {
   legacyManuels = snap.val() || {};
   if (noticesReady) renderAllSoft();
-}, () => {});
+}, () => {}));
 
 function getManuels() {
   const out = {};
@@ -1581,7 +1629,7 @@ window.scanNotice=async function(key){
   if(btn){btn.textContent='⏳ Analyse…';btn.disabled=true;btn.style.transform='scale(0.95)';}
   try{
     const res=await fetch('https://flaudis-server-production.up.railway.app/scan-notice',{
-      method:'POST',headers:{'Content-Type':'application/json','x-app-secret':'***CLE-RETIREE***'},
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(await fbJeton())},
       body:JSON.stringify({pdfUrl:notice.rawUrl,ref:notice.ref})
     });
     const data=await res.json();
@@ -2636,7 +2684,7 @@ const ENTREPOT_VERSION = '2026-11-03-a';
 
   // ── Fenêtre « Préparer » ──
   let FEN = null;
-  if (typeof db !== 'undefined') db.ref('produits').on('value', () => {
+  if (typeof db !== 'undefined') onReady(() => db.ref('produits').on('value', () => {
     if (FEN && !$('pp-fen').hidden) {
       // ne jamais retirer plus que ce qu'il reste après un retrait fait ailleurs entre-temps
       Object.values(FEN.retraits).forEach(ret => Object.keys(ret).forEach(k => {
@@ -2647,7 +2695,7 @@ const ENTREPOT_VERSION = '2026-11-03-a';
       }));
       majStocks(); majFen();
     } else if (demarre && visible()) rendre();
-  });
+  }));
 
   function ouvrirPreparer(cles) {
     const base = ITEMS.find(i => i.cle === cles[0]);
