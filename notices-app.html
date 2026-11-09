@@ -422,7 +422,7 @@
 </head>
 <body>
 <!-- 🔒 Connexion : les données ne sont lisibles qu'une fois connecté (règles Firebase) -->
-<div id="fb-login" style="position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;background:#0f0f0f url(login.png) center/cover no-repeat">
+<div id="fb-login" style="position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;background:#0f0f0f">
   <div style="width:100%;max-width:340px;background:rgba(26,26,26,.94);border:1px solid #333;border-radius:16px;padding:26px;color:#eee;font-family:inherit;box-shadow:0 20px 50px rgba(0,0,0,.5)">
     <div style="font-size:20px;font-weight:800;margin-bottom:4px">Flaudis — Entrepôt</div>
     <div style="font-size:13px;color:#aaa;margin-bottom:16px">Entre le mot de passe de l'app. Il n'est demandé qu'une fois sur cet appareil.</div>
@@ -2219,7 +2219,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-a';
+const ENTREPOT_VERSION = '2026-11-09-b';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
