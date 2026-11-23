@@ -790,6 +790,11 @@ window.boxAdd = function(key) {
   if (!ref) return;
   const items = getManuels()[key]?.items || {};
   const exist = Object.keys(items).find(k => normB(items[k].ref) === normB(ref));
+  // Champs vidés tout de suite et curseur remis sur la réf : on peut enchaîner les ajouts
+  document.getElementById('bi-ref-'+key).value = ''; document.getElementById('bi-note-'+key).value = '';
+  document.getElementById('bi-qte-'+key).value = 1;
+  const connu = document.getElementById('bi-connu-'+key); if (connu) connu.innerHTML = '';
+  try { document.getElementById('bi-ref-'+key).focus({ preventScroll: true }); } catch (e) {}
   if (exist) db.ref('produits/'+key+'/manuel/items/'+exist).update({ ref: items[exist].ref, qte: (parseInt(items[exist].qte)||0) + qte, note: note || items[exist].note || '' }).catch(fbErr);
   else db.ref('produits/'+key+'/manuel/items').push({ ref, qte, note }).catch(fbErr);
 };
@@ -1047,7 +1052,30 @@ function renderAll() {
   });
 }
 
+// Réaffichage « doux » : la liste est reconstruite à chaque changement dans la base (le nôtre
+// ou celui d'un autre poste). On garde ce qui est en cours de saisie — texte tapé et curseur —
+// sinon un champ se vide et perd le curseur dès que quelqu'un d'autre enregistre quelque chose.
 function renderAllSoft() {
+  const saisies = {}; let focusId = null, sel = null;
+  document.querySelectorAll('.detail-panel input[id], .detail-panel textarea[id], .detail-panel select[id]').forEach(el => {
+    if (el.type === 'file' || el.type === 'checkbox' || el.type === 'radio') return;
+    if (el.value !== el.defaultValue) saisies[el.id] = el.value;
+  });
+  const act = document.activeElement;
+  if (act && act.id && act.closest && act.closest('.detail-panel')) {
+    focusId = act.id;
+    try { sel = [act.selectionStart, act.selectionEnd]; } catch (e) { sel = null; }
+  }
+  renderAllSoftBase();
+  Object.keys(saisies).forEach(id => { const el = document.getElementById(id); if (el) el.value = saisies[id]; });
+  if (focusId) {
+    const el = document.getElementById(focusId);
+    if (el && document.activeElement !== el) {
+      try { el.focus({ preventScroll: true }); if (sel && sel[0] != null) el.setSelectionRange(sel[0], sel[1]); } catch (e) {}
+    }
+  }
+}
+function renderAllSoftBase() {
   const openKeys={}, openTabs={}, openCartons={};
   document.querySelectorAll('.detail-panel').forEach(p=>{
     if(p.style.display==='block'){
@@ -2219,7 +2247,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-09-i';
+const ENTREPOT_VERSION = '2026-11-23-a';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
