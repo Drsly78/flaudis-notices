@@ -266,6 +266,8 @@
   #sec-prepa .c-pied{display:flex;gap:8px;align-items:center;padding:10px 14px 12px;margin-top:10px;border-top:1px solid var(--border);min-height:60px;flex-wrap:wrap;}
   #sec-prepa .b-prep{padding:10px 16px;border-radius:10px;border:0;background:var(--orange);color:#fff;font-weight:700;font-size:14px;}
   #sec-prepa .b-notice{padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;}
+  #sec-prepa .b-att{padding:9px 13px;border-radius:10px;border:1px solid #eab308;background:rgba(234,179,8,.12);color:#eab308;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;}
+  #sec-prepa .b-att:disabled{opacity:.5;}
   #sec-prepa .b-notice.absente{color:var(--pp-faint);border-style:dashed;cursor:default;}
   #sec-prepa .statut-ok{display:inline-flex;align-items:center;gap:8px;color:var(--pp-ok);font-weight:700;font-size:13.5px;flex-wrap:wrap;}
   #sec-prepa .statut-ok .t{font-weight:800;font-size:12px;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;}
@@ -2252,7 +2254,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-26-a';
+const ENTREPOT_VERSION = '2026-11-26-b';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2460,7 +2462,7 @@ const ENTREPOT_VERSION = '2026-11-26-a';
         (notice
           ? '<a class="b-notice" href="' + esc(notice.githubUrl) + '" target="_blank" rel="noopener" title="' + esc(notice.ref + ' — ' + (notice.label || '')) + '">📄 Notice</a>'
           : '<span class="b-notice absente" title="Aucune notice trouvée pour cette réf">📄 Pas de notice</span>') +
-        (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : att ? '' : '<button class="b-lien" data-act="attente" title="Sortir ce dossier de la liste en attendant la réception de la pièce">⏳ Attente pièce</button>') +
+        (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : att ? '' : '<button class="b-att" data-act="attente" title="Sortir ce dossier de la liste en attendant la réception de la pièce">⏳ Attente pièce</button>') +
       '</div>' +
       '</div>' +
     '</article>';
