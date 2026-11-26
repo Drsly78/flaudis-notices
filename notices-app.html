@@ -268,6 +268,11 @@
   #sec-prepa .b-notice{padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;}
   #sec-prepa .b-att{padding:9px 13px;border-radius:10px;border:1px solid #eab308;background:rgba(234,179,8,.12);color:#eab308;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;}
   #sec-prepa .b-att:disabled{opacity:.5;}
+  /* Dossier pas encore préparé : bouton principal sur toute la largeur, puis Notice et Attente pièce côte à côte, même taille */
+  #sec-prepa .pied-grille{gap:8px;padding-top:12px;}
+  #sec-prepa .pied-grille .b-prep{flex:1 1 100%;white-space:nowrap;padding:13px 16px;font-size:15px;}
+  #sec-prepa .pied-grille .statut-att{flex:1 1 100%;}
+  #sec-prepa .pied-grille .b-notice,#sec-prepa .pied-grille .b-att{flex:1 1 0;min-width:0;min-height:44px;padding:10px 8px;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;font-size:13.5px;box-sizing:border-box;}
   #sec-prepa .b-notice.absente{color:var(--pp-faint);border-style:dashed;cursor:default;}
   #sec-prepa .statut-ok{display:inline-flex;align-items:center;gap:8px;color:var(--pp-ok);font-weight:700;font-size:13.5px;flex-wrap:wrap;}
   #sec-prepa .statut-ok .t{font-weight:800;font-size:12px;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;}
@@ -2254,7 +2259,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-26-b';
+const ENTREPOT_VERSION = '2026-11-26-c';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2451,7 +2456,7 @@ const ENTREPOT_VERSION = '2026-11-26-b';
           (f.type_doc ? '<span class="tag">' + esc(f.type_doc) + '</span>' : '') + '</button>').join('')
         : '<span class="sans"><i>📷</i>Aucune photo</span>') + '</div>' +
       tiroirs(it, docs, detail) +
-      '<div class="c-pied">' +
+      '<div class="c-pied' + (it.prepare ? '' : ' pied-grille') + '">' +
         (it.prepare
           ? '<span class="statut-ok">✅ Préparé' + (it.colis ? ' · Colis ' + it.colis : ' (sans colis)') + (it.transporteur ? ' <span class="t ' + esc(it.transporteur) + '">' + esc(it.transporteur) + '</span>' : '') + '</span>' + chipX(it) +
             (it.colis ? '' : '<button class="b-prep" data-act="prep">📦 Mettre en colis</button>')
