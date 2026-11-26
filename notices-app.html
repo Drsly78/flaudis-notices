@@ -271,6 +271,10 @@
   #sec-prepa .statut-ok .t{font-weight:800;font-size:12px;letter-spacing:.5px;padding:3px 8px;border-radius:6px;color:#fff;}
   #sec-prepa .statut-ok .t.DSV{background:var(--pp-dsv);}
   #sec-prepa .statut-ok .t.GLS{background:var(--pp-gls);color:#1a1a1a;}
+  #sec-prepa .carte.en-attente{border-color:#eab308;}
+  #sec-prepa .statut-att{display:inline-flex;align-items:center;gap:6px;color:#eab308;font-weight:700;font-size:13px;flex-wrap:wrap;}
+  #sec-prepa .c-entete .e-att{flex:0 0 auto;margin-left:auto;}
+  #sec-prepa .e-att{font-size:11px;font-weight:800;color:#1a1a1a;background:#facc15;border-radius:6px;padding:2px 7px;white-space:nowrap;}
   #sec-prepa .b-lien{margin-left:auto;border:0;background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;text-underline-offset:2px;padding:6px 2px;}
   #sec-prepa button:disabled{opacity:.5;cursor:wait;}
 
@@ -517,6 +521,7 @@
         <div class="pp-l2">
           <div class="pp-seg" id="pp-filtre">
             <button data-f="afaire">À préparer<span class="n"></span></button>
+            <button data-f="attente" title="Dossiers en attente de réception de pièce">⏳ Attente pièce<span class="n"></span></button>
             <button data-f="prepares">Préparés<span class="n"></span></button>
             <button data-f="tous">Tous<span class="n"></span></button>
           </div>
@@ -2247,7 +2252,7 @@ loadNotices();
 // ══════════════════════════════════════════════════════════════════
 // Version de la page : à changer à chaque publication. Les appareils qui ont
 // une ancienne version se rechargent seuls (sans attendre le cache du navigateur).
-const ENTREPOT_VERSION = '2026-11-23-a';
+const ENTREPOT_VERSION = '2026-11-26-a';
 (function () {
   if (!/^https?:/.test(location.protocol)) return;
   let enCours = false;
@@ -2396,7 +2401,9 @@ const ENTREPOT_VERSION = '2026-11-23-a';
   }
   function visibles() {
     const q = $('pp-recherche').value.trim();
-    return ITEMS.filter(it => (FILTRE === 'tous' || (FILTRE === 'prepares') === !!it.prepare) && correspond(it, q));
+    // ⏳ un dossier en attente de pièce n'apparaît que dans son filtre (et dans « Tous »)
+    const garde = it => FILTRE === 'tous' ? true : FILTRE === 'attente' ? !!it.attente : FILTRE === 'prepares' ? !!it.prepare : (!it.prepare && !it.attente);
+    return ITEMS.filter(it => garde(it) && correspond(it, q));
   }
 
   function carte(it) {
@@ -2414,7 +2421,9 @@ const ENTREPOT_VERSION = '2026-11-23-a';
     const usv = lienRevers(it)
       ? '<a class="usv" href="' + esc(lienRevers(it)) + '" target="_blank" rel="noopener" title="Ouvrir le dossier dans Revers.io">' + numero + '</a>'
       : '<span class="usv" title="Lien Revers.io inconnu">' + numero + '</span>';
-    return '<article class="carte' + (it.prepare ? ' prepare' : '') + (CARTES_OUVERTES[it.cle] ? ' ouverte' : '') + '" data-cle="' + esc(it.cle) + '">' +
+    const att = !it.prepare && it.attente;
+    const attDepuis = att ? new Date(att.depuis).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '';
+    return '<article class="carte' + (it.prepare ? ' prepare' : '') + (att ? ' en-attente' : '') + (CARTES_OUVERTES[it.cle] ? ' ouverte' : '') + '" data-cle="' + esc(it.cle) + '">' +
       '<div class="c-entete" title="Ouvrir / fermer le dossier">' +
         '<span class="ch" aria-hidden="true"></span>' +
         '<div class="e-txt">' +
@@ -2423,7 +2432,7 @@ const ENTREPOT_VERSION = '2026-11-23-a';
             '<span class="c-date" title="Date de réception">' + esc(it.date) + '</span></span>' +
           '</div>' +
           '<div class="e-l"><span class="e-ref">' + esc(it.ref || '—') + '</span>' +
-            (it.prepare ? '<span class="e-ok">' + (it.colis ? 'Colis ' + it.colis : 'Préparé') + '</span>' : '') + '</div>' +
+            (it.prepare ? '<span class="e-ok">' + (it.colis ? 'Colis ' + it.colis : 'Préparé') + '</span>' : att ? '<span class="e-att">⏳ Attente pièce</span>' : '') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="c-corps">' +
@@ -2444,11 +2453,14 @@ const ENTREPOT_VERSION = '2026-11-23-a';
         (it.prepare
           ? '<span class="statut-ok">✅ Préparé' + (it.colis ? ' · Colis ' + it.colis : ' (sans colis)') + (it.transporteur ? ' <span class="t ' + esc(it.transporteur) + '">' + esc(it.transporteur) + '</span>' : '') + '</span>' + chipX(it) +
             (it.colis ? '' : '<button class="b-prep" data-act="prep">📦 Mettre en colis</button>')
-          : '<button class="b-prep" data-act="prep">📦 Préparer…</button>') +
+          : att
+            ? '<span class="statut-att">⏳ En attente de pièce depuis le ' + attDepuis + (att.note ? ' · ' + esc(att.note) : '') + '</span>' +
+              '<button class="b-prep" data-act="sortir-attente">↩ Remettre à traiter</button>'
+            : '<button class="b-prep" data-act="prep">📦 Préparer…</button>') +
         (notice
           ? '<a class="b-notice" href="' + esc(notice.githubUrl) + '" target="_blank" rel="noopener" title="' + esc(notice.ref + ' — ' + (notice.label || '')) + '">📄 Notice</a>'
           : '<span class="b-notice absente" title="Aucune notice trouvée pour cette réf">📄 Pas de notice</span>') +
-        (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : '') +
+        (it.prepare ? '<button class="b-lien" data-act="annuler">Retirer « préparé »</button>' : att ? '' : '<button class="b-lien" data-act="attente" title="Sortir ce dossier de la liste en attendant la réception de la pièce">⏳ Attente pièce</button>') +
       '</div>' +
       '</div>' +
     '</article>';
@@ -2494,11 +2506,11 @@ const ENTREPOT_VERSION = '2026-11-23-a';
   }
 
   function rendre() {
-    const nbAF = ITEMS.filter(i => !i.prepare).length, nbP = ITEMS.length - nbAF;
+    const nbAtt = ITEMS.filter(i => i.attente && !i.prepare).length, nbP = ITEMS.filter(i => i.prepare).length, nbAF = ITEMS.length - nbP - nbAtt;
     const colisOuverts = new Set(ITEMS.filter(i => i.prepare && i.colis).map(i => i.colis));
     document.querySelectorAll('#pp-filtre button').forEach(b => {
       b.classList.toggle('on', b.dataset.f === FILTRE);
-      b.querySelector('.n').textContent = b.dataset.f === 'afaire' ? nbAF : b.dataset.f === 'prepares' ? nbP : ITEMS.length;
+      b.querySelector('.n').textContent = b.dataset.f === 'afaire' ? nbAF : b.dataset.f === 'prepares' ? nbP : b.dataset.f === 'attente' ? nbAtt : ITEMS.length;
     });
     const nbX = ITEMS.filter(i => i.prepare && !i.x && !i.b_autre).length;
     $('pp-nb-x').textContent = nbX;
@@ -2506,7 +2518,7 @@ const ENTREPOT_VERSION = '2026-11-23-a';
     $('pp-info-colis').textContent = colisOuverts.size ? '· ' + colisOuverts.size + ' colis prêt' + (colisOuverts.size > 1 ? 's' : '') + ' à partir' : '';
     const v = visibles();
     if (!v.length) {
-      $('pp-liste').innerHTML = '<div class="pp-vide">' + (ITEMS.length ? 'Aucun dossier ne correspond.' : '🎉 Rien à préparer pour le moment.') + '</div>';
+      $('pp-liste').innerHTML = '<div class="pp-vide">' + (FILTRE === 'attente' && !$('pp-recherche').value.trim() ? 'Aucun dossier en attente de pièce.' : ITEMS.length ? 'Aucun dossier ne correspond.' : '🎉 Rien à préparer pour le moment.') + '</div>';
       return;
     }
     let html = '';
@@ -2528,7 +2540,7 @@ const ENTREPOT_VERSION = '2026-11-23-a';
     } else {
       grouper(v, magKey).forEach(g => {
         const a = g.items[0];
-        const aFaire = g.items.filter(i => !i.prepare).length;
+        const aFaire = g.items.filter(i => !i.prepare && !i.attente).length;
         const ouverts = [...new Set(ITEMS.filter(i => magKey(i) === g.k && i.prepare && i.colis).map(i => i.colis))];
         html += '<section class="groupe"><div class="g-tete">' +
           '<div class="g-titre"><b>' + titreVille(a) + '</b><span>' + (a.mag_multi ? '⚠️ ' : '') + nomMag(a) + ' · ' + g.items.length + ' dossier' + (g.items.length > 1 ? 's' : '') + '</span></div>' +
@@ -2730,7 +2742,7 @@ const ENTREPOT_VERSION = '2026-11-23-a';
   function ouvrirPreparer(cles) {
     const base = ITEMS.find(i => i.cle === cles[0]);
     const mag = magKey(base);
-    const candidats = ITEMS.filter(i => magKey(i) === mag && (!i.prepare || (cles.includes(i.cle) && !i.colis)));
+    const candidats = ITEMS.filter(i => magKey(i) === mag && !i.attente && (!i.prepare || (cles.includes(i.cle) && !i.colis)));
     const existants = {};
     ITEMS.filter(i => magKey(i) === mag && i.prepare && i.colis).forEach(i => {
       const e = existants[i.colis] = existants[i.colis] || { t: i.transporteur, dossiers: [], le: null };
@@ -2916,7 +2928,7 @@ const ENTREPOT_VERSION = '2026-11-23-a';
     const ph = e.target.closest('[data-photo]');
     if (ph) { ouvrirVisionneuse(ph.closest('.carte').dataset.cle, parseInt(ph.dataset.photo, 10)); return; }
     const gr = e.target.closest('[data-groupe]');
-    if (gr) { const it = ITEMS.find(i => magKey(i) === gr.dataset.groupe && !i.prepare); if (it) ouvrirPreparer([it.cle]); return; }
+    if (gr) { const it = ITEMS.find(i => magKey(i) === gr.dataset.groupe && !i.prepare && !i.attente); if (it) ouvrirPreparer([it.cle]); return; }
     const pt = e.target.closest('.pill-t[data-colis]');
     if (pt) {
       if (pt.classList.contains('on')) return;
@@ -2935,6 +2947,23 @@ const ENTREPOT_VERSION = '2026-11-23-a';
       const it = ITEMS.find(x => x.cle === cle);
       if (!it) return;
       if (b.dataset.act === 'prep') { ouvrirPreparer([cle]); return; }
+      // ⏳ Attente de réception de pièce : le dossier sort de « À préparer », sa ligne SYSTEME U passe en jaune
+      if (b.dataset.act === 'attente' || b.dataset.act === 'sortir-attente') {
+        const mettre = b.dataset.act === 'attente', nomD = it.cnb || it.fla;
+        let note = '';
+        if (mettre) {
+          note = prompt('Mettre ' + nomD + ' en attente de pièce ?\n\nIl sort de la liste « À préparer » et sa ligne passe en jaune dans SYSTEME U.\n\nPièce attendue ou remarque (facultatif) :', '');
+          if (note === null) return;
+        } else if (!confirm('Remettre ' + nomD + ' dans les dossiers à traiter ?\n\nSa ligne retrouve sa couleur d\u2019origine dans SYSTEME U.')) return;
+        b.disabled = true;
+        try {
+          const d = await api('attente', { cle, ligne: it.ligne, attente: mettre, note });
+          it.attente = d.attente || null;
+          rendre();
+          toast(mettre ? '⏳ ' + nomD + ' en attente de pièce — ligne en jaune dans SYSTEME U' : '↩︎ ' + nomD + ' remis « à préparer »', 4000);
+        } catch (err) { b.disabled = false; if (err.message !== 'code') toast('⚠️ ' + err.message, 6000); }
+        return;
+      }
       if (b.dataset.act === 'annuler') {
         const aRendre = Object.values(it.stock_retraits || {}).reduce((t, n) => t + (parseInt(n, 10) || 0), 0);
         if (!confirm('Retirer « préparé » pour ' + (it.cnb || it.fla) + ' ?' + (it.colis ? '\nIl sortira du colis ' + it.colis + '.' : '') + (it.x ? '\nLa lettre « ' + (it.marque || 'x') + ' » sera enlevée du Sheet.' : '') +
@@ -3039,8 +3068,9 @@ const ENTREPOT_VERSION = '2026-11-23-a';
   // 📋 Remplir l'onglet « Pour SAV Entrepôt » avec la liste affichée (mêmes colonnes, même ordre que l'onglet)
   $('pp-export').onclick = async () => {
     const tous = visibles();
-    const v = tous.filter(i => !i.x);          // x déjà écrit = le colis part : on ne le remet pas dans la liste de prépa
-    const avecX = tous.length - v.length;
+    const v = tous.filter(i => !i.x && !i.attente);   // x déjà écrit = le colis part ; en attente de pièce = pas à préparer
+    const avecX = tous.filter(i => i.x).length;
+    if (!v.length && tous.some(i => i.attente && !i.x)) { toast('Les dossiers en attente de pièce ne vont pas dans « Pour SAV Entrepôt ».', 4000); return; }
     if (!v.length) { toast(avecX ? 'Tous les dossiers affichés ont déjà leur x : rien à remettre dans « Pour SAV Entrepôt ».' : 'Rien à écrire avec ce filtre.', 4000); return; }
     const lib = FILTRE === 'afaire' ? 'à préparer' : FILTRE === 'prepares' ? 'préparés' : 'en cours';
     const ok = await confirmer('Remplir « Pour SAV Entrepôt » ?', v.length + ' dossier' + (v.length > 1 ? 's' : '') + ' ' + lib + ($('pp-recherche').value.trim() ? ' (recherche en cours)' : ''),
